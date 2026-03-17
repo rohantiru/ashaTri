@@ -1,0 +1,200 @@
+import { useEffect, useState } from 'react'
+import { collection, getDocs, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { db } from '../../firebase'
+import StatusBadge from '../../components/StatusBadge'
+import { CheckSquare, Search, Check, Package } from 'lucide-react'
+
+const STATUS_FLOW = ['interested', 'ordered', 'ready', 'picked_up']
+const STATUS_LABELS = { interested: 'Interested', ordered: 'Ordered', ready: 'Ready', picked_up: 'Collected' }
+
+export default function PickupManager() {
+  const [items, setItems] = useState([])
+  const [responses, setResponses] = useState([])
+  const [users, setUsers] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [filterItem, setFilterItem] = useState('all')
+  const [updating, setUpdating] = useState({})
+
+  const fetchAll = async () => {
+    const [itemsSnap, responsesSnap, usersSnap] = await Promise.all([
+      getDocs(collection(db, 'swagItems')),
+      getDocs(collection(db, 'swagResponses')),
+      getDocs(collection(db, 'users')),
+    ])
+    setItems(itemsSnap.docs.map(d => ({ id: d.id, ...d.data() })))
+    setResponses(responsesSnap.docs.map(d => ({ id: d.id, ...d.data() })))
+    const usersMap = {}
+    usersSnap.docs.forEach(d => { usersMap[d.id] = d.data() })
+    setUsers(usersMap)
+    setLoading(false)
+  }
+
+  useEffect(() => { fetchAll() }, [])
+
+  const advanceStatus = async (response) => {
+    const currentIdx = STATUS_FLOW.indexOf(response.status)
+    if (currentIdx === STATUS_FLOW.length - 1) return
+    const nextStatus = STATUS_FLOW[currentIdx + 1]
+    setUpdating(u => ({ ...u, [response.id]: true }))
+    await updateDoc(doc(db, 'swagResponses', response.id), {
+      status: nextStatus,
+      [`${nextStatus}At`]: serverTimestamp(),
+    })
+    setResponses(r => r.map(x => x.id === response.id ? { ...x, status: nextStatus } : x))
+    setUpdating(u => ({ ...u, [response.id]: false }))
+  }
+
+  const itemMap = {}
+  items.forEach(i => { itemMap[i.id] = i })
+
+  const filtered = responses.filter(r => {
+    const u = users[r.athleteId]
+    const matchSearch = !search || u?.name?.toLowerCase().includes(search.toLowerCase()) || u?.email?.toLowerCase().includes(search.toLowerCase())
+    const matchStatus = filterStatus === 'all' || r.status === filterStatus
+    const matchItem = filterItem === 'all' || r.itemId === filterItem
+    return matchSearch && matchStatus && matchItem
+  })
+
+  // Bulk actions
+  const bulkReady = async () => {
+    const ordered = filtered.filter(r => r.status === 'ordered')
+    if (!ordered.length) return
+    if (!confirm(`Mark ${ordered.length} ordered items as ready for pickup?`)) return
+    await Promise.all(ordered.map(r => updateDoc(doc(db, 'swagResponses', r.id), { status: 'ready', readyAt: serverTimestamp() })))
+    fetchAll()
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-display font-bold text-3xl text-asha-dark">Pickup Manager</h1>
+          <p className="font-body text-asha-muted text-sm mt-1">Advance statuses and track collection</p>
+        </div>
+        <button
+          onClick={bulkReady}
+          className="text-sm font-body font-medium px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors"
+        >
+          Bulk: Mark ordered → Ready
+        </button>
+      </div>
+
+      {/* Status summary pills */}
+      <div className="grid grid-cols-4 gap-3 mb-6">
+        {STATUS_FLOW.map(s => {
+          const count = responses.filter(r => r.status === s).length
+          return (
+            <div key={s} className="bg-white rounded-xl border border-asha-border p-3 text-center">
+              <div className="font-display font-bold text-xl text-asha-dark">{count}</div>
+              <div className="font-body text-xs text-asha-muted">{STATUS_LABELS[s]}</div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 mb-5">
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-asha-muted" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search athlete…"
+            className="pl-8 pr-3 py-2 border border-asha-border rounded-xl font-body text-sm focus:outline-none focus:border-asha-orange transition-colors w-48"
+          />
+        </div>
+        <select
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+          className="px-3 py-2 border border-asha-border rounded-xl font-body text-sm focus:outline-none focus:border-asha-orange transition-colors bg-white"
+        >
+          <option value="all">All statuses</option>
+          {STATUS_FLOW.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
+        </select>
+        <select
+          value={filterItem}
+          onChange={e => setFilterItem(e.target.value)}
+          className="px-3 py-2 border border-asha-border rounded-xl font-body text-sm focus:outline-none focus:border-asha-orange transition-colors bg-white"
+        >
+          <option value="all">All items</option>
+          {items.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+        </select>
+      </div>
+
+      {/* Response list */}
+      {loading ? (
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-16 animate-pulse" />)}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16">
+          <CheckSquare size={32} className="text-asha-muted mx-auto mb-3" />
+          <p className="font-body text-asha-muted">No responses match your filters</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-asha-border overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-asha-cream/60 border-b border-asha-border">
+              <tr>
+                <th className="font-body font-medium text-xs text-asha-muted text-left px-4 py-3">Athlete</th>
+                <th className="font-body font-medium text-xs text-asha-muted text-left px-4 py-3">Item</th>
+                <th className="font-body font-medium text-xs text-asha-muted text-left px-4 py-3">Size</th>
+                <th className="font-body font-medium text-xs text-asha-muted text-left px-4 py-3">Status</th>
+                <th className="font-body font-medium text-xs text-asha-muted text-left px-4 py-3">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(r => {
+                const u = users[r.athleteId]
+                const item = itemMap[r.itemId]
+                const isLast = r.status === 'picked_up'
+                const isUpdating = updating[r.id]
+                const nextLabel = STATUS_LABELS[STATUS_FLOW[STATUS_FLOW.indexOf(r.status) + 1]]
+
+                return (
+                  <tr key={r.id} className="border-b border-asha-border/50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {u?.photoURL && <img src={u.photoURL} alt="" className="w-7 h-7 rounded-full" />}
+                        <div>
+                          <div className="font-body font-medium text-sm text-asha-dark">{u?.name || '—'}</div>
+                          <div className="font-body text-xs text-asha-muted">{u?.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-body text-sm text-asha-dark">{item?.name || '—'}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="font-body text-sm text-asha-muted">{r.size || '—'}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={r.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      {isLast ? (
+                        <div className="flex items-center gap-1 text-emerald-600 text-xs font-body">
+                          <Check size={13} /> Done
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => advanceStatus(r)}
+                          disabled={isUpdating}
+                          className="text-xs font-body font-medium px-3 py-1.5 bg-asha-orange text-white rounded-lg hover:bg-asha-orangeLight transition-colors disabled:opacity-50"
+                        >
+                          {isUpdating ? '…' : `→ ${nextLabel}`}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}

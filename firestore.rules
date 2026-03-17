@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isCoordinator() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coordinator';
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Users collection
+    // - Anyone signed in can read their own doc
+    // - Users can create their own doc on first sign-in
+    // - Only coordinators can update role field
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']))
+        || isCoordinator();
+      allow delete: if isCoordinator();
+    }
+
+    // Swag items
+    // - Anyone signed in can read active items
+    // - Only coordinators can create/update/delete
+    match /swagItems/{itemId} {
+      allow read: if isSignedIn();
+      allow write: if isCoordinator();
+    }
+
+    // Swag responses
+    // - Athletes can read/create/delete their own responses
+    // - Athletes cannot change status (only coordinators do that)
+    // - Coordinators can read all and update status
+    match /swagResponses/{responseId} {
+      allow read: if isSignedIn() &&
+        (resource.data.athleteId == request.auth.uid || isCoordinator());
+      allow create: if isSignedIn() &&
+        request.resource.data.athleteId == request.auth.uid &&
+        request.resource.data.status == 'interested';
+      allow update: if isCoordinator() ||
+        // Athletes can only delete their own interested-status responses via a delete,
+        // not update status directly
+        false;
+      allow delete: if isSignedIn() &&
+        resource.data.athleteId == request.auth.uid &&
+        resource.data.status == 'interested';
+    }
+  }
+}
