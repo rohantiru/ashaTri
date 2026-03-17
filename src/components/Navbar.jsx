@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useAppConfig } from '../contexts/AppConfigContext'
 import {
   LogOut, LayoutDashboard, Package, BarChart2, CheckSquare,
-  ShoppingBag, Star, ArrowLeftRight, Receipt, Settings, Users, Menu, X
+  ShoppingBag, Star, ArrowLeftRight, Receipt, Settings, Users, Menu, X, BookOpen
 } from 'lucide-react'
 
 const coordLinks = [
@@ -34,8 +34,11 @@ export default function Navbar() {
   const isCoordinator = profile?.role === 'coordinator'
   const isAthleteMode = location.pathname.startsWith('/athlete')
 
+  const visibleCoordLinks = profile?.email === 'rohantirumale@gmail.com'
+    ? [...coordLinks, { to: '/coord/vault', label: 'Vault', icon: BookOpen }]
+    : coordLinks.filter(l => l.to !== '/coord/users')
   const athleteLinks = allAthleteLinks.filter(l => !l.tab || config.tabs[l.tab])
-  const links = isCoordinator ? (isAthleteMode ? athleteLinks : coordLinks) : athleteLinks
+  const links = isCoordinator ? (isAthleteMode ? athleteLinks : visibleCoordLinks) : athleteLinks
 
   const handleLogout = async () => {
     await logout()

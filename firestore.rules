@@ -17,7 +17,7 @@ service cloud.firestore {
 
     // Users collection
     match /users/{uid} {
-      allow read: if isSignedIn();
+      allow read: if isOwner(uid) || isCoordinator();
       allow create: if isOwner(uid);
       allow update: if isOwner(uid) &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']))
