@@ -25,7 +25,7 @@ const allAthleteLinks = [
 ]
 
 export default function Navbar() {
-  const { profile, logout } = useAuth()
+  const { user, profile, logout } = useAuth()
   const { config } = useAppConfig()
   const location = useLocation()
   const navigate = useNavigate()
@@ -34,8 +34,9 @@ export default function Navbar() {
   const isCoordinator = profile?.role === 'coordinator'
   const isAthleteMode = location.pathname.startsWith('/athlete')
 
-  const visibleCoordLinks = profile?.email === 'rohantirumale@gmail.com'
-    ? [...coordLinks, { to: '/coord/vault', label: 'Vault', icon: BookOpen }]
+  const isOwner = user?.email === 'rohantirumale@gmail.com'
+  const visibleCoordLinks = isOwner
+    ? [...coordLinks.slice(0, 5), { to: '/coord/vault', label: 'Vault', icon: BookOpen }, ...coordLinks.slice(5)]
     : coordLinks.filter(l => l.to !== '/coord/users')
   const athleteLinks = allAthleteLinks.filter(l => !l.tab || config.tabs[l.tab])
   const links = isCoordinator ? (isAthleteMode ? athleteLinks : visibleCoordLinks) : athleteLinks
