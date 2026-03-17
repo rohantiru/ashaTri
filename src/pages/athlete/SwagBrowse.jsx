@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, query, where, addDoc, deleteDoc, doc, runTransaction, serverTimestamp, increment } from 'firebase/firestore'
+import { collection, getDocs, onSnapshot, query, where, addDoc, deleteDoc, doc, runTransaction, serverTimestamp, increment } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
@@ -168,17 +168,21 @@ export default function SwagBrowse() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
 
-  const fetchAll = async () => {
-    const [itemsSnap, mySnap] = await Promise.all([
-      getDocs(collection(db, 'swagItems')),
-      getDocs(query(collection(db, 'swagResponses'), where('athleteId', '==', user.uid))),
-    ])
-    setItems(itemsSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(i => i.isActive))
+  // Live inventory updates via onSnapshot
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'swagItems'), (snap) => {
+      setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(i => i.isActive))
+    })
+    return unsub
+  }, [])
+
+  const fetchMyResponses = async () => {
+    const mySnap = await getDocs(query(collection(db, 'swagResponses'), where('athleteId', '==', user.uid)))
     setMyResponses(mySnap.docs.map(d => ({ id: d.id, ...d.data() })))
     setLoading(false)
   }
 
-  useEffect(() => { fetchAll() }, [user.uid])
+  useEffect(() => { fetchMyResponses() }, [user.uid])
 
   const handleSubmit = async (item, size) => {
     if (item.type === 'inventory') {
@@ -207,7 +211,7 @@ export default function SwagBrowse() {
         createdAt: serverTimestamp(),
       })
     }
-    await fetchAll()
+    await fetchMyResponses()
   }
 
   const handleWithdraw = async (response) => {
@@ -222,7 +226,7 @@ export default function SwagBrowse() {
     } else {
       await deleteDoc(doc(db, 'swagResponses', response.id))
     }
-    await fetchAll()
+    await fetchMyResponses()
   }
 
   const myResponseMap = {}

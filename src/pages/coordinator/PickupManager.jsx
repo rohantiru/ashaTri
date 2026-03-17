@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { collection, getDocs, updateDoc, doc, serverTimestamp, runTransaction, writeBatch } from 'firebase/firestore'
 import { db } from '../../firebase'
 import StatusBadge from '../../components/StatusBadge'
 import { CheckSquare, Search, Check } from 'lucide-react'
@@ -48,12 +48,21 @@ export default function PickupManager() {
     if (currentIdx === -1 || currentIdx === flow.length - 1) return
     const nextStatus = flow[currentIdx + 1]
     setUpdating(u => ({ ...u, [response.id]: true }))
-    await updateDoc(doc(db, 'swagResponses', response.id), {
-      status: nextStatus,
-      [`${nextStatus}At`]: serverTimestamp(),
-    })
-    setResponses(r => r.map(x => x.id === response.id ? { ...x, status: nextStatus } : x))
-    setUpdating(u => ({ ...u, [response.id]: false }))
+    try {
+      const responseRef = doc(db, 'swagResponses', response.id)
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(responseRef)
+        // Guard: if another coord already advanced this, skip
+        if (!snap.exists() || snap.data().status !== response.status) return
+        tx.update(responseRef, {
+          status: nextStatus,
+          [`${nextStatus}At`]: serverTimestamp(),
+        })
+      })
+      setResponses(r => r.map(x => x.id === response.id ? { ...x, status: nextStatus } : x))
+    } finally {
+      setUpdating(u => ({ ...u, [response.id]: false }))
+    }
   }
 
   const filtered = responses.filter(r => {
@@ -68,7 +77,11 @@ export default function PickupManager() {
     const ordered = filtered.filter(r => r.status === 'ordered')
     if (!ordered.length) return
     if (!confirm(`Mark ${ordered.length} ordered items as ready for pickup?`)) return
-    await Promise.all(ordered.map(r => updateDoc(doc(db, 'swagResponses', r.id), { status: 'ready', readyAt: serverTimestamp() })))
+    const batch = writeBatch(db)
+    ordered.forEach(r => {
+      batch.update(doc(db, 'swagResponses', r.id), { status: 'ready', readyAt: serverTimestamp() })
+    })
+    await batch.commit()
     fetchAll()
   }
 
