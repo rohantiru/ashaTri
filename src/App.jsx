@@ -8,6 +8,7 @@ import InterestView from './pages/coordinator/InterestView'
 import PickupManager from './pages/coordinator/PickupManager'
 import ExpensesSummary from './pages/coordinator/ExpensesSummary'
 import Settings from './pages/coordinator/Settings'
+import UserManagement from './pages/coordinator/UserManagement'
 import AthleteDashboard from './pages/athlete/Dashboard'
 import SwagBrowse from './pages/athlete/SwagBrowse'
 import MySwag from './pages/athlete/MySwag'
@@ -53,6 +54,7 @@ function AppRoutes() {
         <Route path="/coord/pickup" element={<ProtectedRoute role="coordinator"><PickupManager /></ProtectedRoute>} />
         <Route path="/coord/expenses" element={<ProtectedRoute role="coordinator"><ExpensesSummary /></ProtectedRoute>} />
         <Route path="/coord/settings" element={<ProtectedRoute role="coordinator"><Settings /></ProtectedRoute>} />
+        <Route path="/coord/users" element={<ProtectedRoute role="coordinator"><UserManagement /></ProtectedRoute>} />
 
         {/* Athlete routes — gated by tab config */}
         <Route path="/athlete" element={<ProtectedRoute role="athlete"><AthleteDashboard /></ProtectedRoute>} />

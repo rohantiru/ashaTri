@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useAppConfig } from '../contexts/AppConfigContext'
-import { LogOut, LayoutDashboard, Package, BarChart2, CheckSquare, ShoppingBag, Star, ArrowLeftRight, Receipt, Settings } from 'lucide-react'
+import { LogOut, LayoutDashboard, Package, BarChart2, CheckSquare, ShoppingBag, Star, ArrowLeftRight, Receipt, Settings, Users } from 'lucide-react'
 
 const coordLinks = [
   { to: '/coord', label: 'Overview', icon: LayoutDashboard },
@@ -9,6 +9,7 @@ const coordLinks = [
   { to: '/coord/interest', label: 'Interest', icon: BarChart2 },
   { to: '/coord/pickup', label: 'Pickup', icon: CheckSquare },
   { to: '/coord/expenses', label: 'Expenses', icon: Receipt },
+  { to: '/coord/users', label: 'Users', icon: Users },
   { to: '/coord/settings', label: 'Settings', icon: Settings },
 ]
 
