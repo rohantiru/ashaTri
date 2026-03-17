@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, query, where, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { collection, getDocs, query, where, addDoc, deleteDoc, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
-import { ShoppingBag, Check, Package, ChevronDown } from 'lucide-react'
+import { ShoppingBag, Check, ChevronDown } from 'lucide-react'
 
 function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
   const [selectedSize, setSelectedSize] = useState(myResponse?.size || '')
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
   const hasResponse = !!myResponse
   const isInventory = item.type === 'inventory'
 
-  // Compute stock for a given size
   const getStock = (size) => item.inventory?.[size] ?? 0
   const totalStock = item.hasSizes
     ? (item.sizes || []).reduce((sum, s) => sum + (item.inventory?.[s] || 0), 0)
@@ -21,10 +21,19 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
     ? (totalStock === 0 ? 'out_of_stock' : totalStock <= 3 ? 'low_stock' : 'available')
     : 'interest'
 
+  const sizeOptions = item.hasSizes ? (item.sizes || []) : ['One Size']
+  const selectedSizeStock = isInventory ? getStock(selectedSize || 'One Size') : null
+  const canClaim = !isInventory || (selectedSizeStock !== null && selectedSizeStock > 0)
+
   const handleSubmit = async () => {
     if (!selectedSize && item.hasSizes) return
     setSubmitting(true)
-    await onSubmit(item, selectedSize || 'One Size')
+    setError('')
+    try {
+      await onSubmit(item, selectedSize || 'One Size')
+    } catch (e) {
+      setError(e.message || 'Something went wrong')
+    }
     setSubmitting(false)
   }
 
@@ -34,20 +43,23 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
     setSubmitting(false)
   }
 
-  const sizeOptions = item.hasSizes ? (item.sizes || []) : ['One Size']
-  const selectedSizeStock = isInventory ? getStock(selectedSize || 'One Size') : null
-  const canClaim = !isInventory || (selectedSizeStock !== null && selectedSizeStock > 0)
-
   return (
-    <div className={`bg-white rounded-2xl border transition-all flex flex-col ${hasResponse ? 'border-asha-orange/40 shadow-sm' : 'border-asha-border hover:border-asha-orange/30 hover:shadow-sm'}`}>
-      {/* Color band top */}
-      <div className={`h-1.5 rounded-t-2xl ${hasResponse ? 'bg-asha-orange' : 'bg-asha-border'}`} />
+    <div className={`bg-white rounded-2xl border transition-all flex flex-col overflow-hidden ${hasResponse ? 'border-asha-orange/40 shadow-sm' : 'border-asha-border hover:border-asha-orange/30 hover:shadow-sm'}`}>
+      {/* Image or color band */}
+      {item.imageUrl ? (
+        <img src={item.imageUrl} alt={item.name} className="w-full h-36 object-cover" onError={e => e.target.style.display='none'} />
+      ) : (
+        <div className={`h-1.5 ${hasResponse ? 'bg-asha-orange' : 'bg-asha-border'}`} />
+      )}
 
       <div className="p-5 flex-1 flex flex-col">
         {/* Header */}
-        <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-start justify-between gap-2 mb-1">
           <div>
             <h3 className="font-display font-bold text-asha-dark text-base leading-snug">{item.name}</h3>
+            {item.price != null && (
+              <span className="font-body text-sm font-semibold text-asha-orange">${item.price.toFixed(2)}</span>
+            )}
             {item.description && <p className="font-body text-xs text-asha-muted mt-1 leading-relaxed">{item.description}</p>}
           </div>
           <StatusBadge status={stockStatus} />
@@ -81,7 +93,7 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
             <div className="flex items-center gap-2 bg-asha-orangeDim rounded-xl px-3 py-2.5">
               <Check size={14} className="text-asha-orange flex-shrink-0" />
               <span className="font-body text-sm text-asha-orange font-medium">
-                {isInventory ? 'Claimed' : 'Interest submitted'}
+                {isInventory ? 'Ordered' : 'Interest submitted'}
                 {myResponse.size && myResponse.size !== 'One Size' && ` — ${myResponse.size}`}
               </span>
             </div>
@@ -102,7 +114,6 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
           </div>
         ) : (
           <div className="mt-4 space-y-2">
-            {/* Size selector */}
             {item.hasSizes && (
               <div className="relative">
                 <select
@@ -125,12 +136,14 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
               </div>
             )}
 
+            {error && <p className="font-body text-xs text-red-500">{error}</p>}
+
             <button
               onClick={handleSubmit}
               disabled={submitting || (item.hasSizes && !selectedSize) || (isInventory && !canClaim) || stockStatus === 'out_of_stock'}
               className="w-full py-2.5 rounded-xl bg-asha-orange text-white font-body font-medium text-sm hover:bg-asha-orangeLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Submitting…' : isInventory ? 'Claim Item' : 'Express Interest'}
+              {submitting ? 'Submitting…' : isInventory ? 'Order Now' : 'Express Interest'}
             </button>
           </div>
         )}
@@ -144,7 +157,7 @@ export default function SwagBrowse() {
   const [items, setItems] = useState([])
   const [myResponses, setMyResponses] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('all') // all | interest | inventory
+  const [filter, setFilter] = useState('all')
 
   const fetchAll = async () => {
     const [itemsSnap, mySnap] = await Promise.all([
@@ -159,13 +172,32 @@ export default function SwagBrowse() {
   useEffect(() => { fetchAll() }, [user.uid])
 
   const handleSubmit = async (item, size) => {
-    await addDoc(collection(db, 'swagResponses'), {
-      athleteId: user.uid,
-      itemId: item.id,
-      size,
-      status: 'interested',
-      createdAt: serverTimestamp(),
-    })
+    if (item.type === 'inventory') {
+      // Transactionally decrement stock and create response
+      await runTransaction(db, async (tx) => {
+        const itemRef = doc(db, 'swagItems', item.id)
+        const snap = await tx.get(itemRef)
+        const stock = snap.data().inventory?.[size] || 0
+        if (stock <= 0) throw new Error('Sorry, that size just sold out')
+        tx.update(itemRef, { [`inventory.${size}`]: stock - 1 })
+        const responseRef = doc(collection(db, 'swagResponses'))
+        tx.set(responseRef, {
+          athleteId: user.uid,
+          itemId: item.id,
+          size,
+          status: 'ordered',
+          createdAt: serverTimestamp(),
+        })
+      })
+    } else {
+      await addDoc(collection(db, 'swagResponses'), {
+        athleteId: user.uid,
+        itemId: item.id,
+        size,
+        status: 'interested',
+        createdAt: serverTimestamp(),
+      })
+    }
     await fetchAll()
   }
 
@@ -185,7 +217,7 @@ export default function SwagBrowse() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="mb-7">
         <h1 className="font-display font-bold text-3xl text-asha-dark">Browse Swag</h1>
-        <p className="font-body text-asha-muted text-sm mt-1">Express interest in upcoming items or claim available inventory</p>
+        <p className="font-body text-asha-muted text-sm mt-1">Express interest in upcoming items or order available stock</p>
       </div>
 
       {/* Filter tabs */}

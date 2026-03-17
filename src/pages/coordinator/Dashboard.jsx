@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
-import { Package, BarChart2, CheckSquare, TrendingUp, Users, ArrowRight } from 'lucide-react'
+import { Package, BarChart2, CheckSquare, TrendingUp, Users, ArrowRight, DollarSign } from 'lucide-react'
 
 export default function CoordinatorDashboard() {
   const { profile } = useAuth()
-  const [stats, setStats] = useState({ items: 0, interestItems: 0, inventoryItems: 0, totalResponses: 0, pendingPickup: 0, collected: 0 })
+  const [stats, setStats] = useState({ items: 0, interestItems: 0, inventoryItems: 0, totalResponses: 0, pendingPickup: 0, collected: 0, totalValue: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -17,8 +17,13 @@ export default function CoordinatorDashboard() {
         getDocs(collection(db, 'swagResponses')),
       ])
 
-      const items = itemsSnap.docs.map(d => d.data())
+      const items = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
       const responses = responsesSnap.docs.map(d => d.data())
+      const itemPriceMap = {}
+      items.forEach(i => { itemPriceMap[i.id] = i.price || 0 })
+
+      const committed = responses.filter(r => ['ordered', 'ready', 'picked_up'].includes(r.status))
+      const totalValue = committed.reduce((sum, r) => sum + (itemPriceMap[r.itemId] || 0), 0)
 
       setStats({
         items: items.length,
@@ -27,6 +32,7 @@ export default function CoordinatorDashboard() {
         totalResponses: responses.length,
         pendingPickup: responses.filter(r => r.status === 'ready').length,
         collected: responses.filter(r => r.status === 'picked_up').length,
+        totalValue,
       })
       setLoading(false)
     }
@@ -37,18 +43,16 @@ export default function CoordinatorDashboard() {
     { label: 'Swag Items', value: stats.items, sub: `${stats.interestItems} interest · ${stats.inventoryItems} inventory`, icon: Package, to: '/coord/items', color: 'bg-blue-50 text-blue-600' },
     { label: 'Total Responses', value: stats.totalResponses, sub: 'across all items', icon: TrendingUp, to: '/coord/interest', color: 'bg-purple-50 text-purple-600' },
     { label: 'Awaiting Pickup', value: stats.pendingPickup, sub: 'ready to collect', icon: CheckSquare, to: '/coord/pickup', color: 'bg-amber-50 text-amber-600' },
-    { label: 'Collected', value: stats.collected, sub: 'successfully picked up', icon: Users, to: '/coord/pickup', color: 'bg-emerald-50 text-emerald-600' },
+    { label: 'Orders Value', value: `$${stats.totalValue.toFixed(2)}`, sub: 'committed orders', icon: DollarSign, to: '/coord/interest', color: 'bg-emerald-50 text-emerald-600' },
   ]
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Header */}
       <div className="mb-8">
         <p className="font-body text-asha-muted text-sm mb-1">Welcome back, {profile?.name?.split(' ')[0]}</p>
         <h1 className="font-display font-bold text-3xl text-asha-dark">Coordinator Overview</h1>
       </div>
 
-      {/* Stat cards */}
       {loading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[...Array(4)].map((_, i) => (
@@ -70,12 +74,11 @@ export default function CoordinatorDashboard() {
         </div>
       )}
 
-      {/* Quick actions */}
       <h2 className="font-display font-semibold text-lg text-asha-dark mb-4">Quick Actions</h2>
       <div className="grid sm:grid-cols-3 gap-4">
         {[
-          { to: '/coord/items', label: 'Manage Swag Items', desc: 'Add items, update inventory, set interest polls', icon: Package },
-          { to: '/coord/interest', label: 'View Interest Summary', desc: 'See who wants what and in which sizes', icon: BarChart2 },
+          { to: '/coord/items', label: 'Manage Swag Items', desc: 'Add items, set prices, update inventory', icon: Package },
+          { to: '/coord/interest', label: 'View Interest & Orders', desc: 'See who wants what and total committed value', icon: BarChart2 },
           { to: '/coord/pickup', label: 'Manage Pickups', desc: 'Mark items as ready and track collection', icon: CheckSquare },
         ].map(({ to, label, desc, icon: Icon }) => (
           <Link key={to} to={to} className="bg-white rounded-2xl border border-asha-border p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group flex items-start gap-4">

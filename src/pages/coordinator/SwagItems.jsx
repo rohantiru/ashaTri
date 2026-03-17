@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase'
 import StatusBadge from '../../components/StatusBadge'
-import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, Package } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Package, Image } from 'lucide-react'
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size']
 
@@ -11,10 +11,12 @@ function ItemModal({ item, onSave, onClose }) {
   const [form, setForm] = useState({
     name: item?.name || '',
     description: item?.description || '',
+    imageUrl: item?.imageUrl || '',
+    price: item?.price ?? '',
     type: item?.type || 'interest',
     hasSizes: item?.hasSizes ?? true,
     sizes: item?.sizes || ['S', 'M', 'L', 'XL'],
-    inventory: item?.inventory || {}, // { 'S': 5, 'M': 10 }
+    inventory: item?.inventory || {},
     isActive: item?.isActive ?? true,
   })
 
@@ -31,7 +33,12 @@ function ItemModal({ item, onSave, onClose }) {
 
   const handleSubmit = () => {
     if (!form.name.trim()) return
-    onSave({ ...form, sizes: form.hasSizes ? form.sizes : ['One Size'] })
+    if (form.price === '' || isNaN(parseFloat(form.price))) return
+    onSave({
+      ...form,
+      price: parseFloat(form.price),
+      sizes: form.hasSizes ? form.sizes : ['One Size'],
+    })
   }
 
   return (
@@ -54,6 +61,23 @@ function ItemModal({ item, onSave, onClose }) {
             />
           </div>
 
+          {/* Price */}
+          <div>
+            <label className="block text-xs font-body font-medium text-asha-muted mb-1.5 uppercase tracking-wide">Price (AUD) *</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 font-body text-sm text-asha-muted">$</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.price}
+                onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                className="w-full border border-asha-border rounded-xl pl-7 pr-3 py-2.5 font-body text-sm focus:outline-none focus:border-asha-orange transition-colors"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
           {/* Description */}
           <div>
             <label className="block text-xs font-body font-medium text-asha-muted mb-1.5 uppercase tracking-wide">Description</label>
@@ -66,13 +90,27 @@ function ItemModal({ item, onSave, onClose }) {
             />
           </div>
 
+          {/* Image URL */}
+          <div>
+            <label className="block text-xs font-body font-medium text-asha-muted mb-1.5 uppercase tracking-wide">Image URL</label>
+            <input
+              value={form.imageUrl}
+              onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
+              className="w-full border border-asha-border rounded-xl px-3 py-2.5 font-body text-sm focus:outline-none focus:border-asha-orange transition-colors"
+              placeholder="https://…"
+            />
+            {form.imageUrl && (
+              <img src={form.imageUrl} alt="preview" className="mt-2 w-full h-32 object-cover rounded-xl border border-asha-border" onError={e => e.target.style.display='none'} />
+            )}
+          </div>
+
           {/* Type */}
           <div>
             <label className="block text-xs font-body font-medium text-asha-muted mb-1.5 uppercase tracking-wide">Type</label>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { val: 'interest', label: 'Interest Poll', desc: 'Collect interest before ordering' },
-                { val: 'inventory', label: 'Inventory', desc: 'In stock, ready for pickup' },
+                { val: 'interest', label: 'Interest Poll', desc: 'Gauge demand before ordering' },
+                { val: 'inventory', label: 'Inventory', desc: 'In stock, order directly' },
               ].map(({ val, label, desc }) => (
                 <button
                   key={val}
@@ -172,7 +210,7 @@ function ItemModal({ item, onSave, onClose }) {
 export default function SwagItems() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [modal, setModal] = useState(null) // null | 'new' | item object
+  const [modal, setModal] = useState(null)
 
   const fetchItems = async () => {
     const snap = await getDocs(collection(db, 'swagItems'))
@@ -236,16 +274,25 @@ export default function SwagItems() {
           {items.map(item => (
             <div key={item.id} className={`bg-white rounded-2xl border transition-all ${item.isActive ? 'border-asha-border' : 'border-dashed border-gray-200 opacity-60'}`}>
               <div className="flex items-center gap-4 p-4">
-                <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
-                  <Package size={18} className="text-asha-orange" />
-                </div>
+                {item.imageUrl ? (
+                  <img src={item.imageUrl} alt={item.name} className="w-12 h-12 rounded-xl object-cover border border-asha-border flex-shrink-0" onError={e => e.target.style.display='none'} />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
+                    <Package size={20} className="text-asha-orange" />
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-display font-semibold text-asha-dark">{item.name}</span>
                     <StatusBadge status={item.type} />
                     {!item.isActive && <span className="text-xs font-body text-asha-muted">(hidden)</span>}
                   </div>
-                  {item.description && <p className="font-body text-xs text-asha-muted mt-0.5 truncate">{item.description}</p>}
+                  <div className="flex items-center gap-3 mt-0.5">
+                    {item.price != null && (
+                      <span className="font-body text-sm font-semibold text-asha-orange">${item.price.toFixed(2)}</span>
+                    )}
+                    {item.description && <p className="font-body text-xs text-asha-muted truncate">{item.description}</p>}
+                  </div>
                   {item.hasSizes && item.sizes?.length > 0 && (
                     <div className="flex gap-1 mt-1.5 flex-wrap">
                       {item.sizes.map(s => (

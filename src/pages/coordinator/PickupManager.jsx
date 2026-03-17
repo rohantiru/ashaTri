@@ -2,10 +2,14 @@ import { useEffect, useState } from 'react'
 import { collection, getDocs, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase'
 import StatusBadge from '../../components/StatusBadge'
-import { CheckSquare, Search, Check, Package } from 'lucide-react'
+import { CheckSquare, Search, Check } from 'lucide-react'
 
-const STATUS_FLOW = ['interested', 'ordered', 'ready', 'picked_up']
+const FULL_FLOW = ['interested', 'ordered', 'ready', 'picked_up']
 const STATUS_LABELS = { interested: 'Interested', ordered: 'Ordered', ready: 'Ready', picked_up: 'Collected' }
+
+function getFlow(itemType) {
+  return itemType === 'inventory' ? ['ordered', 'ready', 'picked_up'] : FULL_FLOW
+}
 
 export default function PickupManager() {
   const [items, setItems] = useState([])
@@ -33,10 +37,15 @@ export default function PickupManager() {
 
   useEffect(() => { fetchAll() }, [])
 
+  const itemMap = {}
+  items.forEach(i => { itemMap[i.id] = i })
+
   const advanceStatus = async (response) => {
-    const currentIdx = STATUS_FLOW.indexOf(response.status)
-    if (currentIdx === STATUS_FLOW.length - 1) return
-    const nextStatus = STATUS_FLOW[currentIdx + 1]
+    const itemType = itemMap[response.itemId]?.type
+    const flow = getFlow(itemType)
+    const currentIdx = flow.indexOf(response.status)
+    if (currentIdx === -1 || currentIdx === flow.length - 1) return
+    const nextStatus = flow[currentIdx + 1]
     setUpdating(u => ({ ...u, [response.id]: true }))
     await updateDoc(doc(db, 'swagResponses', response.id), {
       status: nextStatus,
@@ -46,9 +55,6 @@ export default function PickupManager() {
     setUpdating(u => ({ ...u, [response.id]: false }))
   }
 
-  const itemMap = {}
-  items.forEach(i => { itemMap[i.id] = i })
-
   const filtered = responses.filter(r => {
     const u = users[r.athleteId]
     const matchSearch = !search || u?.name?.toLowerCase().includes(search.toLowerCase()) || u?.email?.toLowerCase().includes(search.toLowerCase())
@@ -57,7 +63,6 @@ export default function PickupManager() {
     return matchSearch && matchStatus && matchItem
   })
 
-  // Bulk actions
   const bulkReady = async () => {
     const ordered = filtered.filter(r => r.status === 'ordered')
     if (!ordered.length) return
@@ -65,6 +70,9 @@ export default function PickupManager() {
     await Promise.all(ordered.map(r => updateDoc(doc(db, 'swagResponses', r.id), { status: 'ready', readyAt: serverTimestamp() })))
     fetchAll()
   }
+
+  // Status summary — only show statuses relevant to each item type
+  const statusCounts = FULL_FLOW.map(s => ({ s, count: responses.filter(r => r.status === s).length }))
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -83,15 +91,12 @@ export default function PickupManager() {
 
       {/* Status summary pills */}
       <div className="grid grid-cols-4 gap-3 mb-6">
-        {STATUS_FLOW.map(s => {
-          const count = responses.filter(r => r.status === s).length
-          return (
-            <div key={s} className="bg-white rounded-xl border border-asha-border p-3 text-center">
-              <div className="font-display font-bold text-xl text-asha-dark">{count}</div>
-              <div className="font-body text-xs text-asha-muted">{STATUS_LABELS[s]}</div>
-            </div>
-          )
-        })}
+        {statusCounts.map(({ s, count }) => (
+          <div key={s} className="bg-white rounded-xl border border-asha-border p-3 text-center">
+            <div className="font-display font-bold text-xl text-asha-dark">{count}</div>
+            <div className="font-body text-xs text-asha-muted">{STATUS_LABELS[s]}</div>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
@@ -111,7 +116,7 @@ export default function PickupManager() {
           className="px-3 py-2 border border-asha-border rounded-xl font-body text-sm focus:outline-none focus:border-asha-orange transition-colors bg-white"
         >
           <option value="all">All statuses</option>
-          {STATUS_FLOW.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
+          {FULL_FLOW.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
         </select>
         <select
           value={filterItem}
@@ -123,7 +128,6 @@ export default function PickupManager() {
         </select>
       </div>
 
-      {/* Response list */}
       {loading ? (
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-16 animate-pulse" />)}
@@ -141,6 +145,7 @@ export default function PickupManager() {
                 <th className="font-body font-medium text-xs text-asha-muted text-left px-4 py-3">Athlete</th>
                 <th className="font-body font-medium text-xs text-asha-muted text-left px-4 py-3">Item</th>
                 <th className="font-body font-medium text-xs text-asha-muted text-left px-4 py-3">Size</th>
+                <th className="font-body font-medium text-xs text-asha-muted text-left px-4 py-3">Price</th>
                 <th className="font-body font-medium text-xs text-asha-muted text-left px-4 py-3">Status</th>
                 <th className="font-body font-medium text-xs text-asha-muted text-left px-4 py-3">Action</th>
               </tr>
@@ -149,9 +154,11 @@ export default function PickupManager() {
               {filtered.map(r => {
                 const u = users[r.athleteId]
                 const item = itemMap[r.itemId]
-                const isLast = r.status === 'picked_up'
+                const flow = getFlow(item?.type)
+                const currentIdx = flow.indexOf(r.status)
+                const isLast = currentIdx === flow.length - 1
                 const isUpdating = updating[r.id]
-                const nextLabel = STATUS_LABELS[STATUS_FLOW[STATUS_FLOW.indexOf(r.status) + 1]]
+                const nextLabel = STATUS_LABELS[flow[currentIdx + 1]]
 
                 return (
                   <tr key={r.id} className="border-b border-asha-border/50 last:border-0 hover:bg-gray-50/50 transition-colors">
@@ -171,6 +178,11 @@ export default function PickupManager() {
                       <span className="font-body text-sm text-asha-muted">{r.size || '—'}</span>
                     </td>
                     <td className="px-4 py-3">
+                      <span className="font-body text-sm font-medium text-asha-dark">
+                        {item?.price != null ? `$${item.price.toFixed(2)}` : '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
                       <StatusBadge status={r.status} />
                     </td>
                     <td className="px-4 py-3">
@@ -178,6 +190,8 @@ export default function PickupManager() {
                         <div className="flex items-center gap-1 text-emerald-600 text-xs font-body">
                           <Check size={13} /> Done
                         </div>
+                      ) : currentIdx === -1 ? (
+                        <span className="font-body text-xs text-asha-muted">—</span>
                       ) : (
                         <button
                           onClick={() => advanceStatus(r)}
@@ -192,6 +206,18 @@ export default function PickupManager() {
                 )
               })}
             </tbody>
+            {/* Totals footer */}
+            <tfoot className="bg-asha-cream/40 border-t border-asha-border">
+              <tr>
+                <td colSpan={3} className="px-4 py-3 font-body font-semibold text-sm text-asha-dark">
+                  Total ({filtered.length} orders)
+                </td>
+                <td className="px-4 py-3 font-body font-bold text-sm text-asha-orange">
+                  ${filtered.reduce((sum, r) => sum + (itemMap[r.itemId]?.price || 0), 0).toFixed(2)}
+                </td>
+                <td colSpan={2} />
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}

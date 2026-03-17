@@ -3,7 +3,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
-import { Star, Package, CheckCircle2, Clock, Truck, MapPin } from 'lucide-react'
+import { Star, CheckCircle2, Clock, Truck, MapPin } from 'lucide-react'
 
 const STATUS_META = {
   interested: { icon: Clock, label: 'Interest submitted', color: 'text-blue-500', bg: 'bg-blue-50', desc: 'Your coordinator will review and place orders.' },
@@ -12,8 +12,12 @@ const STATUS_META = {
   picked_up: { icon: CheckCircle2, label: 'Collected', color: 'text-gray-400', bg: 'bg-gray-50', desc: 'Done! Hope you love it.' },
 }
 
-function ProgressBar({ status }) {
-  const steps = ['interested', 'ordered', 'ready', 'picked_up']
+const COMMITTED = ['ordered', 'ready', 'picked_up']
+
+function ProgressBar({ status, itemType }) {
+  const steps = itemType === 'inventory'
+    ? ['ordered', 'ready', 'picked_up']
+    : ['interested', 'ordered', 'ready', 'picked_up']
   const currentIdx = steps.indexOf(status)
   return (
     <div className="flex items-center gap-0 mt-3">
@@ -55,6 +59,9 @@ export default function MySwag() {
 
   const readyCount = responses.filter(r => r.status === 'ready').length
   const activeCount = responses.filter(r => r.status !== 'picked_up').length
+  const totalSpend = responses
+    .filter(r => COMMITTED.includes(r.status))
+    .reduce((sum, r) => sum + (itemMap[r.itemId]?.price || 0), 0)
 
   const filtered = responses.filter(r => filterStatus === 'all' || r.status === filterStatus)
 
@@ -67,14 +74,15 @@ export default function MySwag() {
 
       {/* Summary row */}
       {!loading && responses.length > 0 && (
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-4 gap-3 mb-6">
           {[
             { label: 'Requested', val: responses.length, color: 'text-asha-dark' },
             { label: 'In Progress', val: activeCount, color: 'text-amber-600' },
             { label: 'Ready to Collect', val: readyCount, color: 'text-emerald-600' },
+            { label: 'My Total', val: `$${totalSpend.toFixed(2)}`, color: 'text-asha-orange' },
           ].map(({ label, val, color }) => (
             <div key={label} className="bg-white rounded-2xl border border-asha-border p-4 text-center">
-              <div className={`font-display font-bold text-2xl ${color}`}>{val}</div>
+              <div className={`font-display font-bold text-xl ${color}`}>{val}</div>
               <div className="font-body text-xs text-asha-muted mt-0.5">{label}</div>
             </div>
           ))}
@@ -155,10 +163,13 @@ export default function MySwag() {
                           {r.size && r.size !== 'One Size' && (
                             <span className="font-body text-xs bg-gray-100 text-asha-muted px-2 py-0.5 rounded">{r.size}</span>
                           )}
+                          {item?.price != null && (
+                            <span className="font-body text-sm font-semibold text-asha-orange">${item.price.toFixed(2)}</span>
+                          )}
                           <StatusBadge status={r.status} />
                         </div>
                       </div>
-                      <ProgressBar status={r.status} />
+                      <ProgressBar status={r.status} itemType={item?.type} />
                     </div>
                   </div>
                 </div>
