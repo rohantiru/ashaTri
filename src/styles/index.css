@@ -6,8 +6,11 @@
   body {
     @apply bg-asha-cream font-body text-asha-dark;
   }
+  /* Syne (font-display) has tall ascenders/descenders — ensure they never clip */
   h1, h2, h3, h4 {
     @apply font-display;
+    line-height: 1.35;
+    overflow: visible;
   }
 }
 
