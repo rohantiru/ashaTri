@@ -91,7 +91,7 @@ export default function PickupManager() {
       </div>
 
       {/* Status summary pills */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {statusCounts.map(({ s, count }) => (
           <div key={s} className="bg-white rounded-xl border border-asha-border p-3 text-center">
             <div className="font-display font-bold text-xl text-asha-dark">{count}</div>
@@ -101,7 +101,7 @@ export default function PickupManager() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-5">
+      <div className="flex flex-wrap gap-2 mb-5">
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-asha-muted" />
           <input
@@ -140,7 +140,8 @@ export default function PickupManager() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-asha-border overflow-hidden">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-asha-cream/60 border-b border-asha-border">
               <tr>
                 <th className="font-body font-medium text-xs text-asha-muted text-left px-4 py-3">Athlete</th>
@@ -220,6 +221,7 @@ export default function PickupManager() {
               </tr>
             </tfoot>
           </table>
+          </div>
         </div>
       )}
     </div>

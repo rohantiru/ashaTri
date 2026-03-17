@@ -78,7 +78,7 @@ export default function ExpensesSummary() {
           </div>
 
           {/* Category filter */}
-          <div className="flex gap-2 flex-wrap mb-5">
+          <div className="flex gap-2 mb-5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {['all', ...CATEGORIES].map(cat => (
               <button
                 key={cat}

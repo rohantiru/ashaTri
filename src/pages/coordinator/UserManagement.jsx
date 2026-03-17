@@ -46,7 +46,7 @@ export default function UserManagement() {
 
       {/* Summary */}
       {!loading && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
             { label: 'Total Members', val: users.length, icon: Users, color: 'bg-blue-50 text-blue-600' },
             { label: 'Coordinators', val: coordCount, icon: ShieldCheck, color: 'bg-asha-orangeDim text-asha-orange' },

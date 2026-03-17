@@ -89,7 +89,7 @@ export default function MySwag() {
 
       {/* Summary row */}
       {!loading && responses.length > 0 && (
-        <div className="grid grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
             { label: 'Requested', val: responses.length, color: 'text-asha-dark' },
             { label: 'In Progress', val: activeCount, color: 'text-amber-600' },
@@ -120,7 +120,7 @@ export default function MySwag() {
       )}
 
       {/* Filter */}
-      <div className="flex gap-2 mb-5 flex-wrap">
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {[
           { val: 'all', label: 'All' },
           { val: 'interested', label: 'Interested' },

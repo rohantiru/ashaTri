@@ -240,7 +240,7 @@ export default function SwagBrowse() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {[
           { val: 'all', label: `All (${items.length})` },
           { val: 'interest', label: `Interest Polls (${interestCount})` },
@@ -257,7 +257,7 @@ export default function SwagBrowse() {
       </div>
 
       {loading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border h-52 animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
@@ -269,7 +269,7 @@ export default function SwagBrowse() {
           <p className="font-body text-asha-muted text-sm">Check back soon — your coordinators will add items here</p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(item => (
             <SwagCard
               key={item.id}

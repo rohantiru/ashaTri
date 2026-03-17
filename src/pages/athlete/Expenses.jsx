@@ -32,7 +32,7 @@ function ExpenseModal({ onSave, onClose }) {
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               className="w-full border border-asha-border rounded-xl px-3 py-2.5 font-body text-sm focus:outline-none focus:border-asha-orange transition-colors"
-              placeholder="e.g. Race entry fee — Noosa Tri"
+              placeholder="e.g. Race entry fee, travel, equipment…"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -80,7 +80,7 @@ function ExpenseModal({ onSave, onClose }) {
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
               className="w-full border border-asha-border rounded-xl px-3 py-2.5 font-body text-sm focus:outline-none focus:border-asha-orange transition-colors resize-none"
               rows={2}
-              placeholder="Optional — receipt link, details, etc."
+              placeholder="Optional — receipt link, event name, details…"
             />
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function Expenses() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="font-display font-bold text-3xl text-asha-dark">My Expenses</h1>
-          <p className="font-body text-asha-muted text-sm mt-1">Track your triathlon-related spending</p>
+          <p className="font-body text-asha-muted text-sm mt-1">Submit expenses for Asha reimbursement</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -148,7 +148,10 @@ export default function Expenses() {
           {/* Total + breakdown */}
           <div className="bg-white rounded-2xl border border-asha-border p-5 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <span className="font-display font-semibold text-asha-dark">Total Expenses</span>
+              <div>
+                <span className="font-display font-semibold text-asha-dark">Total Submitted</span>
+                <p className="font-body text-xs text-asha-muted mt-0.5">Pending reimbursement from Asha</p>
+              </div>
               <span className="font-display font-bold text-2xl text-asha-orange">{fmtUSD(total)}</span>
             </div>
             <div className="flex flex-wrap gap-2">

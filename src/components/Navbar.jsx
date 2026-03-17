@@ -55,8 +55,8 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Nav links */}
-        <div className="flex items-center gap-1">
+        {/* Nav links — scrollable on mobile */}
+        <div className="flex items-center gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {links.map(({ to, label, icon: Icon }) => {
             const active = location.pathname === to
             return (

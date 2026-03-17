@@ -76,7 +76,7 @@ export default function CoordinatorDashboard() {
       )}
 
       <h2 className="font-display font-semibold text-lg text-asha-dark mb-4">Quick Actions</h2>
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { to: '/coord/items', label: 'Manage Swag Items', desc: 'Add items, set prices, update inventory', icon: Package },
           { to: '/coord/interest', label: 'View Interest & Orders', desc: 'See who wants what and total committed value', icon: BarChart2 },
