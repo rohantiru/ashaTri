@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase'
 import StatusBadge from '../../components/StatusBadge'
-import { Plus, Pencil, Trash2, X, Package, Image } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Package, Lock } from 'lucide-react'
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size']
 
@@ -18,6 +18,7 @@ function ItemModal({ item, onSave, onClose }) {
     sizes: item?.sizes || ['S', 'M', 'L', 'XL'],
     inventory: item?.inventory || {},
     isActive: item?.isActive ?? true,
+    isLocked: item?.isLocked ?? false,
   })
 
   const toggleSize = (size) => {
@@ -192,6 +193,20 @@ function ItemModal({ item, onSave, onClose }) {
               <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.isActive ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
+
+          {/* Locked toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-body font-medium text-sm text-asha-dark">Lock Orders</div>
+              <div className="font-body text-xs text-asha-muted">Prevent athletes from cancelling once locked</div>
+            </div>
+            <button
+              onClick={() => setForm(f => ({ ...f, isLocked: !f.isLocked }))}
+              className={`w-11 h-6 rounded-full transition-colors relative ${form.isLocked ? 'bg-asha-dark' : 'bg-gray-200'}`}
+            >
+              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.isLocked ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
         </div>
 
         <div className="flex gap-2 p-5 border-t border-asha-border">
@@ -286,6 +301,7 @@ export default function SwagItems() {
                     <span className="font-display font-semibold text-asha-dark">{item.name}</span>
                     <StatusBadge status={item.type} />
                     {!item.isActive && <span className="text-xs font-body text-asha-muted">(hidden)</span>}
+                    {item.isLocked && <span className="flex items-center gap-0.5 text-xs font-body text-asha-dark bg-gray-100 px-1.5 py-0.5 rounded"><Lock size={10} /> Locked</span>}
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
                     {item.price != null && (

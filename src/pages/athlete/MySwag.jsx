@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, getDocs, query, where, deleteDoc, doc, runTransaction, increment } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
@@ -56,6 +56,19 @@ export default function MySwag() {
     }
     load()
   }, [user.uid])
+
+  const cancelResponse = async (r) => {
+    const item = itemMap[r.itemId]
+    if (item?.type === 'inventory' && r.status === 'ordered') {
+      await runTransaction(db, async (tx) => {
+        tx.update(doc(db, 'swagItems', item.id), { [`inventory.${r.size}`]: increment(1) })
+        tx.delete(doc(db, 'swagResponses', r.id))
+      })
+    } else {
+      await deleteDoc(doc(db, 'swagResponses', r.id))
+    }
+    setResponses(prev => prev.filter(x => x.id !== r.id))
+  }
 
   const readyCount = responses.filter(r => r.status === 'ready').length
   const activeCount = responses.filter(r => r.status !== 'picked_up').length
@@ -172,6 +185,22 @@ export default function MySwag() {
                       <ProgressBar status={r.status} itemType={item?.type} />
                     </div>
                   </div>
+                  {/* Cancel button */}
+                  {(r.status === 'interested' || r.status === 'ordered') && !item?.isLocked && (
+                    <div className="mt-3 pt-3 border-t border-asha-border/50">
+                      <button
+                        onClick={() => { if (confirm('Cancel this order?')) cancelResponse(r) }}
+                        className="text-xs font-body text-asha-muted hover:text-red-500 transition-colors"
+                      >
+                        Cancel order
+                      </button>
+                    </div>
+                  )}
+                  {item?.isLocked && (r.status === 'interested' || r.status === 'ordered') && (
+                    <div className="mt-3 pt-3 border-t border-asha-border/50">
+                      <span className="text-xs font-body text-asha-muted">Order locked by coordinator</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )

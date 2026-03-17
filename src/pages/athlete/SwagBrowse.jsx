@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, query, where, addDoc, deleteDoc, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { collection, getDocs, query, where, addDoc, deleteDoc, doc, runTransaction, serverTimestamp, increment } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
@@ -11,6 +11,7 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
   const [error, setError] = useState('')
   const hasResponse = !!myResponse
   const isInventory = item.type === 'inventory'
+  const canCancel = hasResponse && !item.isLocked && (myResponse.status === 'interested' || myResponse.status === 'ordered')
 
   const getStock = (size) => item.inventory?.[size] ?? 0
   const totalStock = item.hasSizes
@@ -97,18 +98,18 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
                 {myResponse.size && myResponse.size !== 'One Size' && ` — ${myResponse.size}`}
               </span>
             </div>
-            {myResponse.status === 'interested' && (
+            {canCancel ? (
               <button
                 onClick={handleWithdraw}
                 disabled={submitting}
                 className="w-full py-2 rounded-xl border border-asha-border font-body text-xs text-asha-muted hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-all disabled:opacity-50"
               >
-                {submitting ? 'Withdrawing…' : 'Withdraw'}
+                {submitting ? 'Cancelling…' : 'Cancel'}
               </button>
-            )}
-            {myResponse.status !== 'interested' && (
-              <div className="text-center">
+            ) : (
+              <div className="text-center flex items-center justify-center gap-1.5">
                 <StatusBadge status={myResponse.status} />
+                {item.isLocked && <span className="font-body text-xs text-asha-muted">(locked)</span>}
               </div>
             )}
           </div>
@@ -202,7 +203,17 @@ export default function SwagBrowse() {
   }
 
   const handleWithdraw = async (response) => {
-    await deleteDoc(doc(db, 'swagResponses', response.id))
+    const item = items.find(i => i.id === response.itemId)
+    if (item?.type === 'inventory' && response.status === 'ordered') {
+      // Restore stock atomically
+      await runTransaction(db, async (tx) => {
+        const itemRef = doc(db, 'swagItems', item.id)
+        tx.update(itemRef, { [`inventory.${response.size}`]: increment(1) })
+        tx.delete(doc(db, 'swagResponses', response.id))
+      })
+    } else {
+      await deleteDoc(doc(db, 'swagResponses', response.id))
+    }
     await fetchAll()
   }
 
