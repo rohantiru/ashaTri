@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, query, where, deleteDoc, doc, runTransaction, increment } from 'firebase/firestore'
+import { collection, getDocs, getDoc, query, where, deleteDoc, doc, runTransaction, increment } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
@@ -12,7 +12,7 @@ const STATUS_META = {
   picked_up: { icon: CheckCircle2, label: 'Collected', color: 'text-gray-400', bg: 'bg-gray-50', desc: 'Done! Hope you love it.' },
 }
 
-const COMMITTED = ['ordered', 'ready', 'picked_up']
+const COMMITTED = ['interested', 'ordered', 'ready', 'picked_up']
 
 function ProgressBar({ status, itemType }) {
   const steps = itemType === 'inventory'
@@ -44,14 +44,15 @@ export default function MySwag() {
 
   useEffect(() => {
     async function load() {
-      const [itemsSnap, mySnap] = await Promise.all([
-        getDocs(collection(db, 'swagItems')),
-        getDocs(query(collection(db, 'swagResponses'), where('athleteId', '==', user.uid))),
-      ])
+      const mySnap = await getDocs(query(collection(db, 'swagResponses'), where('athleteId', '==', user.uid)))
+      const myResponses = mySnap.docs.map(d => ({ id: d.id, ...d.data() }))
+      // Fetch only the specific items this athlete has responses for
+      const itemIds = [...new Set(myResponses.map(r => r.itemId))]
+      const itemDocs = await Promise.all(itemIds.map(id => getDoc(doc(db, 'swagItems', id))))
       const map = {}
-      itemsSnap.docs.forEach(d => { map[d.id] = { id: d.id, ...d.data() } })
+      itemDocs.forEach(d => { if (d.exists()) map[d.id] = { id: d.id, ...d.data() } })
       setItemMap(map)
-      setResponses(mySnap.docs.map(d => ({ id: d.id, ...d.data() })))
+      setResponses(myResponses)
       setLoading(false)
     }
     load()

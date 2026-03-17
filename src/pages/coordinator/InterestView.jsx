@@ -37,7 +37,7 @@ export default function InterestView() {
     responsesByItem[r.itemId].push(r)
   })
 
-  const COMMITTED = ['ordered', 'ready', 'picked_up']
+  const COMMITTED = ['interested', 'ordered', 'ready', 'picked_up']
 
   // Grand totals
   const grandTotal = items.reduce((sum, item) => {

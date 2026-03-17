@@ -22,7 +22,7 @@ export default function CoordinatorDashboard() {
       const itemPriceMap = {}
       items.forEach(i => { itemPriceMap[i.id] = i.price || 0 })
 
-      const committed = responses.filter(r => ['ordered', 'ready', 'picked_up'].includes(r.status))
+      const committed = responses.filter(r => ['interested', 'ordered', 'ready', 'picked_up'].includes(r.status))
       const totalValue = committed.reduce((sum, r) => sum + (itemPriceMap[r.itemId] || 0), 0)
 
       setStats({
