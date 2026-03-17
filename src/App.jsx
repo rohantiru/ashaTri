@@ -14,9 +14,8 @@ function ProtectedRoute({ children, role }) {
   const { user, profile, loading } = useAuth()
   if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
-  if (role && profile?.role !== role) {
-    return <Navigate to={profile?.role === 'coordinator' ? '/coord' : '/athlete'} replace />
-  }
+  if (profile?.role === 'coordinator') return children
+  if (role === 'coordinator') return <Navigate to="/athlete" replace />
   return children
 }
 

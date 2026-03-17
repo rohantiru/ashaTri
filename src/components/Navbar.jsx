@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LogOut, LayoutDashboard, Package, BarChart2, CheckSquare, ShoppingBag, Star } from 'lucide-react'
+import { LogOut, LayoutDashboard, Package, BarChart2, CheckSquare, ShoppingBag, Star, ArrowLeftRight } from 'lucide-react'
 
 const coordLinks = [
   { to: '/coord', label: 'Overview', icon: LayoutDashboard },
@@ -19,7 +19,9 @@ export default function Navbar() {
   const { profile, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const links = profile?.role === 'coordinator' ? coordLinks : athleteLinks
+  const isCoordinator = profile?.role === 'coordinator'
+  const isAthleteMode = location.pathname.startsWith('/athlete')
+  const links = isCoordinator ? (isAthleteMode ? athleteLinks : coordLinks) : athleteLinks
 
   const handleLogout = async () => {
     await logout()
@@ -37,9 +39,9 @@ export default function Navbar() {
           <span className="font-display font-bold text-white text-sm tracking-wide hidden sm:block">
             Asha <span className="text-asha-orange">Swag</span>
           </span>
-          {profile?.role === 'coordinator' && (
+          {isCoordinator && (
             <span className="text-xs bg-asha-orange/20 text-asha-orangeLight border border-asha-orange/30 px-2 py-0.5 rounded-full font-body font-medium">
-              Coordinator
+              {isAthleteMode ? 'Athlete View' : 'Coordinator'}
             </span>
           )}
         </div>
@@ -67,6 +69,16 @@ export default function Navbar() {
 
         {/* User + logout */}
         <div className="flex items-center gap-2">
+          {isCoordinator && (
+            <button
+              onClick={() => navigate(isAthleteMode ? '/coord' : '/athlete')}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-body font-medium text-asha-muted hover:text-white hover:bg-asha-mid transition-all"
+              title={isAthleteMode ? 'Switch to Coord View' : 'Switch to Athlete View'}
+            >
+              <ArrowLeftRight size={13} />
+              <span className="hidden sm:block">{isAthleteMode ? 'Coord View' : 'Athlete View'}</span>
+            </button>
+          )}
           {profile?.photoURL && (
             <img src={profile.photoURL} alt={profile.name} className="w-7 h-7 rounded-full object-cover border border-asha-mid" />
           )}
