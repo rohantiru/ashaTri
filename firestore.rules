@@ -36,6 +36,26 @@ service cloud.firestore {
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inventory']));
     }
 
+    // App config (tab visibility etc)
+    // - Anyone signed in can read
+    // - Only coordinators can write
+    match /appConfig/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isCoordinator();
+    }
+
+    // Expenses
+    // - Athletes can read/write/delete their own
+    // - Coordinators can read all
+    match /expenses/{expenseId} {
+      allow read: if isSignedIn() &&
+        (resource.data.athleteId == request.auth.uid || isCoordinator());
+      allow create: if isSignedIn() &&
+        request.resource.data.athleteId == request.auth.uid;
+      allow update, delete: if isSignedIn() &&
+        resource.data.athleteId == request.auth.uid;
+    }
+
     // Swag responses
     // - Athletes can create their own with status 'interested' (interest polls)
     //   or 'ordered' (inventory items)

@@ -4,6 +4,7 @@ import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
 import { Star, CheckCircle2, Clock, Truck, MapPin } from 'lucide-react'
+import { fmtUSD } from '../../utils/format'
 
 const STATUS_META = {
   interested: { icon: Clock, label: 'Interest submitted', color: 'text-blue-500', bg: 'bg-blue-50', desc: 'Your coordinator will review and place orders.' },
@@ -93,7 +94,7 @@ export default function MySwag() {
             { label: 'Requested', val: responses.length, color: 'text-asha-dark' },
             { label: 'In Progress', val: activeCount, color: 'text-amber-600' },
             { label: 'Ready to Collect', val: readyCount, color: 'text-emerald-600' },
-            { label: 'My Total', val: `$${totalSpend.toFixed(2)}`, color: 'text-asha-orange' },
+            { label: 'My Total', val: fmtUSD(totalSpend), color: 'text-asha-orange' },
           ].map(({ label, val, color }) => (
             <div key={label} className="bg-white rounded-2xl border border-asha-border p-4 text-center">
               <div className={`font-display font-bold text-xl ${color}`}>{val}</div>
@@ -178,7 +179,7 @@ export default function MySwag() {
                             <span className="font-body text-xs bg-gray-100 text-asha-muted px-2 py-0.5 rounded">{r.size}</span>
                           )}
                           {item?.price != null && (
-                            <span className="font-body text-sm font-semibold text-asha-orange">${item.price.toFixed(2)}</span>
+                            <span className="font-body text-sm font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
                           )}
                           <StatusBadge status={r.status} />
                         </div>

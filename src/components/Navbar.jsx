@@ -1,26 +1,34 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LogOut, LayoutDashboard, Package, BarChart2, CheckSquare, ShoppingBag, Star, ArrowLeftRight } from 'lucide-react'
+import { useAppConfig } from '../contexts/AppConfigContext'
+import { LogOut, LayoutDashboard, Package, BarChart2, CheckSquare, ShoppingBag, Star, ArrowLeftRight, Receipt, Settings } from 'lucide-react'
 
 const coordLinks = [
   { to: '/coord', label: 'Overview', icon: LayoutDashboard },
   { to: '/coord/items', label: 'Swag Items', icon: Package },
   { to: '/coord/interest', label: 'Interest', icon: BarChart2 },
   { to: '/coord/pickup', label: 'Pickup', icon: CheckSquare },
+  { to: '/coord/expenses', label: 'Expenses', icon: Receipt },
+  { to: '/coord/settings', label: 'Settings', icon: Settings },
 ]
 
-const athleteLinks = [
-  { to: '/athlete', label: 'Home', icon: LayoutDashboard },
-  { to: '/athlete/browse', label: 'Browse Swag', icon: ShoppingBag },
-  { to: '/athlete/my-swag', label: 'My Swag', icon: Star },
+const allAthleteLinks = [
+  { to: '/athlete', label: 'Home', icon: LayoutDashboard, tab: null },
+  { to: '/athlete/browse', label: 'Browse Swag', icon: ShoppingBag, tab: 'swag' },
+  { to: '/athlete/my-swag', label: 'My Swag', icon: Star, tab: 'swag' },
+  { to: '/athlete/expenses', label: 'Expenses', icon: Receipt, tab: 'expenses' },
 ]
 
 export default function Navbar() {
   const { profile, logout } = useAuth()
+  const { config } = useAppConfig()
   const location = useLocation()
   const navigate = useNavigate()
+
   const isCoordinator = profile?.role === 'coordinator'
   const isAthleteMode = location.pathname.startsWith('/athlete')
+
+  const athleteLinks = allAthleteLinks.filter(l => !l.tab || config.tabs[l.tab])
   const links = isCoordinator ? (isAthleteMode ? athleteLinks : coordLinks) : athleteLinks
 
   const handleLogout = async () => {
@@ -37,7 +45,7 @@ export default function Navbar() {
             <span className="text-white font-display font-bold text-xs">A</span>
           </div>
           <span className="font-display font-bold text-white text-sm tracking-wide hidden sm:block">
-            Asha <span className="text-asha-orange">Swag</span>
+            Asha <span className="text-asha-orange">Tri</span>
           </span>
           {isCoordinator && (
             <span className="text-xs bg-asha-orange/20 text-asha-orangeLight border border-asha-orange/30 px-2 py-0.5 rounded-full font-body font-medium">
@@ -67,7 +75,7 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* User + logout */}
+        {/* User + mode toggle + logout */}
         <div className="flex items-center gap-2">
           {isCoordinator && (
             <button

@@ -3,6 +3,7 @@ import { collection, getDocs, updateDoc, doc, serverTimestamp } from 'firebase/f
 import { db } from '../../firebase'
 import StatusBadge from '../../components/StatusBadge'
 import { CheckSquare, Search, Check } from 'lucide-react'
+import { fmtUSD } from '../../utils/format'
 
 const FULL_FLOW = ['interested', 'ordered', 'ready', 'picked_up']
 const STATUS_LABELS = { interested: 'Interested', ordered: 'Ordered', ready: 'Ready', picked_up: 'Collected' }
@@ -179,7 +180,7 @@ export default function PickupManager() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="font-body text-sm font-medium text-asha-dark">
-                        {item?.price != null ? `$${item.price.toFixed(2)}` : '—'}
+                        {item?.price != null ? fmtUSD(item?.price) : '—'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -213,7 +214,7 @@ export default function PickupManager() {
                   Total ({filtered.length} orders)
                 </td>
                 <td className="px-4 py-3 font-body font-bold text-sm text-asha-orange">
-                  ${filtered.reduce((sum, r) => sum + (itemMap[r.itemId]?.price || 0), 0).toFixed(2)}
+                  {fmtUSD(filtered.reduce((sum, r) => sum + (itemMap[r.itemId]?.price || 0), 0))}
                 </td>
                 <td colSpan={2} />
               </tr>

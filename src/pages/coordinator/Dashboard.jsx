@@ -4,6 +4,7 @@ import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import { Package, BarChart2, CheckSquare, TrendingUp, Users, ArrowRight, DollarSign } from 'lucide-react'
+import { fmtUSD } from '../../utils/format'
 
 export default function CoordinatorDashboard() {
   const { profile } = useAuth()
@@ -43,7 +44,7 @@ export default function CoordinatorDashboard() {
     { label: 'Swag Items', value: stats.items, sub: `${stats.interestItems} interest · ${stats.inventoryItems} inventory`, icon: Package, to: '/coord/items', color: 'bg-blue-50 text-blue-600' },
     { label: 'Total Responses', value: stats.totalResponses, sub: 'across all items', icon: TrendingUp, to: '/coord/interest', color: 'bg-purple-50 text-purple-600' },
     { label: 'Awaiting Pickup', value: stats.pendingPickup, sub: 'ready to collect', icon: CheckSquare, to: '/coord/pickup', color: 'bg-amber-50 text-amber-600' },
-    { label: 'Orders Value', value: `$${stats.totalValue.toFixed(2)}`, sub: 'committed orders', icon: DollarSign, to: '/coord/interest', color: 'bg-emerald-50 text-emerald-600' },
+    { label: 'Orders Value', value: fmtUSD(stats.totalValue), sub: 'committed orders', icon: DollarSign, to: '/coord/interest', color: 'bg-emerald-50 text-emerald-600' },
   ]
 
   return (

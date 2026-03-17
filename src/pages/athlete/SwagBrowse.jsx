@@ -3,7 +3,8 @@ import { collection, getDocs, query, where, addDoc, deleteDoc, doc, runTransacti
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
-import { ShoppingBag, Check, ChevronDown } from 'lucide-react'
+import { ShoppingBag, Check, ChevronDown, Lock } from 'lucide-react'
+import { fmtUSD } from '../../utils/format'
 
 function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
   const [selectedSize, setSelectedSize] = useState(myResponse?.size || '')
@@ -12,6 +13,7 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
   const hasResponse = !!myResponse
   const isInventory = item.type === 'inventory'
   const canCancel = hasResponse && !item.isLocked && (myResponse.status === 'interested' || myResponse.status === 'ordered')
+  const isLocked = item.isLocked
 
   const getStock = (size) => item.inventory?.[size] ?? 0
   const totalStock = item.hasSizes
@@ -59,7 +61,7 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
           <div>
             <h3 className="font-display font-bold text-asha-dark text-base leading-snug">{item.name}</h3>
             {item.price != null && (
-              <span className="font-body text-sm font-semibold text-asha-orange">${item.price.toFixed(2)}</span>
+              <span className="font-body text-sm font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
             )}
             {item.description && <p className="font-body text-xs text-asha-muted mt-1 leading-relaxed">{item.description}</p>}
           </div>
@@ -139,13 +141,19 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
 
             {error && <p className="font-body text-xs text-red-500">{error}</p>}
 
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || (item.hasSizes && !selectedSize) || (isInventory && !canClaim) || stockStatus === 'out_of_stock'}
-              className="w-full py-2.5 rounded-xl bg-asha-orange text-white font-body font-medium text-sm hover:bg-asha-orangeLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {submitting ? 'Submitting…' : isInventory ? 'Order Now' : 'Express Interest'}
-            </button>
+            {isLocked ? (
+              <div className="w-full py-2.5 rounded-xl bg-gray-100 flex items-center justify-center gap-2 text-asha-muted font-body font-medium text-sm">
+                <Lock size={13} /> Orders locked
+              </div>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || (item.hasSizes && !selectedSize) || (isInventory && !canClaim) || stockStatus === 'out_of_stock'}
+                className="w-full py-2.5 rounded-xl bg-asha-orange text-white font-body font-medium text-sm hover:bg-asha-orangeLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {submitting ? 'Submitting…' : isInventory ? 'Order Now' : 'Express Interest'}
+              </button>
+            )}
           </div>
         )}
       </div>

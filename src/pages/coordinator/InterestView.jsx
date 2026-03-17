@@ -3,6 +3,7 @@ import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../../firebase'
 import StatusBadge from '../../components/StatusBadge'
 import { BarChart2, ChevronDown, ChevronUp, Users, DollarSign } from 'lucide-react'
+import { fmtUSD } from '../../utils/format'
 
 export default function InterestView() {
   const [items, setItems] = useState([])
@@ -74,12 +75,12 @@ export default function InterestView() {
               <span className="font-display font-semibold text-asha-dark">{item.name}</span>
               <StatusBadge status={item.type} />
               {item.price != null && (
-                <span className="font-body text-xs text-asha-orange font-semibold">${item.price.toFixed(2)} ea</span>
+                <span className="font-body text-xs text-asha-orange font-semibold">{fmtUSD(item.price)} ea</span>
               )}
             </div>
             <div className="font-body text-xs text-asha-muted mt-0.5">
               {itemResponses.length} response{itemResponses.length !== 1 ? 's' : ''}
-              {committedValue > 0 && <span className="ml-2 text-asha-orange font-medium">${committedValue.toFixed(2)} committed</span>}
+              {committedValue > 0 && <span className="ml-2 text-asha-orange font-medium">{fmtUSD(committedValue)} committed</span>}
             </div>
           </div>
 
@@ -129,7 +130,7 @@ export default function InterestView() {
                             <td className="font-body text-asha-dark py-2 pr-4">{counts.ready || 0}</td>
                             <td className="font-body text-asha-dark py-2 pr-4">{counts.picked_up || 0}</td>
                             <td className="font-body font-medium text-asha-orange py-2">
-                              {item.price != null ? `$${(sizeCommitted * item.price).toFixed(2)}` : '—'}
+                              {item.price != null ? fmtUSD(sizeCommitted * item.price) : '—'}
                             </td>
                           </tr>
                         )
@@ -158,7 +159,7 @@ export default function InterestView() {
                           {r.size && <span className="font-body text-xs bg-gray-100 text-asha-muted px-2 py-0.5 rounded">{r.size}</span>}
                           <StatusBadge status={r.status} />
                           {item.price != null && COMMITTED.includes(r.status) && (
-                            <span className="font-body text-xs text-asha-orange font-medium">${item.price.toFixed(2)}</span>
+                            <span className="font-body text-xs text-asha-orange font-medium">{fmtUSD(item.price)}</span>
                           )}
                         </div>
                       </div>
@@ -183,7 +184,7 @@ export default function InterestView() {
         {grandTotal > 0 && (
           <div className="bg-asha-orangeDim border border-asha-orange/20 rounded-2xl px-4 py-3 text-right">
             <div className="font-body text-xs text-asha-muted uppercase tracking-wide mb-0.5">Total Committed</div>
-            <div className="font-display font-bold text-2xl text-asha-orange">${grandTotal.toFixed(2)}</div>
+            <div className="font-display font-bold text-2xl text-asha-orange">{fmtUSD(grandTotal)}</div>
           </div>
         )}
       </div>

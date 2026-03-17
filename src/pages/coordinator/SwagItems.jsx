@@ -3,6 +3,7 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
 import { db } from '../../firebase'
 import StatusBadge from '../../components/StatusBadge'
 import { Plus, Pencil, Trash2, X, Package, Lock } from 'lucide-react'
+import { fmtUSD } from '../../utils/format'
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size']
 
@@ -305,7 +306,7 @@ export default function SwagItems() {
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
                     {item.price != null && (
-                      <span className="font-body text-sm font-semibold text-asha-orange">${item.price.toFixed(2)}</span>
+                      <span className="font-body text-sm font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
                     )}
                     {item.description && <p className="font-body text-xs text-asha-muted truncate">{item.description}</p>}
                   </div>
