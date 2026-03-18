@@ -4,7 +4,7 @@ import { useAuth, COORD_ROLES } from '../contexts/AuthContext'
 import { useAppConfig } from '../contexts/AppConfigContext'
 import {
   LogOut, LayoutDashboard, ShoppingBag, Flag, Receipt, Settings,
-  Users, Menu, X, ArrowLeftRight, BarChart2, CheckSquare, Package,
+  Users, Menu, X, ArrowLeftRight, BarChart2, CheckSquare, Package, Calendar,
 } from 'lucide-react'
 
 const ROLE_LABELS = {
@@ -29,10 +29,12 @@ export default function Navbar() {
   const expensesEnabled = config.tabs.expenses
 
   const homeEnabled = config.tabs.home
+  const eventsEnabled = config.tabs.events
   const racesEnabled = config.tabs.races
 
   const athletePrimary = [
     ...(homeEnabled ? [{ key: 'home', label: 'Home', icon: LayoutDashboard, to: '/athlete' }] : []),
+    ...(eventsEnabled ? [{ key: 'events', label: 'Events', icon: Calendar, to: '/athlete/events' }] : []),
     ...(swagEnabled ? [{ key: 'swag', label: 'Swag', icon: ShoppingBag, to: '/athlete/browse' }] : []),
     ...(racesEnabled ? [{ key: 'races', label: 'Races', icon: Flag, to: '/athlete/races' }] : []),
     ...(expensesEnabled ? [{ key: 'expenses', label: 'Expenses', icon: Receipt, to: '/athlete/expenses' }] : []),
@@ -48,6 +50,7 @@ export default function Navbar() {
   const athleteActiveKey = (() => {
     const p = location.pathname
     if (p === '/athlete') return 'home'
+    if (p === '/athlete/events') return 'events'
     if (inAthleteSwag) return 'swag'
     if (p === '/athlete/races') return 'races'
     if (p === '/athlete/expenses') return 'expenses'
@@ -60,6 +63,7 @@ export default function Navbar() {
     { key: 'swag', label: 'Swag', icon: ShoppingBag, to: '/coord/items' },
     { key: 'races', label: 'Races', icon: Flag, to: '/coord/races' },
     { key: 'athletes', label: 'Athletes', icon: Users, to: '/coord/athletes' },
+    { key: 'events', label: 'Events', icon: Calendar, to: '/coord/events' },
     { key: 'expenses', label: 'Expenses', icon: Receipt, to: '/coord/expenses' },
     ...(isOwner ? [
       { key: 'settings', label: 'Settings', icon: Settings, to: '/coord/settings' },
@@ -81,6 +85,7 @@ export default function Navbar() {
     if (inCoordSwag) return 'swag'
     if (p === '/coord/races') return 'races'
     if (p === '/coord/athletes') return 'athletes'
+    if (p === '/coord/events') return 'events'
     if (p === '/coord/expenses') return 'expenses'
     if (p === '/coord/settings') return 'settings'
     if (p === '/coord/users') return 'users'

@@ -99,6 +99,19 @@ service cloud.firestore {
       allow read, write: if isCoordOrAbove();
     }
 
+    // Events (created by coords/coaches, visible to recipients)
+    match /events/{eventId} {
+      allow read: if isSignedIn() &&
+        (isCoordOrAbove() || resource.data.recipientIds.hasAny([request.auth.uid]));
+      allow create, update, delete: if isCoordOrAbove();
+    }
+
+    // Secrets (calendar credentials — owner write, coordOrAbove read)
+    match /secrets/{docId} {
+      allow read: if isCoordOrAbove();
+      allow write: if isOwnerRole();
+    }
+
     // Swag responses
     // - Athletes can create their own with status 'interested' or 'ordered'
     // - Athletes can delete their own if still interested or ordered (not yet ready)

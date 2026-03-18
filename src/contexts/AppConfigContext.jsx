@@ -5,7 +5,7 @@ import { db } from '../firebase'
 const AppConfigContext = createContext({})
 
 const DEFAULT_CONFIG = {
-  tabs: { home: true, races: true, swag: true, expenses: true },
+  tabs: { home: true, events: true, races: true, swag: true, expenses: true },
   ownerEmail: 'rohantirumale@gmail.com',
 }
 
