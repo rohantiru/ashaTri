@@ -1,11 +1,17 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth, COORD_ROLES } from '../contexts/AuthContext'
 import { useAppConfig } from '../contexts/AppConfigContext'
 import {
   LogOut, LayoutDashboard, ShoppingBag, Flag, Receipt, Settings,
-  Users, Menu, X, BookOpen, ArrowLeftRight, BarChart2, CheckSquare, Package,
+  Users, Menu, X, ArrowLeftRight, BarChart2, CheckSquare, Package,
 } from 'lucide-react'
+
+const ROLE_LABELS = {
+  coordinator: 'Coordinator',
+  coach: 'Coach',
+  owner: 'Owner',
+}
 
 export default function Navbar() {
   const { user, profile, logout } = useAuth()
@@ -14,9 +20,9 @@ export default function Navbar() {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
 
-  const isCoordinator = profile?.role === 'coordinator'
+  const isCoordLike = COORD_ROLES.includes(profile?.role)
   const isAthleteMode = location.pathname.startsWith('/athlete')
-  const isOwner = user?.email === 'rohantirumale@gmail.com'
+  const isOwner = profile?.role === 'owner' || user?.email === config.ownerEmail
 
   // ── Athlete nav ──────────────────────────────────────────────────────────
   const swagEnabled = config.tabs.swag
@@ -52,10 +58,7 @@ export default function Navbar() {
     { key: 'races', label: 'Races', icon: Flag, to: '/coord/races' },
     { key: 'expenses', label: 'Expenses', icon: Receipt, to: '/coord/expenses' },
     { key: 'settings', label: 'Settings', icon: Settings, to: '/coord/settings' },
-    ...(isOwner ? [
-      { key: 'users', label: 'Users', icon: Users, to: '/coord/users' },
-      { key: 'vault', label: 'Vault', icon: BookOpen, to: '/coord/vault' },
-    ] : []),
+    ...(isOwner ? [{ key: 'users', label: 'Users', icon: Users, to: '/coord/users' }] : []),
   ]
 
   const coordSwagSub = [
@@ -74,12 +77,11 @@ export default function Navbar() {
     if (p === '/coord/expenses') return 'expenses'
     if (p === '/coord/settings') return 'settings'
     if (p === '/coord/users') return 'users'
-    if (p === '/coord/vault') return 'vault'
     return ''
   })()
 
   // ── Active set ───────────────────────────────────────────────────────────
-  const inCoordMode = isCoordinator && !isAthleteMode
+  const inCoordMode = isCoordLike && !isAthleteMode
   const primaryLinks = inCoordMode ? coordPrimary : athletePrimary
   const subLinks = inCoordMode
     ? (inCoordSwag ? coordSwagSub : [])
@@ -109,9 +111,9 @@ export default function Navbar() {
             <span className="font-display font-bold text-white text-sm tracking-wide leading-none">
               Asha <span className="text-asha-orange">Tri</span>
             </span>
-            {isCoordinator && (
+            {isCoordLike && (
               <span className="text-xs bg-asha-orange/20 text-asha-orangeLight border border-asha-orange/30 px-2 py-1 rounded-full font-body font-medium leading-none whitespace-nowrap hidden sm:inline-flex">
-                {isAthleteMode ? 'Athlete View' : 'Coordinator'}
+                {isAthleteMode ? 'Athlete View' : (ROLE_LABELS[profile?.role] ?? 'Coordinator')}
               </span>
             )}
           </div>
@@ -137,7 +139,7 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
-            {isCoordinator && (
+            {isCoordLike && (
               <button
                 onClick={() => navigate(isAthleteMode ? '/coord' : '/athlete')}
                 className="hidden sm:flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-body font-medium text-asha-muted hover:text-white hover:bg-asha-mid transition-all whitespace-nowrap"
@@ -196,8 +198,8 @@ export default function Navbar() {
                 )}
                 <div>
                   <div className="font-body font-medium text-white text-sm leading-tight">{profile?.name?.split(' ')[0]}</div>
-                  {isCoordinator && (
-                    <div className="font-body text-xs text-asha-orange leading-tight">{isAthleteMode ? 'Athlete View' : 'Coordinator'}</div>
+                  {isCoordLike && (
+                    <div className="font-body text-xs text-asha-orange leading-tight">{isAthleteMode ? 'Athlete View' : (ROLE_LABELS[profile?.role] ?? 'Coordinator')}</div>
                   )}
                 </div>
               </div>
@@ -248,7 +250,7 @@ export default function Navbar() {
             </div>
 
             <div className="px-3 pb-5 pt-3 border-t border-asha-mid flex-shrink-0 space-y-1">
-              {isCoordinator && (
+              {isCoordLike && (
                 <button
                   onClick={() => { navigate(isAthleteMode ? '/coord' : '/athlete'); setOpen(false) }}
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-body font-medium text-asha-muted hover:text-white hover:bg-asha-mid transition-all"

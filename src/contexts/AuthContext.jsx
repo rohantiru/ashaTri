@@ -3,6 +3,9 @@ import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase'
 
+// Roles that have coordinator-level access
+export const COORD_ROLES = ['coordinator', 'coach', 'owner']
+
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
@@ -17,13 +20,22 @@ export function AuthProvider({ children }) {
         const snap = await getDoc(ref)
 
         if (!snap.exists()) {
-          // First sign-in: create profile, default role = athlete
+          // First sign-in: check ownerEmail from appConfig to auto-assign owner role
+          let role = 'athlete'
+          try {
+            const configSnap = await getDoc(doc(db, 'appConfig', 'main'))
+            const ownerEmail = configSnap.exists()
+              ? (configSnap.data().ownerEmail || 'rohantirumale@gmail.com')
+              : 'rohantirumale@gmail.com'
+            if (firebaseUser.email === ownerEmail) role = 'owner'
+          } catch (_) {}
+
           const newProfile = {
             uid: firebaseUser.uid,
             name: firebaseUser.displayName,
             email: firebaseUser.email,
             photoURL: firebaseUser.photoURL,
-            role: 'athlete', // coordinators manually upgraded in Firestore
+            role,
             createdAt: serverTimestamp(),
           }
           await setDoc(ref, newProfile)

@@ -6,6 +6,7 @@ const AppConfigContext = createContext({})
 
 const DEFAULT_CONFIG = {
   tabs: { swag: true, expenses: true },
+  ownerEmail: 'rohantirumale@gmail.com',
 }
 
 export function AppConfigProvider({ children }) {
@@ -17,7 +18,7 @@ export function AppConfigProvider({ children }) {
       try {
         const snap = await getDoc(doc(db, 'appConfig', 'main'))
         if (snap.exists()) {
-          setConfig({ ...DEFAULT_CONFIG, ...snap.data(), tabs: { ...DEFAULT_CONFIG.tabs, ...snap.data().tabs } })
+          setConfig({ ...DEFAULT_CONFIG, ...snap.data(), tabs: { ...DEFAULT_CONFIG.tabs, ...snap.data()?.tabs } })
         }
       } catch (_) {}
       setLoading(false)

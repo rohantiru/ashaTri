@@ -6,50 +6,60 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isCoordinator() {
-      return isSignedIn() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coordinator';
+    // owner > coordinator / coach > athlete > serviceUser
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
-    function isOwner(uid) {
+    function isOwnerRole() {
+      return isSignedIn() && userRole() == 'owner';
+    }
+
+    function isCoordOrAbove() {
+      return isSignedIn() &&
+        (userRole() == 'coordinator' || userRole() == 'coach' || userRole() == 'owner');
+    }
+
+    function isDocOwner(uid) {
       return isSignedIn() && request.auth.uid == uid;
     }
 
     // Users collection
     match /users/{uid} {
-      allow read: if isOwner(uid) || isCoordinator();
-      allow create: if isOwner(uid);
-      allow update: if isOwner(uid) &&
-        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']))
-        || isCoordinator();
-      allow delete: if isCoordinator();
+      allow read: if isDocOwner(uid) || isCoordOrAbove();
+      allow create: if isDocOwner(uid);
+      // Owner can update any field (including role); others can update non-role fields on own doc
+      allow update: if isOwnerRole() ||
+        isCoordOrAbove() ||
+        (isDocOwner(uid) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']));
+      allow delete: if isOwnerRole();
     }
 
     // Swag items
-    // - Coordinators have full write access
+    // - Coordinators and above have full write access
     // - Athletes can only update the inventory field (for order/cancel transactions)
     match /swagItems/{itemId} {
       allow read: if isSignedIn();
-      allow create, delete: if isCoordinator();
-      allow update: if isCoordinator() ||
+      allow create, delete: if isCoordOrAbove();
+      allow update: if isCoordOrAbove() ||
         (isSignedIn() &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inventory']));
     }
 
-    // App config (tab visibility etc)
+    // App config (tab visibility, ownerEmail, etc)
     // - Anyone signed in can read
-    // - Only coordinators can write
+    // - Only owner can write
     match /appConfig/{docId} {
       allow read: if isSignedIn();
-      allow write: if isCoordinator();
+      allow write: if isOwnerRole();
     }
 
     // Expenses
     // - Athletes can read/write/delete their own
-    // - Coordinators can read all
+    // - Coordinators and above can read all
     match /expenses/{expenseId} {
       allow read: if isSignedIn() &&
-        (resource.data.athleteId == request.auth.uid || isCoordinator());
+        (resource.data.athleteId == request.auth.uid || isCoordOrAbove());
       allow create: if isSignedIn() &&
         request.resource.data.athleteId == request.auth.uid;
       allow update, delete: if isSignedIn() &&
@@ -58,26 +68,26 @@ service cloud.firestore {
 
     // Race permissions (which races each athlete is allowed to see/enter)
     // - Athletes can read their own
-    // - Coordinators can read/write all
+    // - Coordinators and above can read/write all
     match /racePermissions/{uid} {
-      allow read: if isOwner(uid) || isCoordinator();
-      allow write: if isCoordinator();
+      allow read: if isDocOwner(uid) || isCoordOrAbove();
+      allow write: if isCoordOrAbove();
     }
 
     // Races
     // - Any signed-in user can read
-    // - Coordinators have full write access
+    // - Coordinators and above have full write access
     match /races/{raceId} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isCoordinator();
+      allow create, update, delete: if isCoordOrAbove();
     }
 
     // Race registrations
     // - Athletes can create/update/delete their own
-    // - Coordinators can read all
+    // - Coordinators and above can read all
     match /raceRegistrations/{regId} {
       allow read: if isSignedIn() &&
-        (resource.data.athleteId == request.auth.uid || isCoordinator());
+        (resource.data.athleteId == request.auth.uid || isCoordOrAbove());
       allow create: if isSignedIn() &&
         request.resource.data.athleteId == request.auth.uid;
       allow update, delete: if isSignedIn() &&
@@ -85,18 +95,17 @@ service cloud.firestore {
     }
 
     // Swag responses
-    // - Athletes can create their own with status 'interested' (interest polls)
-    //   or 'ordered' (inventory items)
+    // - Athletes can create their own with status 'interested' or 'ordered'
     // - Athletes can delete their own if still interested or ordered (not yet ready)
-    // - Coordinators can read all and update status
+    // - Coordinators and above can read all and update status
     match /swagResponses/{responseId} {
       allow read: if isSignedIn() &&
-        (resource.data.athleteId == request.auth.uid || isCoordinator());
+        (resource.data.athleteId == request.auth.uid || isCoordOrAbove());
       allow create: if isSignedIn() &&
         request.resource.data.athleteId == request.auth.uid &&
         (request.resource.data.status == 'interested' ||
          request.resource.data.status == 'ordered');
-      allow update: if isCoordinator();
+      allow update: if isCoordOrAbove();
       allow delete: if isSignedIn() &&
         resource.data.athleteId == request.auth.uid &&
         (resource.data.status == 'interested' || resource.data.status == 'ordered');

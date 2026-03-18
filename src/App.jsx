@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth } from './contexts/AuthContext'
+import { useAuth, COORD_ROLES } from './contexts/AuthContext'
 import { AppConfigProvider, useAppConfig } from './contexts/AppConfigContext'
 import Login from './pages/Login'
 import CoordinatorDashboard from './pages/coordinator/Dashboard'
@@ -9,7 +9,6 @@ import PickupManager from './pages/coordinator/PickupManager'
 import ExpensesSummary from './pages/coordinator/ExpensesSummary'
 import Settings from './pages/coordinator/Settings'
 import UserManagement from './pages/coordinator/UserManagement'
-import DocumentVault from './pages/coordinator/DocumentVault'
 import AthleteDashboard from './pages/athlete/Dashboard'
 import SwagBrowse from './pages/athlete/SwagBrowse'
 import MySwag from './pages/athlete/MySwag'
@@ -22,7 +21,7 @@ function ProtectedRoute({ children, role }) {
   const { user, profile, loading } = useAuth()
   if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
-  if (profile?.role === 'coordinator') return children
+  if (COORD_ROLES.includes(profile?.role)) return children
   if (role === 'coordinator') return <Navigate to="/athlete" replace />
   return children
 }
@@ -44,11 +43,14 @@ function AppRoutes() {
 
   if (loading || configLoading) return <LoadingScreen />
 
+  const isOwner = profile?.role === 'owner' || user?.email === config.ownerEmail
+  const isCoordLike = COORD_ROLES.includes(profile?.role)
+
   return (
     <div className="min-h-screen bg-asha-cream">
       {user && <Navbar />}
       <Routes>
-        <Route path="/login" element={!user ? <Login /> : <Navigate to={profile?.role === 'coordinator' ? '/coord' : '/athlete'} replace />} />
+        <Route path="/login" element={!user ? <Login /> : <Navigate to={isCoordLike ? '/coord' : '/athlete'} replace />} />
 
         {/* Coordinator routes */}
         <Route path="/coord" element={<ProtectedRoute role="coordinator"><CoordinatorDashboard /></ProtectedRoute>} />
@@ -60,12 +62,7 @@ function AppRoutes() {
         <Route path="/coord/settings" element={<ProtectedRoute role="coordinator"><Settings /></ProtectedRoute>} />
         <Route path="/coord/users" element={
           <ProtectedRoute role="coordinator">
-            {user?.email === 'rohantirumale@gmail.com' ? <UserManagement /> : <Navigate to="/coord" replace />}
-          </ProtectedRoute>
-        } />
-        <Route path="/coord/vault" element={
-          <ProtectedRoute role="coordinator">
-            {user?.email === 'rohantirumale@gmail.com' ? <DocumentVault /> : <Navigate to="/coord" replace />}
+            {isOwner ? <UserManagement /> : <Navigate to="/coord" replace />}
           </ProtectedRoute>
         } />
 
@@ -82,7 +79,7 @@ function AppRoutes() {
           <Route path="/athlete/expenses" element={<ProtectedRoute role="athlete"><Expenses /></ProtectedRoute>} />
         )}
 
-        <Route path="*" element={<Navigate to={user ? (profile?.role === 'coordinator' ? '/coord' : '/athlete') : '/login'} replace />} />
+        <Route path="*" element={<Navigate to={user ? (isCoordLike ? '/coord' : '/athlete') : '/login'} replace />} />
       </Routes>
     </div>
   )

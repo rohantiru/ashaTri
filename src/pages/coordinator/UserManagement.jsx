@@ -4,12 +4,24 @@ import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import { Users, ShieldCheck, User, Search } from 'lucide-react'
 
+const ALL_ROLES = ['athlete', 'coordinator', 'coach', 'serviceUser', 'owner']
+
+const ROLE_META = {
+  owner:       { label: 'Owner',        color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  coordinator: { label: 'Coordinator',  color: 'bg-asha-orangeDim text-asha-orange border-asha-orange/20' },
+  coach:       { label: 'Coach',        color: 'bg-blue-50 text-blue-600 border-blue-200' },
+  athlete:     { label: 'Athlete',      color: 'bg-gray-100 text-asha-muted border-transparent' },
+  serviceUser: { label: 'Service User', color: 'bg-gray-50 text-gray-400 border-gray-200' },
+}
+
 export default function UserManagement() {
-  const { user: me } = useAuth()
+  const { user: me, profile: myProfile } = useAuth()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [updating, setUpdating] = useState({})
+
+  const amIOwner = myProfile?.role === 'owner'
 
   const fetchUsers = async () => {
     const snap = await getDocs(collection(db, 'users'))
@@ -34,8 +46,15 @@ export default function UserManagement() {
     return u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)
   })
 
-  const coordCount = users.filter(u => u.role === 'coordinator').length
-  const athleteCount = users.filter(u => u.role === 'athlete').length
+  const counts = {
+    total: users.length,
+    coordinators: users.filter(u => u.role === 'coordinator').length,
+    coaches: users.filter(u => u.role === 'coach').length,
+    athletes: users.filter(u => u.role === 'athlete').length,
+  }
+
+  // Roles available to assign — only owner can assign 'owner'
+  const assignableRoles = amIOwner ? ALL_ROLES : ALL_ROLES.filter(r => r !== 'owner')
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -46,11 +65,12 @@ export default function UserManagement() {
 
       {/* Summary */}
       {!loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           {[
-            { label: 'Total Members', val: users.length, icon: Users, color: 'bg-blue-50 text-blue-600' },
-            { label: 'Coordinators', val: coordCount, icon: ShieldCheck, color: 'bg-asha-orangeDim text-asha-orange' },
-            { label: 'Athletes', val: athleteCount, icon: User, color: 'bg-gray-100 text-asha-muted' },
+            { label: 'Total Members', val: counts.total,        icon: Users,       color: 'bg-blue-50 text-blue-600' },
+            { label: 'Coordinators',  val: counts.coordinators, icon: ShieldCheck, color: 'bg-asha-orangeDim text-asha-orange' },
+            { label: 'Coaches',       val: counts.coaches,      icon: ShieldCheck, color: 'bg-blue-50 text-blue-600' },
+            { label: 'Athletes',      val: counts.athletes,     icon: User,        color: 'bg-gray-100 text-asha-muted' },
           ].map(({ label, val, icon: Icon, color }) => (
             <div key={label} className="bg-white rounded-2xl border border-asha-border p-4 flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center flex-shrink-0`}>
@@ -91,7 +111,9 @@ export default function UserManagement() {
           {filtered.map((u, idx) => {
             const isMe = u.id === me.uid
             const isUpdating = updating[u.id]
-            const isCoord = u.role === 'coordinator'
+            const meta = ROLE_META[u.role] ?? ROLE_META.athlete
+            const canChange = !isMe && !(u.role === 'owner' && !amIOwner)
+
             return (
               <div
                 key={u.id}
@@ -115,19 +137,22 @@ export default function UserManagement() {
                   <div className="font-body text-xs text-asha-muted">{u.email}</div>
                 </div>
 
-                {/* Role badge + toggle */}
+                {/* Role badge + selector */}
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={`text-xs font-body font-medium px-2.5 py-1 rounded-full ${isCoord ? 'bg-asha-orangeDim text-asha-orange border border-asha-orange/20' : 'bg-gray-100 text-asha-muted'}`}>
-                    {isCoord ? 'Coordinator' : 'Athlete'}
+                  <span className={`text-xs font-body font-medium px-2.5 py-1 rounded-full border ${meta.color}`}>
+                    {meta.label}
                   </span>
-                  {!isMe && (
-                    <button
-                      onClick={() => setRole(u.id, isCoord ? 'athlete' : 'coordinator')}
+                  {canChange && (
+                    <select
+                      value={u.role ?? 'athlete'}
                       disabled={isUpdating}
-                      className="text-xs font-body font-medium px-3 py-1.5 rounded-lg border border-asha-border text-asha-muted hover:border-asha-orange hover:text-asha-orange transition-all disabled:opacity-40"
+                      onChange={e => setRole(u.id, e.target.value)}
+                      className="text-xs font-body font-medium px-2 py-1.5 rounded-lg border border-asha-border text-asha-muted hover:border-asha-orange focus:border-asha-orange focus:outline-none transition-all disabled:opacity-40 bg-white"
                     >
-                      {isUpdating ? '…' : isCoord ? 'Make Athlete' : 'Make Coord'}
-                    </button>
+                      {assignableRoles.map(r => (
+                        <option key={r} value={r}>{ROLE_META[r]?.label ?? r}</option>
+                      ))}
+                    </select>
                   )}
                 </div>
               </div>
