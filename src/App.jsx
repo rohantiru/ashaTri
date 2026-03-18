@@ -9,6 +9,7 @@ import PickupManager from './pages/coordinator/PickupManager'
 import ExpensesSummary from './pages/coordinator/ExpensesSummary'
 import Settings from './pages/coordinator/Settings'
 import UserManagement from './pages/coordinator/UserManagement'
+import AthletesPage from './pages/coordinator/Athletes'
 import AthleteDashboard from './pages/athlete/Dashboard'
 import SwagBrowse from './pages/athlete/SwagBrowse'
 import MySwag from './pages/athlete/MySwag'
@@ -59,7 +60,12 @@ function AppRoutes() {
         <Route path="/coord/pickup" element={<ProtectedRoute role="coordinator"><PickupManager /></ProtectedRoute>} />
         <Route path="/coord/expenses" element={<ProtectedRoute role="coordinator"><ExpensesSummary /></ProtectedRoute>} />
         <Route path="/coord/races" element={<ProtectedRoute role="coordinator"><RaceManagement /></ProtectedRoute>} />
-        <Route path="/coord/settings" element={<ProtectedRoute role="coordinator"><Settings /></ProtectedRoute>} />
+        <Route path="/coord/athletes" element={<ProtectedRoute role="coordinator"><AthletesPage /></ProtectedRoute>} />
+        <Route path="/coord/settings" element={
+          <ProtectedRoute role="coordinator">
+            {isOwner ? <Settings /> : <Navigate to="/coord" replace />}
+          </ProtectedRoute>
+        } />
         <Route path="/coord/users" element={
           <ProtectedRoute role="coordinator">
             {isOwner ? <UserManagement /> : <Navigate to="/coord" replace />}
@@ -74,7 +80,9 @@ function AppRoutes() {
             <Route path="/athlete/my-swag" element={<ProtectedRoute role="athlete"><MySwag /></ProtectedRoute>} />
           </>
         )}
-        <Route path="/athlete/races" element={<ProtectedRoute role="athlete"><AthleteRaces /></ProtectedRoute>} />
+        {config.tabs.races && (
+          <Route path="/athlete/races" element={<ProtectedRoute role="athlete"><AthleteRaces /></ProtectedRoute>} />
+        )}
         {config.tabs.expenses && (
           <Route path="/athlete/expenses" element={<ProtectedRoute role="athlete"><Expenses /></ProtectedRoute>} />
         )}

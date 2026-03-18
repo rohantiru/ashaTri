@@ -94,6 +94,11 @@ service cloud.firestore {
         resource.data.athleteId == request.auth.uid;
     }
 
+    // Teams (athlete grouping lists — coord/coach/owner only)
+    match /teams/{teamId} {
+      allow read, write: if isCoordOrAbove();
+    }
+
     // Swag responses
     // - Athletes can create their own with status 'interested' or 'ordered'
     // - Athletes can delete their own if still interested or ordered (not yet ready)

@@ -28,10 +28,13 @@ export default function Navbar() {
   const swagEnabled = config.tabs.swag
   const expensesEnabled = config.tabs.expenses
 
+  const homeEnabled = config.tabs.home
+  const racesEnabled = config.tabs.races
+
   const athletePrimary = [
-    { key: 'home', label: 'Home', icon: LayoutDashboard, to: '/athlete' },
+    ...(homeEnabled ? [{ key: 'home', label: 'Home', icon: LayoutDashboard, to: '/athlete' }] : []),
     ...(swagEnabled ? [{ key: 'swag', label: 'Swag', icon: ShoppingBag, to: '/athlete/browse' }] : []),
-    { key: 'races', label: 'Races', icon: Flag, to: '/athlete/races' },
+    ...(racesEnabled ? [{ key: 'races', label: 'Races', icon: Flag, to: '/athlete/races' }] : []),
     ...(expensesEnabled ? [{ key: 'expenses', label: 'Expenses', icon: Receipt, to: '/athlete/expenses' }] : []),
   ]
 
@@ -56,9 +59,12 @@ export default function Navbar() {
     { key: 'overview', label: 'Overview', icon: LayoutDashboard, to: '/coord' },
     { key: 'swag', label: 'Swag', icon: ShoppingBag, to: '/coord/items' },
     { key: 'races', label: 'Races', icon: Flag, to: '/coord/races' },
+    { key: 'athletes', label: 'Athletes', icon: Users, to: '/coord/athletes' },
     { key: 'expenses', label: 'Expenses', icon: Receipt, to: '/coord/expenses' },
-    { key: 'settings', label: 'Settings', icon: Settings, to: '/coord/settings' },
-    ...(isOwner ? [{ key: 'users', label: 'Users', icon: Users, to: '/coord/users' }] : []),
+    ...(isOwner ? [
+      { key: 'settings', label: 'Settings', icon: Settings, to: '/coord/settings' },
+      { key: 'users', label: 'Users', icon: Users, to: '/coord/users' },
+    ] : []),
   ]
 
   const coordSwagSub = [
@@ -74,6 +80,7 @@ export default function Navbar() {
     if (p === '/coord') return 'overview'
     if (inCoordSwag) return 'swag'
     if (p === '/coord/races') return 'races'
+    if (p === '/coord/athletes') return 'athletes'
     if (p === '/coord/expenses') return 'expenses'
     if (p === '/coord/settings') return 'settings'
     if (p === '/coord/users') return 'users'

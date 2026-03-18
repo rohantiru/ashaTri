@@ -36,6 +36,18 @@ export default function Settings() {
         <p className="font-body text-xs text-asha-muted mb-4">Toggle which sections are visible to athletes. Changes take effect immediately.</p>
 
         <Toggle
+          label="Home"
+          desc="Athlete home dashboard"
+          enabled={config.tabs.home}
+          onChange={(val) => updateTabs({ home: val })}
+        />
+        <Toggle
+          label="Races"
+          desc="View upcoming races and manage registrations"
+          enabled={config.tabs.races}
+          onChange={(val) => updateTabs({ races: val })}
+        />
+        <Toggle
           label="Swag"
           desc="Browse swag items, express interest, and track orders"
           enabled={config.tabs.swag}

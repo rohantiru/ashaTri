@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase'
-import { Plus, X, Calendar, MapPin, Flag, Pencil, Trash2, CheckCircle2, Circle, Users, ExternalLink, Tag, Download, CheckSquare, Square, Lock, Unlock } from 'lucide-react'
+import { Plus, X, Calendar, MapPin, Flag, Pencil, Trash2, CheckCircle2, Circle, Users, ExternalLink, Tag, Download, CheckSquare, Lock, Unlock } from 'lucide-react'
 
 const RACE_TYPES = [
   { key: 'swim', label: 'Swim' },
@@ -192,10 +192,8 @@ function FilterBar({ typeFilter, setTypeFilter, distanceFilter, setDistanceFilte
 export default function RaceManagement() {
   const [tab, setTab] = useState('races')
   const [races, setRaces] = useState([])
-  const [users, setUsers] = useState({})       // uid -> user data
-  const [athletes, setAthletes] = useState([]) // just athlete-role users
+  const [users, setUsers] = useState({})
   const [regs, setRegs] = useState([])
-  const [perms, setPerms] = useState({})       // uid -> Set<raceId>
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
   const [selectedRace, setSelectedRace] = useState(null)
@@ -204,11 +202,10 @@ export default function RaceManagement() {
   const [distanceFilter, setDistanceFilter] = useState(null)
 
   const load = async () => {
-    const [racesSnap, usersSnap, regsSnap, permsSnap] = await Promise.all([
+    const [racesSnap, usersSnap, regsSnap] = await Promise.all([
       getDocs(collection(db, 'races')),
       getDocs(collection(db, 'users')),
       getDocs(collection(db, 'raceRegistrations')),
-      getDocs(collection(db, 'racePermissions')),
     ])
     const racesList = racesSnap.docs
       .map(d => ({ id: d.id, ...d.data() }))
@@ -222,23 +219,10 @@ export default function RaceManagement() {
     if (racesList.length > 0) setSelectedRace(prev => prev || racesList[0].id)
 
     const usersMap = {}
-    const athletesList = []
-    usersSnap.docs.forEach(d => {
-      usersMap[d.id] = { id: d.id, ...d.data() }
-      athletesList.push({ id: d.id, ...d.data() })
-    })
-    athletesList.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+    usersSnap.docs.forEach(d => { usersMap[d.id] = { id: d.id, ...d.data() } })
     setUsers(usersMap)
-    setAthletes(athletesList)
 
     setRegs(regsSnap.docs.map(d => ({ id: d.id, ...d.data() })))
-
-    // Build perms map: uid -> Set of allowed raceIds
-    // If no doc exists for an athlete → all races allowed (null means unrestricted)
-    const permsMap = {}
-    permsSnap.docs.forEach(d => { permsMap[d.id] = new Set(d.data().allowedRaceIds || []) })
-    setPerms(permsMap)
-
     setLoading(false)
   }
 
@@ -255,6 +239,7 @@ export default function RaceManagement() {
   }
 
   const handleToggleLock = async (race) => {
+
     await updateDoc(doc(db, 'races', race.id), { isLocked: !race.isLocked, updatedAt: serverTimestamp() })
     setRaces(prev => prev.map(r => r.id === race.id ? { ...r, isLocked: !r.isLocked } : r))
   }
@@ -274,28 +259,6 @@ export default function RaceManagement() {
     }
     setSeeding(false)
     load()
-  }
-
-  // Toggle a single athlete ↔ race permission
-  const togglePerm = async (uid, raceId) => {
-    // If no doc yet, start with all race IDs granted
-    const current = perms[uid] ?? new Set(races.map(r => r.id))
-    const next = new Set(current)
-    if (next.has(raceId)) next.delete(raceId)
-    else next.add(raceId)
-
-    setPerms(p => ({ ...p, [uid]: next }))
-    await setDoc(doc(db, 'racePermissions', uid), { allowedRaceIds: [...next] })
-  }
-
-  // Grant or revoke all races for an athlete at once
-  const toggleAllPermsForAthlete = async (uid) => {
-    const allIds = races.map(r => r.id)
-    const current = perms[uid] ?? new Set(allIds)
-    const hasAll = allIds.every(id => current.has(id))
-    const next = new Set(hasAll ? [] : allIds)
-    setPerms(p => ({ ...p, [uid]: next }))
-    await setDoc(doc(db, 'racePermissions', uid), { allowedRaceIds: [...next] })
   }
 
   // Apply filters to race list
@@ -323,21 +286,12 @@ export default function RaceManagement() {
     byEvent[r.event].push(r)
   })
 
-  // Helper: is athlete allowed for a race (no doc = all allowed)
-  const isAllowed = (uid, raceId) => {
-    if (!perms[uid]) return true // no doc = all allowed
-    return perms[uid].has(raceId)
-  }
-
-  const allRaceIds = races.map(r => r.id)
-  const athleteHasAll = (uid) => allRaceIds.every(id => isAllowed(uid, id))
-
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display font-bold text-3xl text-asha-dark">Race Management</h1>
-          <p className="font-body text-asha-muted text-sm mt-1">Manage races, track registrations, and set athlete permissions</p>
+          <p className="font-body text-asha-muted text-sm mt-1">Manage races and track registrations</p>
         </div>
         {tab === 'races' && (
           <div className="flex gap-2">
@@ -357,7 +311,7 @@ export default function RaceManagement() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-asha-cream rounded-xl p-1 w-fit">
-        {[['races', Flag, 'Races'], ['registrations', CheckSquare, 'Registrations'], ['athletes', Users, 'Athletes']].map(([key, Icon, label]) => (
+        {[['races', Flag, 'Races'], ['registrations', CheckSquare, 'Registrations']].map(([key, Icon, label]) => (
           <button key={key} onClick={() => setTab(key)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-body font-medium transition-all ${tab === key ? 'bg-white text-asha-dark shadow-sm' : 'text-asha-muted hover:text-asha-dark'}`}>
             <Icon size={14} />{label}
@@ -505,90 +459,7 @@ export default function RaceManagement() {
           </>
         )
 
-      ) : (
-
-        /* ── Athletes (permissions) tab ── */
-        athletes.length === 0 ? (
-          <div className="text-center py-16"><Users size={32} className="text-asha-muted mx-auto mb-3" /><p className="font-body text-asha-muted">No athletes yet</p></div>
-        ) : races.length === 0 ? (
-          <div className="text-center py-16"><Flag size={32} className="text-asha-muted mx-auto mb-3" /><p className="font-body text-asha-muted">Add races first to manage permissions</p></div>
-        ) : (
-          <>
-            <p className="font-body text-sm text-asha-muted mb-4">
-              Control which races each athlete can see and enter. Unchecking a race hides it from that athlete's view.
-            </p>
-            <div className="bg-white rounded-2xl border border-asha-border overflow-hidden">
-              {/* Scrollable table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-asha-border bg-asha-cream/50">
-                      <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide sticky left-0 bg-asha-cream/50 min-w-[160px]">
-                        Athlete
-                      </th>
-                      <th className="px-2 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide text-center min-w-[40px]" title="Grant/revoke all races">
-                        All
-                      </th>
-                      {races.map(race => (
-                        <th key={race.id} className="px-3 py-3 text-center min-w-[90px] max-w-[110px]">
-                          <div className="flex flex-col items-center gap-1">
-                            <TypeBadge type={race.type} />
-                            <span className="font-body text-xs text-asha-muted leading-tight text-center break-words">
-                              {race.name}
-                            </span>
-                          </div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {athletes.map((athlete, i) => {
-                      const hasAll = athleteHasAll(athlete.id)
-                      return (
-                        <tr key={athlete.id} className={`border-b border-asha-border/40 last:border-0 ${i % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
-                          {/* Athlete name */}
-                          <td className={`px-4 py-3 sticky left-0 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
-                            <div className="flex items-center gap-2">
-                              {athlete.photoURL
-                                ? <img src={athlete.photoURL} alt="" className="w-7 h-7 rounded-full flex-shrink-0" />
-                                : <div className="w-7 h-7 rounded-full bg-asha-cream flex items-center justify-center flex-shrink-0"><Users size={12} className="text-asha-muted" /></div>
-                              }
-                              <div className="min-w-0">
-                                <div className="font-body font-medium text-sm text-asha-dark truncate">{athlete.name?.split(' ')[0] || '—'}</div>
-                              </div>
-                            </div>
-                          </td>
-                          {/* All toggle */}
-                          <td className="px-2 py-3 text-center">
-                            <button onClick={() => toggleAllPermsForAthlete(athlete.id)} className="flex items-center justify-center mx-auto text-asha-muted hover:text-asha-orange transition-colors">
-                              {hasAll ? <CheckSquare size={18} className="text-asha-orange" /> : <Square size={18} />}
-                            </button>
-                          </td>
-                          {/* Per-race checkboxes */}
-                          {races.map(race => {
-                            const allowed = isAllowed(athlete.id, race.id)
-                            return (
-                              <td key={race.id} className="px-2 py-3 text-center">
-                                <button onClick={() => togglePerm(athlete.id, race.id)} className="flex items-center justify-center mx-auto transition-colors">
-                                  {allowed
-                                    ? <CheckSquare size={17} className="text-asha-orange" />
-                                    : <Square size={17} className="text-gray-300 hover:text-asha-muted" />
-                                  }
-                                </button>
-                              </td>
-                            )
-                          })}
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <p className="font-body text-xs text-asha-muted mt-3">Changes save instantly. Athletes without any restriction see all races by default.</p>
-          </>
-        )
-      )}
+      ) : null}
 
       {modal && (
         <RaceModal initial={modal.race ? { ...modal.race } : null} onSave={handleSave} onClose={() => setModal(null)} />
