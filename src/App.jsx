@@ -14,6 +14,8 @@ import AthleteDashboard from './pages/athlete/Dashboard'
 import SwagBrowse from './pages/athlete/SwagBrowse'
 import MySwag from './pages/athlete/MySwag'
 import Expenses from './pages/athlete/Expenses'
+import AthleteRaces from './pages/athlete/Races'
+import RaceManagement from './pages/coordinator/RaceManagement'
 import Navbar from './components/Navbar'
 
 function ProtectedRoute({ children, role }) {
@@ -54,6 +56,7 @@ function AppRoutes() {
         <Route path="/coord/interest" element={<ProtectedRoute role="coordinator"><InterestView /></ProtectedRoute>} />
         <Route path="/coord/pickup" element={<ProtectedRoute role="coordinator"><PickupManager /></ProtectedRoute>} />
         <Route path="/coord/expenses" element={<ProtectedRoute role="coordinator"><ExpensesSummary /></ProtectedRoute>} />
+        <Route path="/coord/races" element={<ProtectedRoute role="coordinator"><RaceManagement /></ProtectedRoute>} />
         <Route path="/coord/settings" element={<ProtectedRoute role="coordinator"><Settings /></ProtectedRoute>} />
         <Route path="/coord/users" element={
           <ProtectedRoute role="coordinator">
@@ -74,6 +77,7 @@ function AppRoutes() {
             <Route path="/athlete/my-swag" element={<ProtectedRoute role="athlete"><MySwag /></ProtectedRoute>} />
           </>
         )}
+        <Route path="/athlete/races" element={<ProtectedRoute role="athlete"><AthleteRaces /></ProtectedRoute>} />
         {config.tabs.expenses && (
           <Route path="/athlete/expenses" element={<ProtectedRoute role="athlete"><Expenses /></ProtectedRoute>} />
         )}

@@ -6,7 +6,21 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useAppConfig } from '../../contexts/AppConfigContext'
 import { fmtUSD } from '../../utils/format'
 import StatusBadge from '../../components/StatusBadge'
-import { ShoppingBag, Star, ArrowRight, Package, Receipt } from 'lucide-react'
+import { ShoppingBag, Flag, Receipt, ArrowRight, Package, Calendar, CheckCircle2, Circle, ExternalLink } from 'lucide-react'
+
+function fmtDate(dateStr) {
+  if (!dateStr) return 'TBD'
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  })
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return Math.ceil((new Date(dateStr + 'T00:00:00') - today) / 86400000)
+}
 
 export default function AthleteDashboard() {
   const { user, profile } = useAuth()
@@ -14,25 +28,47 @@ export default function AthleteDashboard() {
   const [myResponses, setMyResponses] = useState([])
   const [itemMap, setItemMap] = useState({})
   const [expenses, setExpenses] = useState([])
+  const [myRaceRegs, setMyRaceRegs] = useState([])
+  const [raceMap, setRaceMap] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      const [responsesSnap, expSnap] = await Promise.all([
+      const [responsesSnap, expSnap, regsSnap, racesSnap] = await Promise.all([
         getDocs(query(collection(db, 'swagResponses'), where('athleteId', '==', user.uid))),
         getDocs(query(collection(db, 'expenses'), where('athleteId', '==', user.uid))),
+        getDocs(query(collection(db, 'raceRegistrations'), where('athleteId', '==', user.uid))),
+        getDocs(collection(db, 'races')),
       ])
+
       const responses = responsesSnap.docs.map(d => ({ id: d.id, ...d.data() }))
-      // Fetch only items this athlete has responses for
       const itemIds = [...new Set(responses.map(r => r.itemId))]
       const itemDocs = await Promise.all(itemIds.map(id => getDoc(doc(db, 'swagItems', id))))
       const map = {}
       itemDocs.forEach(d => { if (d.exists()) map[d.id] = { id: d.id, ...d.data() } })
       setItemMap(map)
       setMyResponses(responses)
+
       const exp = expSnap.docs.map(d => ({ id: d.id, ...d.data() }))
       exp.sort((a, b) => (b.date > a.date ? 1 : -1))
       setExpenses(exp)
+
+      const races = {}
+      racesSnap.docs.forEach(d => { races[d.id] = { id: d.id, ...d.data() } })
+      setRaceMap(races)
+
+      const regs = regsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+      // Sort: upcoming first (with date), then TBD
+      regs.sort((a, b) => {
+        const ra = races[a.raceId]
+        const rb = races[b.raceId]
+        if (!ra?.date && !rb?.date) return 0
+        if (!ra?.date) return 1
+        if (!rb?.date) return -1
+        return ra.date > rb.date ? 1 : -1
+      })
+      setMyRaceRegs(regs)
+
       setLoading(false)
     }
     load()
@@ -40,6 +76,14 @@ export default function AthleteDashboard() {
 
   const readyItems = myResponses.filter(r => r.status === 'ready')
   const expenseTotal = expenses.reduce((sum, e) => sum + (e.amount || 0), 0)
+
+  // Next upcoming race
+  const nextRaceReg = myRaceRegs.find(r => {
+    const race = raceMap[r.raceId]
+    const days = daysUntil(race?.date)
+    return days === null || days >= 0
+  })
+  const nextRace = nextRaceReg ? raceMap[nextRaceReg.raceId] : null
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
@@ -67,28 +111,38 @@ export default function AthleteDashboard() {
         </div>
       )}
 
-      {/* Quick links */}
-      <div className={`grid gap-3 mb-6 ${config.tabs.swag && config.tabs.expenses ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+      {/* Quick links — Swag · Races · Expenses */}
+      <div className={`grid gap-3 mb-6 ${
+        config.tabs.swag && config.tabs.expenses ? 'grid-cols-1 sm:grid-cols-3' :
+        config.tabs.swag || config.tabs.expenses ? 'grid-cols-1 sm:grid-cols-2' :
+        'grid-cols-1'
+      }`}>
         {config.tabs.swag && (
           <Link to="/athlete/browse" className="bg-asha-orange rounded-2xl p-5 hover:bg-asha-orangeLight transition-colors group">
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
               <ShoppingBag size={20} className="text-white" />
             </div>
-            <div className="font-display font-bold text-white text-base sm:text-lg">Browse Swag</div>
-            <div className="font-body text-white/80 text-sm mt-1">Explore items and express interest</div>
-            <ArrowRight size={16} className="text-white/60 mt-3 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        )}
-        {config.tabs.swag && (
-          <Link to="/athlete/my-swag" className="bg-white border border-asha-border rounded-2xl p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
-            <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center mb-3">
-              <Star size={20} className="text-asha-orange" />
+            <div className="font-display font-bold text-white text-base sm:text-lg">Swag</div>
+            <div className="font-body text-white/80 text-sm mt-1">Browse items and track orders</div>
+            <div className="font-body text-white/70 text-xs mt-3">
+              {myResponses.length > 0 ? `${myResponses.length} item${myResponses.length !== 1 ? 's' : ''} requested` : "Explore what's available"}
             </div>
-            <div className="font-display font-bold text-asha-dark text-base sm:text-lg">My Swag</div>
-            <div className="font-body text-asha-muted text-sm mt-1">Track requests and pickup status</div>
-            <div className="font-body text-xs text-asha-muted mt-3">{myResponses.length} item{myResponses.length !== 1 ? 's' : ''} requested</div>
           </Link>
         )}
+
+        <Link to="/athlete/races" className="bg-white border border-asha-border rounded-2xl p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
+          <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center mb-3">
+            <Flag size={20} className="text-asha-orange" />
+          </div>
+          <div className="font-display font-bold text-asha-dark text-base sm:text-lg">Races</div>
+          <div className="font-body text-asha-muted text-sm mt-1">Select events and track registration</div>
+          <div className="font-body text-xs text-asha-muted mt-3">
+            {myRaceRegs.length > 0
+              ? `${myRaceRegs.length} race${myRaceRegs.length !== 1 ? 's' : ''} selected`
+              : 'View upcoming races'}
+          </div>
+        </Link>
+
         {config.tabs.expenses && (
           <Link to="/athlete/expenses" className="bg-white border border-asha-border rounded-2xl p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
             <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center mb-3">
@@ -103,7 +157,60 @@ export default function AthleteDashboard() {
         )}
       </div>
 
-      {/* Expenses summary widget */}
+      {/* My Races widget */}
+      {!loading && myRaceRegs.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display font-semibold text-base sm:text-lg text-asha-dark">My Races</h2>
+            {myRaceRegs.length > 3 && (
+              <Link to="/athlete/races" className="text-xs font-body text-asha-orange hover:underline flex items-center gap-1">
+                View all <ArrowRight size={11} />
+              </Link>
+            )}
+          </div>
+          <div className="space-y-2">
+            {myRaceRegs.slice(0, 3).map(reg => {
+              const race = raceMap[reg.raceId]
+              if (!race) return null
+              const days = daysUntil(race.date)
+              const isPast = days !== null && days < 0
+              return (
+                <div key={reg.id} className="bg-white rounded-2xl border border-asha-border flex items-center gap-3 px-4 py-3">
+                  <div className="w-8 h-8 rounded-lg bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
+                    <Flag size={14} className="text-asha-orange" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-body font-medium text-sm text-asha-dark truncate">{race.name}</div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="font-body text-xs text-asha-muted flex items-center gap-1">
+                        <Calendar size={10} />{fmtDate(race.date)}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded-md bg-asha-cream font-body text-xs text-asha-muted">{reg.event}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {!isPast && days !== null && (
+                      <span className={`text-xs font-body font-medium px-2 py-1 rounded-lg ${
+                        days <= 14 ? 'bg-red-50 text-red-600' :
+                        days <= 60 ? 'bg-amber-50 text-amber-600' :
+                        'bg-asha-cream text-asha-muted'
+                      }`}>
+                        {days === 0 ? 'Today!' : `${days}d`}
+                      </span>
+                    )}
+                    {reg.isRegistered
+                      ? <CheckCircle2 size={16} className="text-asha-orange" />
+                      : <Circle size={16} className="text-asha-muted" />
+                    }
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Expenses widget */}
       {config.tabs.expenses && !loading && expenses.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">

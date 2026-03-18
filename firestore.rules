@@ -56,6 +56,26 @@ service cloud.firestore {
         resource.data.athleteId == request.auth.uid;
     }
 
+    // Races
+    // - Any signed-in user can read
+    // - Coordinators have full write access
+    match /races/{raceId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isCoordinator();
+    }
+
+    // Race registrations
+    // - Athletes can create/update/delete their own
+    // - Coordinators can read all
+    match /raceRegistrations/{regId} {
+      allow read: if isSignedIn() &&
+        (resource.data.athleteId == request.auth.uid || isCoordinator());
+      allow create: if isSignedIn() &&
+        request.resource.data.athleteId == request.auth.uid;
+      allow update, delete: if isSignedIn() &&
+        resource.data.athleteId == request.auth.uid;
+    }
+
     // Swag responses
     // - Athletes can create their own with status 'interested' (interest polls)
     //   or 'ordered' (inventory items)

@@ -3,26 +3,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useAppConfig } from '../contexts/AppConfigContext'
 import {
-  LogOut, LayoutDashboard, Package, BarChart2, CheckSquare,
-  ShoppingBag, Star, ArrowLeftRight, Receipt, Settings, Users, Menu, X, BookOpen
+  LogOut, LayoutDashboard, ShoppingBag, Flag, Receipt, Settings,
+  Users, Menu, X, BookOpen, ArrowLeftRight, BarChart2, CheckSquare, Package,
 } from 'lucide-react'
-
-const coordLinks = [
-  { to: '/coord', label: 'Overview', icon: LayoutDashboard },
-  { to: '/coord/items', label: 'Swag Items', icon: Package },
-  { to: '/coord/interest', label: 'Interest', icon: BarChart2 },
-  { to: '/coord/pickup', label: 'Pickup', icon: CheckSquare },
-  { to: '/coord/expenses', label: 'Expenses', icon: Receipt },
-  { to: '/coord/users', label: 'Users', icon: Users },
-  { to: '/coord/settings', label: 'Settings', icon: Settings },
-]
-
-const allAthleteLinks = [
-  { to: '/athlete', label: 'Home', icon: LayoutDashboard, tab: null },
-  { to: '/athlete/browse', label: 'Browse Swag', icon: ShoppingBag, tab: 'swag' },
-  { to: '/athlete/my-swag', label: 'My Swag', icon: Star, tab: 'swag' },
-  { to: '/athlete/expenses', label: 'Expenses', icon: Receipt, tab: 'expenses' },
-]
 
 export default function Navbar() {
   const { user, profile, logout } = useAuth()
@@ -33,13 +16,75 @@ export default function Navbar() {
 
   const isCoordinator = profile?.role === 'coordinator'
   const isAthleteMode = location.pathname.startsWith('/athlete')
-
   const isOwner = user?.email === 'rohantirumale@gmail.com'
-  const visibleCoordLinks = isOwner
-    ? [...coordLinks.slice(0, 5), { to: '/coord/vault', label: 'Vault', icon: BookOpen }, ...coordLinks.slice(5)]
-    : coordLinks.filter(l => l.to !== '/coord/users')
-  const athleteLinks = allAthleteLinks.filter(l => !l.tab || config.tabs[l.tab])
-  const links = isCoordinator ? (isAthleteMode ? athleteLinks : visibleCoordLinks) : athleteLinks
+
+  // ── Athlete nav ──────────────────────────────────────────────────────────
+  const swagEnabled = config.tabs.swag
+  const expensesEnabled = config.tabs.expenses
+
+  const athletePrimary = [
+    { key: 'home', label: 'Home', icon: LayoutDashboard, to: '/athlete' },
+    ...(swagEnabled ? [{ key: 'swag', label: 'Swag', icon: ShoppingBag, to: '/athlete/browse' }] : []),
+    { key: 'races', label: 'Races', icon: Flag, to: '/athlete/races' },
+    ...(expensesEnabled ? [{ key: 'expenses', label: 'Expenses', icon: Receipt, to: '/athlete/expenses' }] : []),
+  ]
+
+  const athleteSwagSub = swagEnabled ? [
+    { to: '/athlete/browse', label: 'Browse' },
+    { to: '/athlete/my-swag', label: 'My Swag' },
+  ] : []
+
+  const inAthleteSwag = ['/athlete/browse', '/athlete/my-swag'].includes(location.pathname)
+
+  const athleteActiveKey = (() => {
+    const p = location.pathname
+    if (p === '/athlete') return 'home'
+    if (inAthleteSwag) return 'swag'
+    if (p === '/athlete/races') return 'races'
+    if (p === '/athlete/expenses') return 'expenses'
+    return ''
+  })()
+
+  // ── Coordinator nav ──────────────────────────────────────────────────────
+  const coordPrimary = [
+    { key: 'overview', label: 'Overview', icon: LayoutDashboard, to: '/coord' },
+    { key: 'swag', label: 'Swag', icon: ShoppingBag, to: '/coord/items' },
+    { key: 'races', label: 'Races', icon: Flag, to: '/coord/races' },
+    { key: 'expenses', label: 'Expenses', icon: Receipt, to: '/coord/expenses' },
+    { key: 'settings', label: 'Settings', icon: Settings, to: '/coord/settings' },
+    ...(isOwner ? [
+      { key: 'users', label: 'Users', icon: Users, to: '/coord/users' },
+      { key: 'vault', label: 'Vault', icon: BookOpen, to: '/coord/vault' },
+    ] : []),
+  ]
+
+  const coordSwagSub = [
+    { to: '/coord/items', label: 'Items', icon: Package },
+    { to: '/coord/interest', label: 'Interest', icon: BarChart2 },
+    { to: '/coord/pickup', label: 'Pickup', icon: CheckSquare },
+  ]
+
+  const inCoordSwag = ['/coord/items', '/coord/interest', '/coord/pickup'].includes(location.pathname)
+
+  const coordActiveKey = (() => {
+    const p = location.pathname
+    if (p === '/coord') return 'overview'
+    if (inCoordSwag) return 'swag'
+    if (p === '/coord/races') return 'races'
+    if (p === '/coord/expenses') return 'expenses'
+    if (p === '/coord/settings') return 'settings'
+    if (p === '/coord/users') return 'users'
+    if (p === '/coord/vault') return 'vault'
+    return ''
+  })()
+
+  // ── Active set ───────────────────────────────────────────────────────────
+  const inCoordMode = isCoordinator && !isAthleteMode
+  const primaryLinks = inCoordMode ? coordPrimary : athletePrimary
+  const subLinks = inCoordMode
+    ? (inCoordSwag ? coordSwagSub : [])
+    : (inAthleteSwag ? athleteSwagSub : [])
+  const activeKey = inCoordMode ? coordActiveKey : athleteActiveKey
 
   const handleLogout = async () => {
     await logout()
@@ -71,13 +116,13 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Desktop nav links */}
+          {/* Desktop primary nav */}
           <div className="hidden sm:flex items-center gap-1">
-            {links.map(({ to, label, icon: Icon }) => {
-              const active = location.pathname === to
+            {primaryLinks.map(({ key, to, label, icon: Icon }) => {
+              const active = activeKey === key
               return (
                 <Link
-                  key={to}
+                  key={key}
                   to={to}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-body font-medium whitespace-nowrap transition-all ${
                     active ? 'bg-asha-orange text-white' : 'text-asha-muted hover:text-white hover:bg-asha-mid'
@@ -92,7 +137,6 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
-            {/* Desktop: mode toggle + avatar + logout */}
             {isCoordinator && (
               <button
                 onClick={() => navigate(isAthleteMode ? '/coord' : '/athlete')}
@@ -108,7 +152,6 @@ export default function Navbar() {
             <button onClick={handleLogout} className="hidden sm:flex p-1.5 text-asha-muted hover:text-white hover:bg-asha-mid rounded-lg transition-all">
               <LogOut size={14} />
             </button>
-            {/* Mobile: hamburger */}
             <button
               onClick={() => setOpen(true)}
               className="sm:hidden p-1.5 text-asha-muted hover:text-white hover:bg-asha-mid rounded-lg transition-all"
@@ -117,17 +160,35 @@ export default function Navbar() {
             </button>
           </div>
         </div>
+
+        {/* Sub-nav bar (desktop) */}
+        {subLinks.length > 0 && (
+          <div className="border-t border-asha-mid/50 hidden sm:block">
+            <div className="max-w-6xl mx-auto px-4 flex items-center gap-0.5 h-9">
+              {subLinks.map(({ to, label }) => {
+                const active = location.pathname === to
+                return (
+                  <Link
+                    key={to}
+                    to={to}
+                    className={`px-3 py-1 rounded-md text-xs font-body font-medium transition-all ${
+                      active ? 'text-asha-orangeLight bg-asha-mid/60' : 'text-asha-muted hover:text-white'
+                    }`}
+                  >
+                    {label}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </nav>
 
-      {/* Mobile drawer overlay */}
+      {/* Mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-[60] sm:hidden">
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
-
-          {/* Drawer */}
           <div className="absolute top-0 right-0 h-full w-72 bg-asha-dark flex flex-col shadow-2xl">
-            {/* Drawer header */}
             <div className="flex items-center justify-between px-5 h-14 border-b border-asha-mid flex-shrink-0">
               <div className="flex items-center gap-2">
                 {profile?.photoURL && (
@@ -145,26 +206,47 @@ export default function Navbar() {
               </button>
             </div>
 
-            {/* Nav links */}
             <div className="flex-1 overflow-y-auto py-3 px-3">
-              {links.map(({ to, label, icon: Icon }) => {
-                const active = location.pathname === to
+              {primaryLinks.map(({ key, to, label, icon: Icon }) => {
+                const active = activeKey === key
+                const isSwagGroup = key === 'swag'
+                const drawerSubLinks = inCoordMode ? coordSwagSub : athleteSwagSub
+
                 return (
-                  <button
-                    key={to}
-                    onClick={() => handleNav(to)}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-body font-medium transition-all mb-1 ${
-                      active ? 'bg-asha-orange text-white' : 'text-asha-muted hover:text-white hover:bg-asha-mid'
-                    }`}
-                  >
-                    <Icon size={16} />
-                    {label}
-                  </button>
+                  <div key={key}>
+                    <button
+                      onClick={() => handleNav(to)}
+                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-body font-medium transition-all mb-0.5 ${
+                        active ? 'bg-asha-orange text-white' : 'text-asha-muted hover:text-white hover:bg-asha-mid'
+                      }`}
+                    >
+                      <Icon size={16} />
+                      {label}
+                    </button>
+                    {isSwagGroup && (
+                      <div className="ml-4 mb-1 space-y-0.5">
+                        {drawerSubLinks.map(sub => {
+                          const subActive = location.pathname === sub.to
+                          return (
+                            <button
+                              key={sub.to}
+                              onClick={() => handleNav(sub.to)}
+                              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-body font-medium transition-all ${
+                                subActive ? 'text-asha-orange' : 'text-asha-muted hover:text-white'
+                              }`}
+                            >
+                              {sub.icon && <sub.icon size={13} />}
+                              {sub.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 )
               })}
             </div>
 
-            {/* Drawer footer */}
             <div className="px-3 pb-5 pt-3 border-t border-asha-mid flex-shrink-0 space-y-1">
               {isCoordinator && (
                 <button
