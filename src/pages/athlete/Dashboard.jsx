@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useAppConfig } from '../../contexts/AppConfigContext'
 import { fmtUSD } from '../../utils/format'
 import StatusBadge from '../../components/StatusBadge'
-import { ShoppingBag, Flag, Receipt, ArrowRight, Package, Calendar, CheckCircle2, Circle, ExternalLink } from 'lucide-react'
+import { ShoppingBag, Flag, Receipt, ArrowRight, Package, Calendar, CheckCircle2, Circle, MapPin } from 'lucide-react'
 
 function fmtDate(dateStr) {
   if (!dateStr) return 'TBD'
@@ -30,15 +30,17 @@ export default function AthleteDashboard() {
   const [expenses, setExpenses] = useState([])
   const [myRaceRegs, setMyRaceRegs] = useState([])
   const [raceMap, setRaceMap] = useState({})
+  const [myEvents, setMyEvents] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      const [responsesSnap, expSnap, regsSnap, racesSnap] = await Promise.all([
+      const [responsesSnap, expSnap, regsSnap, racesSnap, eventsSnap] = await Promise.all([
         getDocs(query(collection(db, 'swagResponses'), where('athleteId', '==', user.uid))),
         getDocs(query(collection(db, 'expenses'), where('athleteId', '==', user.uid))),
         getDocs(query(collection(db, 'raceRegistrations'), where('athleteId', '==', user.uid))),
         getDocs(collection(db, 'races')),
+        getDocs(query(collection(db, 'events'), where('recipientIds', 'array-contains', user.uid))),
       ])
 
       const responses = responsesSnap.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -68,6 +70,14 @@ export default function AthleteDashboard() {
         return ra.date > rb.date ? 1 : -1
       })
       setMyRaceRegs(regs)
+
+      // Events
+      const today2 = new Date(); today2.setHours(0, 0, 0, 0)
+      const events = eventsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+      const upcomingEvents = events
+        .filter(e => e.date && new Date(e.date + 'T00:00:00') >= today2)
+        .sort((a, b) => a.date > b.date ? 1 : -1)
+      setMyEvents(upcomingEvents)
 
       setLoading(false)
     }
@@ -111,51 +121,61 @@ export default function AthleteDashboard() {
         </div>
       )}
 
-      {/* Quick links — Swag · Races · Expenses */}
-      <div className={`grid gap-3 mb-6 ${
-        config.tabs.swag && config.tabs.expenses ? 'grid-cols-1 sm:grid-cols-3' :
-        config.tabs.swag || config.tabs.expenses ? 'grid-cols-1 sm:grid-cols-2' :
-        'grid-cols-1'
-      }`}>
-        {config.tabs.swag && (
-          <Link to="/athlete/browse" className="bg-asha-orange rounded-2xl p-5 hover:bg-asha-orangeLight transition-colors group">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
-              <ShoppingBag size={20} className="text-white" />
-            </div>
-            <div className="font-display font-bold text-white text-base sm:text-lg">Swag</div>
-            <div className="font-body text-white/80 text-sm mt-1">Browse items and track orders</div>
-            <div className="font-body text-white/70 text-xs mt-3">
-              {myResponses.length > 0 ? `${myResponses.length} item${myResponses.length !== 1 ? 's' : ''} requested` : "Explore what's available"}
-            </div>
-          </Link>
-        )}
-
-        <Link to="/athlete/races" className="bg-white border border-asha-border rounded-2xl p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
-          <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center mb-3">
-            <Flag size={20} className="text-asha-orange" />
-          </div>
-          <div className="font-display font-bold text-asha-dark text-base sm:text-lg">Races</div>
-          <div className="font-body text-asha-muted text-sm mt-1">Select events and track registration</div>
-          <div className="font-body text-xs text-asha-muted mt-3">
-            {myRaceRegs.length > 0
-              ? `${myRaceRegs.length} race${myRaceRegs.length !== 1 ? 's' : ''} selected`
-              : 'View upcoming races'}
-          </div>
-        </Link>
-
-        {config.tabs.expenses && (
-          <Link to="/athlete/expenses" className="bg-white border border-asha-border rounded-2xl p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
-            <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center mb-3">
-              <Receipt size={20} className="text-asha-orange" />
-            </div>
-            <div className="font-display font-bold text-asha-dark text-base sm:text-lg">Expenses</div>
-            <div className="font-body text-asha-muted text-sm mt-1">Submit for reimbursement</div>
-            <div className="font-body text-xs text-asha-orange font-semibold mt-3">
-              {expenses.length > 0 ? `${fmtUSD(expenseTotal)} submitted` : 'No expenses yet'}
-            </div>
-          </Link>
-        )}
-      </div>
+      {/* Quick links */}
+      {(() => {
+        const links = [
+          config.tabs.events && (
+            <Link key="events" to="/athlete/events" className="bg-asha-orange rounded-2xl p-5 hover:bg-asha-orangeLight transition-colors group">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
+                <Calendar size={20} className="text-white" />
+              </div>
+              <div className="font-display font-bold text-white text-base sm:text-lg">Events</div>
+              <div className="font-body text-white/80 text-sm mt-1">Team events and calendar invites</div>
+              <div className="font-body text-white/70 text-xs mt-3">
+                {myEvents.length > 0 ? `${myEvents.length} upcoming event${myEvents.length !== 1 ? 's' : ''}` : 'Check your schedule'}
+              </div>
+            </Link>
+          ),
+          config.tabs.swag && (
+            <Link key="swag" to="/athlete/browse" className="bg-white border border-asha-border rounded-2xl p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
+              <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center mb-3">
+                <ShoppingBag size={20} className="text-asha-orange" />
+              </div>
+              <div className="font-display font-bold text-asha-dark text-base sm:text-lg">Swag</div>
+              <div className="font-body text-asha-muted text-sm mt-1">Browse items and track orders</div>
+              <div className="font-body text-xs text-asha-muted mt-3">
+                {myResponses.length > 0 ? `${myResponses.length} item${myResponses.length !== 1 ? 's' : ''} requested` : "Explore what's available"}
+              </div>
+            </Link>
+          ),
+          config.tabs.races && (
+            <Link key="races" to="/athlete/races" className="bg-white border border-asha-border rounded-2xl p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
+              <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center mb-3">
+                <Flag size={20} className="text-asha-orange" />
+              </div>
+              <div className="font-display font-bold text-asha-dark text-base sm:text-lg">Races</div>
+              <div className="font-body text-asha-muted text-sm mt-1">Select events and track registration</div>
+              <div className="font-body text-xs text-asha-muted mt-3">
+                {myRaceRegs.length > 0 ? `${myRaceRegs.length} race${myRaceRegs.length !== 1 ? 's' : ''} selected` : 'View upcoming races'}
+              </div>
+            </Link>
+          ),
+          config.tabs.expenses && (
+            <Link key="expenses" to="/athlete/expenses" className="bg-white border border-asha-border rounded-2xl p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
+              <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center mb-3">
+                <Receipt size={20} className="text-asha-orange" />
+              </div>
+              <div className="font-display font-bold text-asha-dark text-base sm:text-lg">Expenses</div>
+              <div className="font-body text-asha-muted text-sm mt-1">Submit for reimbursement</div>
+              <div className="font-body text-xs text-asha-orange font-semibold mt-3">
+                {expenses.length > 0 ? `${fmtUSD(expenseTotal)} submitted` : 'No expenses yet'}
+              </div>
+            </Link>
+          ),
+        ].filter(Boolean)
+        const cols = links.length >= 3 ? 'grid-cols-2 sm:grid-cols-4' : links.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
+        return <div className={`grid gap-3 mb-6 ${cols}`}>{links}</div>
+      })()}
 
       {/* My Races widget */}
       {!loading && myRaceRegs.length > 0 && (
@@ -203,6 +223,56 @@ export default function AthleteDashboard() {
                       : <Circle size={16} className="text-asha-muted" />
                     }
                   </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming events widget */}
+      {config.tabs.events && !loading && myEvents.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display font-semibold text-base sm:text-lg text-asha-dark">Upcoming Events</h2>
+            {myEvents.length > 3 && (
+              <Link to="/athlete/events" className="text-xs font-body text-asha-orange hover:underline flex items-center gap-1">
+                View all <ArrowRight size={11} />
+              </Link>
+            )}
+          </div>
+          <div className="space-y-2">
+            {myEvents.slice(0, 3).map(event => {
+              const days = daysUntil(event.date)
+              return (
+                <div key={event.id} className="bg-white rounded-2xl border border-asha-border flex items-center gap-3 px-4 py-3">
+                  <div className="w-8 h-8 rounded-lg bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
+                    <Calendar size={14} className="text-asha-orange" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-body font-medium text-sm text-asha-dark truncate">{event.title}</div>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="font-body text-xs text-asha-muted flex items-center gap-1">
+                        <Calendar size={10} />{new Date(event.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {event.startTime && ` · ${event.startTime}`}
+                      </span>
+                      {event.location && (
+                        <span className="font-body text-xs text-asha-muted flex items-center gap-1">
+                          <MapPin size={10} />{event.location}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {days !== null && (
+                    <span className={`text-xs font-body font-medium px-2 py-1 rounded-lg flex-shrink-0 ${
+                      days === 0 ? 'bg-asha-orange/10 text-asha-orange' :
+                      days <= 7 ? 'bg-red-50 text-red-600' :
+                      days <= 30 ? 'bg-amber-50 text-amber-600' :
+                      'bg-asha-cream text-asha-muted'
+                    }`}>
+                      {days === 0 ? 'Today!' : `${days}d`}
+                    </span>
+                  )}
                 </div>
               )
             })}
