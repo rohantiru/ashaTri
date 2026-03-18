@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp, query, where } from 'firebase/firestore'
+import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, serverTimestamp, query, where } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
-import { Calendar, MapPin, Flag, CheckCircle2, Circle, ExternalLink, Tag } from 'lucide-react'
+import { Calendar, MapPin, Flag, CheckCircle2, Circle, ExternalLink, Tag, Lock } from 'lucide-react'
 
 function fmtDate(dateStr) {
   if (!dateStr) return 'TBD'
@@ -36,13 +36,15 @@ export default function AthleteRaces() {
 
   useEffect(() => {
     async function load() {
-      const [racesSnap, regsSnap] = await Promise.all([
+      const [racesSnap, regsSnap, permDoc] = await Promise.all([
         getDocs(collection(db, 'races')),
         getDocs(query(collection(db, 'raceRegistrations'), where('athleteId', '==', user.uid))),
+        getDoc(doc(db, 'racePermissions', user.uid)),
       ])
+      const allowedIds = permDoc.exists() ? new Set(permDoc.data().allowedRaceIds) : null
       const racesList = racesSnap.docs
         .map(d => ({ id: d.id, ...d.data() }))
-        .filter(r => r.isActive)
+        .filter(r => r.isActive && (allowedIds === null || allowedIds.has(r.id)))
         .sort((a, b) => {
           if (!a.date && !b.date) return 0
           if (!a.date) return 1
@@ -173,6 +175,7 @@ export default function AthleteRaces() {
             const reg = myRegs[race.id]
             const days = daysUntil(race.date)
             const isPast = days !== null && days < 0
+            const isLocked = !!race.isLocked
 
             return (
               <div
@@ -182,34 +185,39 @@ export default function AthleteRaces() {
                 <div className="p-5 pb-3">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <h2 className="font-display font-bold text-lg text-asha-dark leading-tight">{race.name}</h2>
-                        {race.type && (
-                          <span className={`text-xs font-body font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
-                            race.type === 'swim' ? 'bg-blue-50 text-blue-600' :
-                            race.type === 'triathlon' ? 'bg-asha-orangeDim text-asha-orange' :
-                            race.type === 'aquathon' ? 'bg-purple-50 text-purple-600' :
-                            'bg-gray-100 text-gray-500'
-                          }`}>
-                            {race.type === 'swim' ? 'Swim' : race.type === 'triathlon' ? 'Tri' : race.type === 'aquathon' ? 'Aquathon' : race.type}
-                          </span>
-                        )}
-                      </div>
+                      <h2 className="font-display font-bold text-lg text-asha-dark leading-tight mb-1">{race.name}</h2>
+                      {race.type && (
+                        <span className={`inline-block text-xs font-body font-medium px-2 py-0.5 rounded-full mb-0.5 ${
+                          race.type === 'swim' ? 'bg-blue-50 text-blue-600' :
+                          race.type === 'triathlon' ? 'bg-asha-orangeDim text-asha-orange' :
+                          race.type === 'aquathon' ? 'bg-purple-50 text-purple-600' :
+                          'bg-gray-100 text-gray-500'
+                        }`}>
+                          {race.type === 'swim' ? 'Swim' : race.type === 'triathlon' ? 'Tri' : race.type === 'aquathon' ? 'Aquathon' : race.type}
+                        </span>
+                      )}
                       {race.description && <p className="font-body text-sm text-asha-muted">{race.description}</p>}
                     </div>
-                    {days !== null ? (
-                      <div className={`text-xs font-body font-semibold px-2.5 py-1.5 rounded-xl flex-shrink-0 ${
-                        isPast ? 'bg-gray-100 text-gray-400' :
-                        days === 0 ? 'bg-asha-orange text-white' :
-                        days <= 14 ? 'bg-red-50 text-red-600' :
-                        days <= 60 ? 'bg-amber-50 text-amber-600' :
-                        'bg-asha-cream text-asha-muted'
-                      }`}>
-                        {isPast ? 'Past' : days === 0 ? 'Today!' : `${days}d away`}
-                      </div>
-                    ) : (
-                      <div className="text-xs font-body font-semibold px-2.5 py-1.5 rounded-xl flex-shrink-0 bg-asha-cream text-asha-muted">TBD</div>
-                    )}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {isLocked && (
+                        <span className="flex items-center gap-1 text-xs font-body font-medium px-2.5 py-1.5 rounded-xl bg-gray-100 text-gray-500">
+                          <Lock size={11} />Locked
+                        </span>
+                      )}
+                      {days !== null ? (
+                        <div className={`text-xs font-body font-semibold px-2.5 py-1.5 rounded-xl ${
+                          isPast ? 'bg-gray-100 text-gray-400' :
+                          days === 0 ? 'bg-asha-orange text-white' :
+                          days <= 14 ? 'bg-red-50 text-red-600' :
+                          days <= 60 ? 'bg-amber-50 text-amber-600' :
+                          'bg-asha-cream text-asha-muted'
+                        }`}>
+                          {isPast ? 'Past' : days === 0 ? 'Today!' : `${days}d away`}
+                        </div>
+                      ) : (
+                        <div className="text-xs font-body font-semibold px-2.5 py-1.5 rounded-xl bg-asha-cream text-asha-muted">TBD</div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap gap-x-4 gap-y-1.5">
@@ -246,12 +254,12 @@ export default function AthleteRaces() {
                       {race.events.map(ev => (
                         <button
                           key={ev}
-                          onClick={() => !isPast && !saving[race.id] && handleEventSelect(race, ev)}
-                          disabled={isPast || saving[race.id]}
+                          onClick={() => !isPast && !isLocked && !saving[race.id] && handleEventSelect(race, ev)}
+                          disabled={isPast || isLocked || saving[race.id]}
                           className={`px-3 py-1.5 rounded-lg text-xs font-body font-medium border transition-all ${
                             reg?.event === ev
-                              ? 'bg-asha-orange text-white border-asha-orange'
-                              : isPast
+                              ? isLocked ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-asha-orange text-white border-asha-orange'
+                              : isPast || isLocked
                               ? 'border-asha-border text-asha-muted opacity-40 cursor-not-allowed'
                               : 'border-asha-border text-asha-muted hover:border-asha-orange/50 hover:text-asha-dark'
                           }`}
@@ -266,8 +274,8 @@ export default function AthleteRaces() {
                 {reg && (
                   <div className="px-5 pb-5">
                     <button
-                      onClick={() => !isPast && !saving[race.id] && handleRegisteredToggle(race)}
-                      disabled={isPast || saving[race.id]}
+                      onClick={() => !isPast && !isLocked && !saving[race.id] && handleRegisteredToggle(race)}
+                      disabled={isPast || isLocked || saving[race.id]}
                       className="flex items-center gap-2.5 group disabled:opacity-50"
                     >
                       {reg.isRegistered

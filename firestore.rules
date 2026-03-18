@@ -56,6 +56,14 @@ service cloud.firestore {
         resource.data.athleteId == request.auth.uid;
     }
 
+    // Race permissions (which races each athlete is allowed to see/enter)
+    // - Athletes can read their own
+    // - Coordinators can read/write all
+    match /racePermissions/{uid} {
+      allow read: if isOwner(uid) || isCoordinator();
+      allow write: if isCoordinator();
+    }
+
     // Races
     // - Any signed-in user can read
     // - Coordinators have full write access
