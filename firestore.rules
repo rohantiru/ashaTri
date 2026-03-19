@@ -112,6 +112,11 @@ service cloud.firestore {
       allow write: if isOwnerRole();
     }
 
+    // Strava activity cache — owner only
+    match /stravaCache/{docId} {
+      allow read, write: if isOwnerRole();
+    }
+
     // Swag responses
     // - Athletes can create their own with status 'interested' or 'ordered'
     // - Athletes can delete their own if still interested or ordered (not yet ready)

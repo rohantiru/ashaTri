@@ -18,6 +18,7 @@ import Expenses from './pages/athlete/Expenses'
 import AthleteRaces from './pages/athlete/Races'
 import AthleteEvents from './pages/athlete/Events'
 import RaceManagement from './pages/coordinator/RaceManagement'
+import TrainingCalendar from './pages/coordinator/TrainingCalendar'
 import Navbar from './components/Navbar'
 
 function ProtectedRoute({ children, role }) {
@@ -72,6 +73,11 @@ function AppRoutes() {
         <Route path="/coord/users" element={
           <ProtectedRoute role="coordinator">
             {isOwner ? <UserManagement /> : <Navigate to="/coord" replace />}
+          </ProtectedRoute>
+        } />
+        <Route path="/coord/training" element={
+          <ProtectedRoute role="coordinator">
+            {isOwner ? <TrainingCalendar /> : <Navigate to="/coord" replace />}
           </ProtectedRoute>
         } />
 

@@ -4,7 +4,7 @@ import { useAuth, COORD_ROLES } from '../contexts/AuthContext'
 import { useAppConfig } from '../contexts/AppConfigContext'
 import {
   LogOut, LayoutDashboard, ShoppingBag, Flag, Receipt, Settings,
-  Users, Menu, X, ArrowLeftRight, BarChart2, CheckSquare, Package, Calendar,
+  Users, Menu, X, ArrowLeftRight, BarChart2, CheckSquare, Package, Calendar, Activity,
 } from 'lucide-react'
 
 const ROLE_LABELS = {
@@ -66,6 +66,7 @@ export default function Navbar() {
     { key: 'events', label: 'Events', icon: Calendar, to: '/coord/events' },
     { key: 'expenses', label: 'Expenses', icon: Receipt, to: '/coord/expenses' },
     ...(isOwner ? [
+      { key: 'training', label: 'Training', icon: Activity, to: '/coord/training' },
       { key: 'settings', label: 'Settings', icon: Settings, to: '/coord/settings' },
       { key: 'users', label: 'Users', icon: Users, to: '/coord/users' },
     ] : []),
@@ -87,6 +88,7 @@ export default function Navbar() {
     if (p === '/coord/athletes') return 'athletes'
     if (p === '/coord/events') return 'events'
     if (p === '/coord/expenses') return 'expenses'
+    if (p === '/coord/training') return 'training'
     if (p === '/coord/settings') return 'settings'
     if (p === '/coord/users') return 'users'
     return ''
