@@ -261,8 +261,9 @@ function CalendarView() {
         </div>
       )}
 
-      {/* Calendar grid */}
-      <div className="border border-asha-border rounded-2xl overflow-hidden">
+      {/* Calendar grid — horizontally scrollable on mobile */}
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="border border-asha-border rounded-2xl overflow-hidden min-w-[480px]">
 
         {/* Day-of-week header row */}
         <div className="flex border-b border-asha-border bg-asha-cream/60">
@@ -301,7 +302,7 @@ function CalendarView() {
                 return (
                   <div
                     key={key}
-                    className={`border-r border-asha-border/40 last:border-r-0 p-1.5 min-h-[110px] ${
+                    className={`border-r border-asha-border/40 last:border-r-0 p-1.5 min-h-[90px] ${
                       isToday ? 'bg-asha-orange/5' : inMonth ? 'bg-white' : 'bg-asha-cream/30'
                     }`}
                   >
@@ -331,12 +332,13 @@ function CalendarView() {
 
             {/* Weekly totals */}
             {showTotals && (
-              <div className="w-28 shrink-0 border-l border-asha-border/60 px-2 min-h-[110px] hidden sm:block">
+              <div className="w-28 shrink-0 border-l border-asha-border/60 px-2 min-h-[90px] hidden sm:block">
                 <WeekTotals week={week} activityMap={activityMap} />
               </div>
             )}
           </div>
         ))}
+      </div>
       </div>
 
       {loading && (
