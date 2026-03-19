@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase'
+import { getCached, setCached, invalidate } from '../../utils/cache'
 import { Plus, X, Calendar, MapPin, Flag, Pencil, Trash2, CheckCircle2, Circle, Users, ExternalLink, Tag, Download, CheckSquare, Lock, Unlock } from 'lucide-react'
 
 const RACE_TYPES = [
@@ -201,21 +202,28 @@ export default function RaceManagement() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [distanceFilter, setDistanceFilter] = useState(null)
 
-  const load = async () => {
-    const [racesSnap, usersSnap, regsSnap] = await Promise.all([
-      getDocs(collection(db, 'races')),
-      getDocs(collection(db, 'users')),
-      getDocs(collection(db, 'raceRegistrations')),
+  const load = async (forceRefresh = false) => {
+    if (forceRefresh) invalidate('races')
+    let racesList = getCached('races')
+
+    const [usersSnap, regsSnap, racesSnap] = await Promise.all([
+      getDocs(collection(db, 'users')),              // small, always fresh (role changes)
+      getDocs(collection(db, 'raceRegistrations')),  // always fresh
+      racesList ? Promise.resolve(null) : getDocs(collection(db, 'races')),
     ])
-    const racesList = racesSnap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => {
-        if (!a.date && !b.date) return 0
-        if (!a.date) return 1
-        if (!b.date) return -1
-        return a.date > b.date ? 1 : -1
-      })
-    setRaces(racesList)
+
+    if (racesSnap) {
+      racesList = racesSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+      setCached('races', racesList)
+    }
+
+    const sorted = [...racesList].sort((a, b) => {
+      if (!a.date && !b.date) return 0
+      if (!a.date) return 1
+      if (!b.date) return -1
+      return a.date > b.date ? 1 : -1
+    })
+    setRaces(sorted)
     if (racesList.length > 0) setSelectedRace(prev => prev || racesList[0].id)
 
     const usersMap = {}
@@ -235,18 +243,19 @@ export default function RaceManagement() {
       await addDoc(collection(db, 'races'), { ...form, createdAt: serverTimestamp() })
     }
     setModal(null)
-    load()
+    load(true)
   }
 
   const handleToggleLock = async (race) => {
-
     await updateDoc(doc(db, 'races', race.id), { isLocked: !race.isLocked, updatedAt: serverTimestamp() })
+    invalidate('races')
     setRaces(prev => prev.map(r => r.id === race.id ? { ...r, isLocked: !r.isLocked } : r))
   }
 
   const handleDelete = async (race) => {
     if (!confirm(`Delete "${race.name}"? This cannot be undone.`)) return
     await deleteDoc(doc(db, 'races', race.id))
+    invalidate('races')
     setRaces(prev => prev.filter(r => r.id !== race.id))
     if (selectedRace === race.id) setSelectedRace(null)
   }
@@ -258,7 +267,7 @@ export default function RaceManagement() {
       await addDoc(collection(db, 'races'), { ...race, createdAt: serverTimestamp() })
     }
     setSeeding(false)
-    load()
+    load(true)
   }
 
   // Apply filters to race list

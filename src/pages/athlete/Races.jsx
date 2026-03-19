@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, serverTimestamp, query, where } from 'firebase/firestore'
+import { getCached, setCached } from '../../utils/cache'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import { Calendar, MapPin, Flag, CheckCircle2, Circle, ExternalLink, Tag, Lock } from 'lucide-react'
@@ -36,14 +37,21 @@ export default function AthleteRaces() {
 
   useEffect(() => {
     async function load() {
-      const [racesSnap, regsSnap, permDoc] = await Promise.all([
-        getDocs(collection(db, 'races')),
-        getDocs(query(collection(db, 'raceRegistrations'), where('athleteId', '==', user.uid))),
-        getDoc(doc(db, 'racePermissions', user.uid)),
+      let cachedRaces = getCached('races')
+
+      const [regsSnap, permDoc, racesSnap] = await Promise.all([
+        getDocs(query(collection(db, 'raceRegistrations'), where('athleteId', '==', user.uid))), // always fresh
+        getDoc(doc(db, 'racePermissions', user.uid)),                                            // always fresh
+        cachedRaces ? Promise.resolve(null) : getDocs(collection(db, 'races')),
       ])
+
+      if (racesSnap) {
+        cachedRaces = racesSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+        setCached('races', cachedRaces)
+      }
+
       const allowedIds = permDoc.exists() ? new Set(permDoc.data().allowedRaceIds) : null
-      const racesList = racesSnap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
+      const racesList = cachedRaces
         .filter(r => r.isActive && (allowedIds === null || allowedIds.has(r.id)))
         .sort((a, b) => {
           if (!a.date && !b.date) return 0

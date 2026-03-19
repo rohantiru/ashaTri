@@ -5,6 +5,7 @@ import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import { Package, CheckSquare, TrendingUp, Users, ArrowRight, DollarSign, Flag, Calendar, CheckCircle2, MapPin } from 'lucide-react'
 import { fmtUSD } from '../../utils/format'
+import { getCached, setCached } from '../../utils/cache'
 
 function daysUntil(dateStr) {
   if (!dateStr) return null
@@ -24,16 +25,22 @@ export default function CoordinatorDashboard() {
 
   useEffect(() => {
     async function fetchStats() {
-      const [itemsSnap, responsesSnap, racesSnap, regsSnap, eventsSnap] = await Promise.all([
-        getDocs(collection(db, 'swagItems')),
-        getDocs(collection(db, 'swagResponses')),
-        getDocs(collection(db, 'races')),
-        getDocs(collection(db, 'raceRegistrations')),
-        getDocs(collection(db, 'events')),
+      // races + swagItems are cached — skip those reads when fresh
+      let items = getCached('swagItems')
+      let races = getCached('races')
+
+      const [responsesSnap, regsSnap, eventsSnap, itemsSnap, racesSnap] = await Promise.all([
+        getDocs(collection(db, 'swagResponses')),      // always fresh — athletes order in real time
+        getDocs(collection(db, 'raceRegistrations')),  // always fresh
+        getDocs(collection(db, 'events')),             // always fresh
+        items ? Promise.resolve(null) : getDocs(collection(db, 'swagItems')),
+        races ? Promise.resolve(null) : getDocs(collection(db, 'races')),
       ])
 
+      if (itemsSnap) { items = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() })); setCached('swagItems', items) }
+      if (racesSnap) { races = racesSnap.docs.map(d => ({ id: d.id, ...d.data() })); setCached('races', races) }
+
       // Swag
-      const items = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
       const responses = responsesSnap.docs.map(d => d.data())
       const itemPriceMap = {}
       items.forEach(i => { itemPriceMap[i.id] = i.price || 0 })
@@ -49,7 +56,6 @@ export default function CoordinatorDashboard() {
       })
 
       // Races
-      const races = racesSnap.docs.map(d => ({ id: d.id, ...d.data() }))
       const regs = regsSnap.docs.map(d => d.data())
       const today = new Date(); today.setHours(0, 0, 0, 0)
       const upcomingRaces = races

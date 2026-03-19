@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { getCached, setCached, invalidate } from '../../utils/cache'
 import { db } from '../../firebase'
 import StatusBadge from '../../components/StatusBadge'
 import { Plus, Pencil, Trash2, X, Package, Lock } from 'lucide-react'
@@ -228,9 +229,14 @@ export default function SwagItems() {
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
 
-  const fetchItems = async () => {
+  const fetchItems = async (forceRefresh = false) => {
+    if (forceRefresh) invalidate('swagItems')
+    const cached = getCached('swagItems')
+    if (cached) { setItems(cached); setLoading(false); return }
     const snap = await getDocs(collection(db, 'swagItems'))
-    setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    setCached('swagItems', items)
+    setItems(items)
     setLoading(false)
   }
 
@@ -243,18 +249,18 @@ export default function SwagItems() {
       await addDoc(collection(db, 'swagItems'), { ...data, createdAt: serverTimestamp() })
     }
     setModal(null)
-    fetchItems()
+    fetchItems(true)
   }
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this item? This will not remove existing responses.')) return
     await deleteDoc(doc(db, 'swagItems', id))
-    fetchItems()
+    fetchItems(true)
   }
 
   const toggleActive = async (item) => {
     await updateDoc(doc(db, 'swagItems', item.id), { isActive: !item.isActive })
-    fetchItems()
+    fetchItems(true)
   }
 
   return (
