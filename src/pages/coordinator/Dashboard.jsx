@@ -15,6 +15,8 @@ function daysUntil(dateStr) {
 
 export default function CoordinatorDashboard() {
   const { profile } = useAuth()
+  const isCoach = profile?.role === 'coach'
+  const isCoordinator = profile?.role === 'coordinator'
   const [swagStats, setSwagStats] = useState({ items: 0, interestItems: 0, inventoryItems: 0, totalResponses: 0, pendingPickup: 0, totalValue: 0 })
   const [raceStats, setRaceStats] = useState({ total: 0, upcoming: 0, participating: 0, confirmed: 0, nextRace: null })
   const [eventStats, setEventStats] = useState({ total: 0, upcoming: 0, nextEvent: null })
@@ -176,9 +178,9 @@ export default function CoordinatorDashboard() {
             ))}
           </div>
 
-          {/* Swag stats */}
-          <h2 className="font-display font-semibold text-base text-asha-dark mb-3">Swag</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Swag stats — coordinators and owners only */}
+          {!isCoach && <h2 className="font-display font-semibold text-base text-asha-dark mb-3">Swag</h2>}
+          {!isCoach && <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {[
               { label: 'Swag Items', value: swagStats.items, sub: `${swagStats.interestItems} interest · ${swagStats.inventoryItems} inventory`, icon: Package, to: '/coord/items', color: 'bg-blue-50 text-blue-600' },
               { label: 'Total Responses', value: swagStats.totalResponses, sub: 'across all items', icon: TrendingUp, to: '/coord/interest', color: 'bg-purple-50 text-purple-600' },
@@ -192,7 +194,7 @@ export default function CoordinatorDashboard() {
                 <div className="font-body text-xs text-asha-muted mt-0.5">{sub}</div>
               </Link>
             ))}
-          </div>
+          </div>}
 
           {/* Events stats */}
           <h2 className="font-display font-semibold text-base text-asha-dark mb-3">Events</h2>
@@ -218,9 +220,9 @@ export default function CoordinatorDashboard() {
         {[
           { to: '/coord/events', label: 'Manage Events', desc: 'Create events, send calendar invites to athletes', icon: Calendar },
           { to: '/coord/races', label: 'Manage Races', desc: 'Add races, set dates, registration links and coupon codes', icon: Flag },
-          { to: '/coord/athletes', label: 'Manage Athletes', desc: 'Organize teams, set race permissions for athletes', icon: Users },
-          { to: '/coord/items', label: 'Manage Swag', desc: 'Add items, set prices, update inventory', icon: Package },
-          { to: '/coord/pickup', label: 'Manage Pickups', desc: 'Mark items as ready and track collection', icon: CheckSquare },
+          ...(!isCoordinator ? [{ to: '/coord/athletes', label: 'Manage Athletes', desc: 'Organize teams, set race permissions for athletes', icon: Users }] : []),
+          ...(!isCoach ? [{ to: '/coord/items', label: 'Manage Swag', desc: 'Add items, set prices, update inventory', icon: Package }] : []),
+          ...(!isCoach ? [{ to: '/coord/pickup', label: 'Manage Pickups', desc: 'Mark items as ready and track collection', icon: CheckSquare }] : []),
         ].map(({ to, label, desc, icon: Icon }) => (
           <Link key={label} to={to} className="bg-white rounded-2xl border border-asha-border p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group flex items-start gap-4">
             <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center flex-shrink-0">

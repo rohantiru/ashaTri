@@ -58,13 +58,16 @@ export default function Navbar() {
   })()
 
   // ── Coordinator nav ──────────────────────────────────────────────────────
+  const isCoach = profile?.role === 'coach'
+  const isCoordinator = profile?.role === 'coordinator'
+
   const coordPrimary = [
     { key: 'overview', label: 'Overview', icon: LayoutDashboard, to: '/coord' },
-    { key: 'swag', label: 'Swag', icon: ShoppingBag, to: '/coord/items' },
+    ...(!isCoach ? [{ key: 'swag', label: 'Swag', icon: ShoppingBag, to: '/coord/items' }] : []),
     { key: 'races', label: 'Races', icon: Flag, to: '/coord/races' },
-    { key: 'athletes', label: 'Athletes', icon: Users, to: '/coord/athletes' },
+    ...(!isCoordinator ? [{ key: 'athletes', label: 'Athletes', icon: Users, to: '/coord/athletes' }] : []),
     { key: 'events', label: 'Events', icon: Calendar, to: '/coord/events' },
-    { key: 'expenses', label: 'Expenses', icon: Receipt, to: '/coord/expenses' },
+    ...(!isCoach ? [{ key: 'expenses', label: 'Expenses', icon: Receipt, to: '/coord/expenses' }] : []),
     ...(isOwner ? [
       { key: 'training', label: 'Training', icon: Activity, to: '/coord/training' },
       { key: 'settings', label: 'Settings', icon: Settings, to: '/coord/settings' },
