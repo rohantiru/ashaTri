@@ -4,13 +4,13 @@ import { useAuth, COORD_ROLES } from '../contexts/AuthContext'
 import { useAppConfig } from '../contexts/AppConfigContext'
 import {
   LogOut, LayoutDashboard, ShoppingBag, Flag, Receipt, Settings,
-  Users, Menu, X, ArrowLeftRight, BarChart2, CheckSquare, Package, Calendar, Activity,
+  Users, Menu, X, ArrowLeftRight, BarChart2, CheckSquare, Package, Calendar, Activity, BookOpen,
 } from 'lucide-react'
 
 const ROLE_LABELS = {
-  coordinator: 'Coordinator',
-  coach: 'Coach',
-  owner: 'Owner',
+  coordinator: 'Coordinator View',
+  coach: 'Coach View',
+  owner: 'Owner View',
 }
 
 export default function Navbar() {
@@ -38,6 +38,7 @@ export default function Navbar() {
     ...(swagEnabled ? [{ key: 'swag', label: 'Swag', icon: ShoppingBag, to: '/athlete/browse' }] : []),
     ...(racesEnabled ? [{ key: 'races', label: 'Races', icon: Flag, to: '/athlete/races' }] : []),
     ...(expensesEnabled ? [{ key: 'expenses', label: 'Expenses', icon: Receipt, to: '/athlete/expenses' }] : []),
+    ...(isOwner ? [{ key: 'training', label: 'Training', icon: Activity, to: '/athlete/training' }] : []),
   ]
 
   const athleteSwagSub = swagEnabled ? [
@@ -54,6 +55,7 @@ export default function Navbar() {
     if (inAthleteSwag) return 'swag'
     if (p === '/athlete/races') return 'races'
     if (p === '/athlete/expenses') return 'expenses'
+    if (p === '/athlete/training') return 'training'
     return ''
   })()
 
@@ -68,8 +70,8 @@ export default function Navbar() {
     ...(!isCoordinator ? [{ key: 'athletes', label: 'Athletes', icon: Users, to: '/coord/athletes' }] : []),
     { key: 'events', label: 'Events', icon: Calendar, to: '/coord/events' },
     ...(!isCoach ? [{ key: 'expenses', label: 'Expenses', icon: Receipt, to: '/coord/expenses' }] : []),
+    ...((isCoach || isOwner) ? [{ key: 'training-plans', label: 'Training Plans', icon: BookOpen, to: '/coord/training-plans' }] : []),
     ...(isOwner ? [
-      { key: 'training', label: 'Training', icon: Activity, to: '/coord/training' },
       { key: 'settings', label: 'Settings', icon: Settings, to: '/coord/settings' },
       { key: 'users', label: 'Users', icon: Users, to: '/coord/users' },
     ] : []),
@@ -91,7 +93,7 @@ export default function Navbar() {
     if (p === '/coord/athletes') return 'athletes'
     if (p === '/coord/events') return 'events'
     if (p === '/coord/expenses') return 'expenses'
-    if (p === '/coord/training') return 'training'
+    if (p === '/coord/training-plans') return 'training-plans'
     if (p === '/coord/settings') return 'settings'
     if (p === '/coord/users') return 'users'
     return ''
@@ -162,7 +164,7 @@ export default function Navbar() {
                 className="hidden sm:flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-body font-medium text-asha-muted hover:text-white hover:bg-asha-mid transition-all whitespace-nowrap"
               >
                 <ArrowLeftRight size={13} />
-                {isAthleteMode ? 'Coord View' : 'Athlete View'}
+                {isAthleteMode ? (ROLE_LABELS[profile?.role] ?? 'Coord View') : 'Athlete View'}
               </button>
             )}
             {profile?.photoURL && (
@@ -273,7 +275,7 @@ export default function Navbar() {
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-body font-medium text-asha-muted hover:text-white hover:bg-asha-mid transition-all"
                 >
                   <ArrowLeftRight size={16} />
-                  {isAthleteMode ? 'Switch to Coord View' : 'Switch to Athlete View'}
+                  {isAthleteMode ? `Switch to ${ROLE_LABELS[profile?.role] ?? 'Coord View'}` : 'Switch to Athlete View'}
                 </button>
               )}
               <button

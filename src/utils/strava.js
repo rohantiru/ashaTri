@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
 
 const MIN_YEAR = 2026
@@ -20,7 +20,20 @@ function slimActivity(a) {
     moving_time: a.moving_time || 0,
     average_speed: a.average_speed || 0,
     total_elevation_gain: a.total_elevation_gain || 0,
+    average_watts: a.average_watts || null,   // null if no power meter
+    device_watts: a.device_watts || false,    // true = real power meter, false = estimated
   }
+}
+
+// Returns all activities across every cached month (for baselines computation)
+export async function getAllCachedActivities() {
+  const snap = await getDocs(collection(db, 'stravaCache'))
+  const activities = []
+  snap.docs.forEach(d => {
+    const { activities: acts } = d.data()
+    if (Array.isArray(acts)) activities.push(...acts)
+  })
+  return activities
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────

@@ -19,6 +19,7 @@ import AthleteRaces from './pages/athlete/Races'
 import AthleteEvents from './pages/athlete/Events'
 import RaceManagement from './pages/coordinator/RaceManagement'
 import TrainingCalendar from './pages/coordinator/TrainingCalendar'
+import TrainingPlans from './pages/coordinator/TrainingPlans'
 import Navbar from './components/Navbar'
 
 function ProtectedRoute({ children, role }) {
@@ -75,9 +76,10 @@ function AppRoutes() {
             {isOwner ? <UserManagement /> : <Navigate to="/coord" replace />}
           </ProtectedRoute>
         } />
-        <Route path="/coord/training" element={
+        <Route path="/coord/training" element={<Navigate to="/athlete/training" replace />} />
+        <Route path="/coord/training-plans" element={
           <ProtectedRoute role="coordinator">
-            {isOwner ? <TrainingCalendar /> : <Navigate to="/coord" replace />}
+            <TrainingPlans />
           </ProtectedRoute>
         } />
 
@@ -97,6 +99,9 @@ function AppRoutes() {
         )}
         {config.tabs.expenses && (
           <Route path="/athlete/expenses" element={<ProtectedRoute role="athlete"><Expenses /></ProtectedRoute>} />
+        )}
+        {isOwner && (
+          <Route path="/athlete/training" element={<ProtectedRoute role="athlete"><TrainingCalendar /></ProtectedRoute>} />
         )}
 
         <Route path="*" element={<Navigate to={user ? (isCoordLike ? '/coord' : '/athlete') : '/login'} replace />} />
