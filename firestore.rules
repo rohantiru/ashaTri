@@ -112,6 +112,12 @@ service cloud.firestore {
       allow write: if isOwnerRole();
     }
 
+    // Training plans — coaches/coord/owner manage, all athletes can read (for calendar display)
+    match /trainingPlans/{planId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isCoordOrAbove();
+    }
+
     // Strava activity cache — owner only
     match /stravaCache/{docId} {
       allow read, write: if isOwnerRole();

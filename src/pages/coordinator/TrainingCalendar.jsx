@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import {
   Activity, Bike, Waves, ChevronLeft, ChevronRight,
-  AlertCircle, Loader2, RefreshCw, Zap, Timer,
+  AlertCircle, Loader2, RefreshCw, Zap, Timer, X, ExternalLink,
 } from 'lucide-react'
 import { stravaStatus, buildStravaAuthUrl, exchangeCode, getActivitiesForMonth, getAllCachedActivities } from '../../utils/strava'
+import { getActivePlans, buildPlanDateMap, mergePlanMaps, PLAN_SPORTS, COMPLETION_MAP } from '../../utils/plans'
+import { useAuth } from '../../contexts/AuthContext'
 
 // ── Sport config ──────────────────────────────────────────────────────────────
 
@@ -36,31 +38,41 @@ function fmtSwimPace(secs, meters) {
   return `${Math.floor(per100y / 60)}:${String(Math.round(per100y % 60)).padStart(2, '0')}/100y`
 }
 
-// ── Activity card ─────────────────────────────────────────────────────────────
+// ── Activity helpers ──────────────────────────────────────────────────────────
 
-function ActivityCard({ activity }) {
-  const sport = getSport(activity.type)
-  const { Icon } = sport
+function activityDist(activity) {
   const isSwim = activity.type === 'Swim'
-  const isRide = activity.type === 'Ride'
-
-  const distStr = isSwim
+  if (!activity.distance) return null
+  return isSwim
     ? `${Math.round(activity.distance * 1.09361).toLocaleString()} yd`
     : `${(activity.distance / 1609.34).toFixed(2)} mi`
+}
 
+function activityPace(activity) {
+  const isSwim = activity.type === 'Swim'
+  const isRide = activity.type === 'Ride' || activity.type === 'VirtualRide'
+  if (!activity.distance) return null
+  if (isRide && activity.average_speed) return `${(activity.average_speed * 2.237).toFixed(1)} mph`
+  if (isSwim) return fmtSwimPace(activity.moving_time, activity.distance)
+  return fmtRunPace(activity.moving_time, activity.distance)
+}
+
+// ── Activity card (calendar cell — compact) ───────────────────────────────────
+
+function ActivityCard({ activity, onClick }) {
+  const sport = getSport(activity.type)
+  const { Icon } = sport
+  const distStr = activityDist(activity)
   const timeOfDay = new Date(activity.start_date_local).toLocaleTimeString('en-US', {
     hour: 'numeric', minute: '2-digit',
   })
 
-  let sub = null
-  if (activity.distance > 0) {
-    if (isRide && activity.average_speed) sub = `${(activity.average_speed * 2.237).toFixed(1)} mph`
-    else if (isSwim) sub = fmtSwimPace(activity.moving_time, activity.distance)
-    else sub = fmtRunPace(activity.moving_time, activity.distance)
-  }
-
   return (
-    <div className="mb-1 rounded-lg overflow-hidden" style={{ border: `1px solid ${sport.color}28` }}>
+    <div
+      onClick={onClick}
+      className="mb-1 rounded-lg overflow-hidden cursor-pointer hover:brightness-95 active:scale-[0.98] transition-all"
+      style={{ border: `1px solid ${sport.color}55`, borderLeft: `3px solid ${sport.color}` }}
+    >
       <div className="flex items-center gap-1 px-1.5 py-0.5" style={{ background: sport.bg }}>
         <Icon size={9} style={{ color: sport.color }} />
         <span className="text-[10px] font-semibold leading-none" style={{ color: sport.color }}>
@@ -70,11 +82,126 @@ function ActivityCard({ activity }) {
       </div>
       <div className="px-1.5 py-1 bg-white">
         <div className="flex items-baseline justify-between gap-1">
-          <span className="text-[11px] font-bold text-asha-dark leading-tight">{distStr}</span>
-          <span className="text-[10px] text-asha-muted leading-tight">{fmtTime(activity.moving_time)}</span>
+          <span className="text-[11px] font-bold text-asha-dark leading-tight">{distStr ?? fmtTime(activity.moving_time)}</span>
+          {distStr && <span className="text-[10px] text-asha-muted leading-tight">{fmtTime(activity.moving_time)}</span>}
         </div>
-        {sub && <div className="text-[9px] text-asha-muted mt-0.5">{sub}</div>}
       </div>
+    </div>
+  )
+}
+
+// ── Activity detail modal ─────────────────────────────────────────────────────
+
+function ActivityDetailModal({ activity, onClose }) {
+  const sport = getSport(activity.type)
+  const { Icon } = sport
+  const isSwim = activity.type === 'Swim'
+  const isRide = activity.type === 'Ride' || activity.type === 'VirtualRide'
+
+  const distStr   = activityDist(activity)
+  const paceStr   = activityPace(activity)
+  const elevM     = activity.total_elevation_gain
+  const elevFt    = elevM ? `${Math.round(elevM * 3.281)} ft` : null
+  const watts     = activity.average_watts
+  const hasWatts  = watts && activity.device_watts
+
+  const dateStr = new Date(activity.start_date_local).toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+  })
+  const timeStr = new Date(activity.start_date_local).toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit',
+  })
+
+  const stats = [
+    distStr  && { label: isSwim ? 'Distance' : 'Distance', value: distStr },
+    { label: 'Time', value: fmtTime(activity.moving_time) },
+    paceStr  && { label: isRide ? 'Avg Speed' : isSwim ? 'Avg Pace' : 'Avg Pace', value: paceStr },
+    elevFt   && { label: 'Elevation', value: elevFt },
+    hasWatts && { label: 'Avg Power', value: `${Math.round(watts)} W` },
+  ].filter(Boolean)
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40" onClick={onClose}>
+      <div
+        className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4" style={{ background: sport.bg }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${sport.color}20` }}>
+            <Icon size={20} style={{ color: sport.color }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-display font-bold text-base text-asha-dark leading-tight truncate">
+              {activity.name || sport.label}
+            </div>
+            <div className="font-body text-xs text-asha-muted">{dateStr} · {timeStr}</div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-black/10 transition-colors flex-shrink-0">
+            <X size={16} className="text-asha-muted" />
+          </button>
+        </div>
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 gap-px bg-asha-border m-4 rounded-xl overflow-hidden">
+          {stats.map(({ label, value }) => (
+            <div key={label} className="bg-white px-4 py-3">
+              <div className="font-body text-[10px] uppercase tracking-wide text-asha-muted mb-0.5">{label}</div>
+              <div className="font-display font-bold text-lg text-asha-dark leading-tight">{value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Strava link */}
+        <div className="px-5 pb-5">
+          <a
+            href={`https://www.strava.com/activities/${activity.id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-body font-semibold text-sm text-white transition-colors"
+            style={{ background: sport.color }}
+          >
+            <ExternalLink size={14} />
+            View on Strava
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Plan session chip ─────────────────────────────────────────────────────────
+
+function PlanChip({ session, stravaTypes }) {
+  const sport = PLAN_SPORTS[session.sport]
+  if (!sport) return null
+  const completedTypes = COMPLETION_MAP[session.sport] || []
+  const done = stravaTypes.some(t => completedTypes.includes(t))
+
+  return (
+    <div
+      className="mb-0.5 flex items-center gap-1 rounded px-1 py-0.5 transition-opacity"
+      style={{
+        background: sport.bg,
+        borderTop: `1px dashed ${sport.color}40`,
+        borderRight: `1px dashed ${sport.color}40`,
+        borderBottom: `1px dashed ${sport.color}40`,
+        borderLeft: `2px solid ${sport.color}`,
+        opacity: done ? 0.95 : 0.5,
+      }}
+      title={
+        session.notes
+          ? `${session.sport} — ${session.type}: ${session.notes}`
+          : `${session.sport} — ${session.type} (${session.duration}m) · ${session.planName}`
+      }
+    >
+      <span className="text-[9px] font-semibold leading-none truncate flex-1 min-w-0" style={{ color: sport.color }}>
+        {session.type}
+      </span>
+      {session.duration > 0 && (
+        <span className="text-[8px] text-gray-400 leading-none flex-shrink-0">{session.duration}m</span>
+      )}
+      {done && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 ml-0.5" />}
     </div>
   )
 }
@@ -155,6 +282,7 @@ const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 const MIN_YEAR = 2026
 
 function CalendarView() {
+  const { user } = useAuth()
   const now = new Date()
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
@@ -162,6 +290,17 @@ function CalendarView() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [showTotals, setShowTotals] = useState(true)
+
+  const [planMap, setPlanMap] = useState({}) // dateKey → [planned sessions]
+  const [selectedActivity, setSelectedActivity] = useState(null)
+
+  // Load active plans once — cached 12h in localStorage, so nearly instant on repeat visits
+  useEffect(() => {
+    if (!user) return
+    getActivePlans(user.uid)
+      .then(plans => setPlanMap(mergePlanMaps(plans.map(buildPlanDateMap))))
+      .catch(() => {}) // plans are supplemental — silently skip on error
+  }, [user])
 
   const todayKey = dateKey(now)
   const weeks = getMonthWeeks(viewYear, viewMonth)
@@ -323,8 +462,24 @@ function CalendarView() {
                       )}
                     </div>
 
-                    {/* Activity cards */}
-                    {acts.map(a => <ActivityCard key={a.id} activity={a} />)}
+                    {/* Plan session chips — dashed = planned, faded = not yet done */}
+                    {(planMap[key] || []).map((s, i) => (
+                      <PlanChip key={i} session={s} stravaTypes={acts.map(a => a.type)} />
+                    ))}
+
+                    {/* Divider when both plan chips and actual activities exist */}
+                    {planMap[key]?.length > 0 && acts.length > 0 && (
+                      <div className="flex items-center gap-0.5 my-0.5">
+                        <div className="flex-1 h-px bg-asha-border/60" />
+                        <span className="text-[7px] text-asha-muted/50 font-body uppercase tracking-wide leading-none">done</span>
+                        <div className="flex-1 h-px bg-asha-border/60" />
+                      </div>
+                    )}
+
+                    {/* Actual Strava activities — solid border, clickable */}
+                    {acts.map(a => (
+                      <ActivityCard key={a.id} activity={a} onClick={() => setSelectedActivity(a)} />
+                    ))}
                   </div>
                 )
               })}
@@ -359,6 +514,11 @@ function CalendarView() {
           Powered by Strava
         </a>
       </div>
+
+      {/* Activity detail modal */}
+      {selectedActivity && (
+        <ActivityDetailModal activity={selectedActivity} onClose={() => setSelectedActivity(null)} />
+      )}
     </div>
   )
 }
