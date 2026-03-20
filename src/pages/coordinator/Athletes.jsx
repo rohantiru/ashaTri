@@ -368,6 +368,8 @@ function SessionRow({ session }) {
 }
 
 function AthleteWeekCard({ athlete, weekData }) {
+  const [expanded, setExpanded] = useState(false)
+
   if (!weekData) {
     return (
       <div className="p-4 flex items-center gap-3">
@@ -385,44 +387,67 @@ function AthleteWeekCard({ athlete, weekData }) {
   const totalPlanned = sessions.length
   const totalDone = sessions.filter(s => s.completed).length
   const pct = totalPlanned ? Math.round((totalDone / totalPlanned) * 100) : null
-
   const sports = [...new Set(sessions.map(s => s.sport))]
 
   return (
-    <div className="p-4">
-      {/* Athlete header + weekly summary */}
-      <div className="flex items-center gap-3 mb-3 flex-wrap">
-        {athlete.photoURL
-          ? <img src={athlete.photoURL} alt={athlete.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-          : <div className="w-8 h-8 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-xs flex-shrink-0">{athlete.name?.[0]}</div>
-        }
-        <span className="font-body font-medium text-sm text-asha-dark">{athlete.name}</span>
-        <PctBadge pct={pct} />
-        <span className="text-xs font-body text-asha-muted">{totalDone}/{totalPlanned} sessions</span>
+    <div>
+      {/* ── Default collapsed view ── */}
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="w-full text-left p-4 hover:bg-asha-cream/40 transition-colors"
+      >
+        <div className="flex items-center gap-3 mb-3">
+          {athlete.photoURL
+            ? <img src={athlete.photoURL} alt={athlete.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+            : <div className="w-8 h-8 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-xs flex-shrink-0">{athlete.name?.[0]}</div>
+          }
+          <span className="font-body font-medium text-sm text-asha-dark">{athlete.name}</span>
+          <PctBadge pct={pct} />
+          <span className="text-xs font-body text-asha-muted">{totalDone}/{totalPlanned} sessions</span>
+          <ChevronRight size={14} className={`ml-auto text-asha-muted transition-transform flex-shrink-0 ${expanded ? 'rotate-90' : ''}`} />
+        </div>
 
-        {/* Sport aggregate pills */}
-        <div className="flex gap-2 flex-wrap ml-auto">
+        {/* Sport aggregate table */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {sports.map(sport => {
             const p = planned[sport]
             const a = actual[sport]
             const dist = fmtDist(a?.distanceM, sport)
+            const sportPct = p?.sessions ? Math.min(100, Math.round(((a?.sessions || 0) / p.sessions) * 100)) : null
             return (
-              <span key={sport} className="text-xs font-body px-2 py-0.5 rounded-lg border border-asha-border text-asha-muted">
-                <span className="font-semibold" style={{ color: SPORT_COLORS[sport] }}>{SPORT_LABELS[sport]}</span>
-                {' '}
-                {a ? [dist, fmtSecs(a.durationSecs)].filter(Boolean).join(' · ') : '—'}
-                <span className="text-asha-border mx-1">·</span>
-                plan {p ? fmtMins(p.durationMins) : '—'}
-              </span>
+              <div key={sport} className="flex items-center gap-3 bg-white border border-asha-border rounded-xl px-3 py-2.5">
+                <span className="text-xs font-body font-bold w-9 flex-shrink-0" style={{ color: SPORT_COLORS[sport] }}>
+                  {SPORT_LABELS[sport]}
+                </span>
+                <div className="flex-1 min-w-0 space-y-0.5">
+                  <div className="flex items-center gap-2 text-xs font-body">
+                    <span className="text-asha-muted w-10 flex-shrink-0">Plan</span>
+                    <span className="text-asha-dark font-medium">
+                      {p ? `${p.sessions} × ${fmtMins(p.durationMins)}` : '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-body">
+                    <span className="text-asha-muted w-10 flex-shrink-0">Done</span>
+                    <span className="text-asha-dark font-medium">
+                      {a ? [a.sessions + ' ×', dist, fmtSecs(a.durationSecs)].filter(Boolean).join(' ') : '—'}
+                    </span>
+                  </div>
+                </div>
+                <PctBadge pct={sportPct} />
+              </div>
             )
           })}
         </div>
-      </div>
+      </button>
 
-      {/* Individual session rows */}
-      <div className="divide-y divide-asha-border/50 border border-asha-border rounded-xl px-3 overflow-hidden">
-        {sessions.map((s, i) => <SessionRow key={i} session={s} />)}
-      </div>
+      {/* ── Expanded day-by-day view ── */}
+      {expanded && (
+        <div className="px-4 pb-4">
+          <div className="divide-y divide-asha-border/50 border border-asha-border rounded-xl px-3 overflow-hidden">
+            {sessions.map((s, i) => <SessionRow key={i} session={s} />)}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
