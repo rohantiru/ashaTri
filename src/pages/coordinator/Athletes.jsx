@@ -5,6 +5,7 @@ import {
 import { db } from '../../firebase'
 import {
   Users, Plus, X, Pencil, Trash2, CheckSquare, Square, Search, UserPlus, Tag, BarChart2,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { getAllPlans } from '../../utils/plans'
 import { getTeamStats } from '../../utils/athleteStats'
@@ -295,7 +296,8 @@ function TeamsTab({ athletes, teams, onAdd, onEdit, onDelete }) {
 
 // ── Training Tab ──────────────────────────────────────────────────────────────
 
-const SPORT_COLORS = { Run: '#FC4C02', Ride: '#16A34A', Swim: '#2563EB', Strength: '#7C3AED', Brick: '#D97706' }
+const SPORT_COLORS = { Run: '#FC4C02', Ride: '#16A34A', Swim: '#2563EB', Strength: '#7C3AED' }
+const SPORT_LABELS = { Run: 'RUN', Ride: 'BIKE', Swim: 'SWIM', Strength: 'LIFT' }
 
 function fmtMins(mins) {
   const h = Math.floor(mins / 60); const m = mins % 60
@@ -316,11 +318,120 @@ function PctBadge({ pct }) {
   return <span className={`text-xs font-body font-semibold px-2 py-0.5 rounded-full ${cls}`}>{pct}%</span>
 }
 
+// Determine current week index based on today vs plan start
+function currentWeekIdx(planStartDate, numWeeks) {
+  const today = new Date()
+  const start = new Date(planStartDate + 'T00:00:00')
+  const daysDiff = Math.floor((today - start) / 86400000)
+  return Math.min(Math.max(Math.floor(daysDiff / 7), 0), numWeeks - 1)
+}
+
+function SessionRow({ session }) {
+  const today = new Date().toISOString().slice(0, 10)
+  const isPast = session.date < today
+  const color = SPORT_COLORS[session.sport] || '#9CA3AF'
+  const label = SPORT_LABELS[session.sport] || session.sport.toUpperCase()
+
+  const dist = fmtDist(session.actualDistanceM, session.sport)
+
+  return (
+    <div className={`flex items-center gap-3 py-2 ${!isPast ? 'opacity-50' : ''}`}>
+      {/* Day */}
+      <span className="text-xs font-body text-asha-muted w-7 flex-shrink-0">{session.day}</span>
+
+      {/* Sport pill */}
+      <span
+        className="text-[10px] font-body font-bold px-1.5 py-0.5 rounded flex-shrink-0"
+        style={{ color, background: color + '1A' }}
+      >
+        {label}
+      </span>
+
+      {/* Type + planned duration */}
+      <span className="text-xs font-body text-asha-dark flex-1 min-w-0 truncate">
+        {session.type} <span className="text-asha-muted">· {session.duration}min</span>
+      </span>
+
+      {/* Status */}
+      {!isPast ? (
+        <span className="text-xs font-body text-asha-muted flex-shrink-0">Upcoming</span>
+      ) : session.completed ? (
+        <span className="text-xs font-body text-green-600 flex-shrink-0 text-right">
+          ✓ {[dist, fmtSecs(session.actualDurationSecs)].filter(Boolean).join(' · ')}
+        </span>
+      ) : (
+        <span className="text-xs font-body text-red-400 flex-shrink-0">Not logged</span>
+      )}
+    </div>
+  )
+}
+
+function AthleteWeekCard({ athlete, weekData }) {
+  if (!weekData) {
+    return (
+      <div className="p-4 flex items-center gap-3">
+        {athlete.photoURL
+          ? <img src={athlete.photoURL} alt={athlete.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+          : <div className="w-8 h-8 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-xs flex-shrink-0">{athlete.name?.[0]}</div>
+        }
+        <span className="font-body font-medium text-sm text-asha-dark">{athlete.name}</span>
+        <span className="text-xs font-body text-asha-muted italic">No data — needs to open Training tab</span>
+      </div>
+    )
+  }
+
+  const { sessions = [], planned = {}, actual = {} } = weekData
+  const totalPlanned = sessions.length
+  const totalDone = sessions.filter(s => s.completed).length
+  const pct = totalPlanned ? Math.round((totalDone / totalPlanned) * 100) : null
+
+  const sports = [...new Set(sessions.map(s => s.sport))]
+
+  return (
+    <div className="p-4">
+      {/* Athlete header + weekly summary */}
+      <div className="flex items-center gap-3 mb-3 flex-wrap">
+        {athlete.photoURL
+          ? <img src={athlete.photoURL} alt={athlete.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+          : <div className="w-8 h-8 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-xs flex-shrink-0">{athlete.name?.[0]}</div>
+        }
+        <span className="font-body font-medium text-sm text-asha-dark">{athlete.name}</span>
+        <PctBadge pct={pct} />
+        <span className="text-xs font-body text-asha-muted">{totalDone}/{totalPlanned} sessions</span>
+
+        {/* Sport aggregate pills */}
+        <div className="flex gap-2 flex-wrap ml-auto">
+          {sports.map(sport => {
+            const p = planned[sport]
+            const a = actual[sport]
+            const dist = fmtDist(a?.distanceM, sport)
+            return (
+              <span key={sport} className="text-xs font-body px-2 py-0.5 rounded-lg border border-asha-border text-asha-muted">
+                <span className="font-semibold" style={{ color: SPORT_COLORS[sport] }}>{SPORT_LABELS[sport]}</span>
+                {' '}
+                {a ? [dist, fmtSecs(a.durationSecs)].filter(Boolean).join(' · ') : '—'}
+                <span className="text-asha-border mx-1">·</span>
+                plan {p ? fmtMins(p.durationMins) : '—'}
+              </span>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Individual session rows */}
+      <div className="divide-y divide-asha-border/50 border border-asha-border rounded-xl px-3 overflow-hidden">
+        {sessions.map((s, i) => <SessionRow key={i} session={s} />)}
+      </div>
+    </div>
+  )
+}
+
 function TrainingTab({ teams, athletes }) {
   const [selectedTeamId, setSelectedTeamId] = useState(teams[0]?.id || '')
   const [teamPlan, setTeamPlan] = useState(null)
   const [teamStats, setTeamStats] = useState([])
   const [planLoading, setPlanLoading] = useState(false)
+  const [weekIdx, setWeekIdx] = useState(0)
 
   const selectedTeam = teams.find(t => t.id === selectedTeamId)
   const memberIds = selectedTeam?.memberIds || []
@@ -337,7 +448,10 @@ function TrainingTab({ teams, athletes }) {
         if (cancelled) return
         const plan = plans.find(p => p.isActive && p.teamIds?.includes(selectedTeamId))
         setTeamPlan(plan || null)
-        if (plan && memberIds.length > 0) return getTeamStats(memberIds)
+        if (plan) {
+          setWeekIdx(currentWeekIdx(plan.startDate, plan.weeks.length))
+          if (memberIds.length > 0) return getTeamStats(memberIds)
+        }
         return []
       })
       .then(stats => { if (!cancelled) setTeamStats(stats || []) })
@@ -346,11 +460,8 @@ function TrainingTab({ teams, athletes }) {
     return () => { cancelled = true }
   }, [selectedTeamId])
 
-  const allSports = teamPlan
-    ? [...new Set(teamPlan.weeks.flatMap(w => (w.sessions || []).map(s => s.sport)).filter(s => s && s !== 'Rest'))]
-    : []
-
   const statsById = Object.fromEntries((teamStats || []).filter(Boolean).map(s => [s.uid, s]))
+  const numWeeks = teamPlan?.weeks.length || 0
 
   if (teams.length === 0) {
     return (
@@ -385,9 +496,28 @@ function TrainingTab({ teams, athletes }) {
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-asha-border overflow-hidden">
-          <div className="px-5 py-3 border-b border-asha-border bg-asha-cream/50 flex items-center justify-between flex-wrap gap-2">
+          {/* Plan header + week navigation */}
+          <div className="px-5 py-3 border-b border-asha-border bg-asha-cream/50 flex items-center justify-between flex-wrap gap-3">
             <span className="font-display font-semibold text-sm text-asha-dark">{teamPlan.name}</span>
-            <span className="font-body text-xs text-asha-muted">{teamPlan.weeks.length} weeks · starts {teamPlan.startDate}</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setWeekIdx(i => Math.max(0, i - 1))}
+                disabled={weekIdx === 0}
+                className="p-1 rounded-lg hover:bg-asha-border disabled:opacity-25 transition-colors"
+              >
+                <ChevronLeft size={14} className="text-asha-muted" />
+              </button>
+              <span className="font-body text-xs text-asha-dark font-medium text-center min-w-[160px]">
+                {teamPlan.weeks[weekIdx]?.label || `Week ${weekIdx + 1}`}
+              </span>
+              <button
+                onClick={() => setWeekIdx(i => Math.min(numWeeks - 1, i + 1))}
+                disabled={weekIdx === numWeeks - 1}
+                className="p-1 rounded-lg hover:bg-asha-border disabled:opacity-25 transition-colors"
+              >
+                <ChevronRight size={14} className="text-asha-muted" />
+              </button>
+            </div>
           </div>
 
           {memberAthletes.length === 0 ? (
@@ -398,47 +528,8 @@ function TrainingTab({ teams, athletes }) {
             <div className="divide-y divide-asha-border">
               {memberAthletes.map(athlete => {
                 const stats = statsById[athlete.id]
-                return (
-                  <div key={athlete.id} className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      {athlete.photoURL
-                        ? <img src={athlete.photoURL} alt={athlete.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-                        : <div className="w-8 h-8 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-xs flex-shrink-0">{athlete.name?.[0]}</div>
-                      }
-                      <span className="font-body font-medium text-sm text-asha-dark">{athlete.name}</span>
-                      {!stats && <span className="text-xs font-body text-asha-muted italic">No data yet — athlete needs to open their Training tab</span>}
-                    </div>
-                    {stats && allSports.length > 0 && (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                        {allSports.map(sport => {
-                          const p = stats.planned?.[sport]
-                          const a = stats.actual?.[sport]
-                          if (!p && !a) return null
-                          const pct = p?.sessions ? Math.min(100, Math.round(((a?.sessions || 0) / p.sessions) * 100)) : null
-                          const dist = fmtDist(a?.distanceM, sport)
-                          return (
-                            <div key={sport} className="rounded-xl border border-asha-border p-3 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-body font-semibold" style={{ color: SPORT_COLORS[sport] }}>{sport}</span>
-                                <PctBadge pct={pct} />
-                              </div>
-                              <div className="space-y-1">
-                                <div className="text-xs font-body text-asha-muted">
-                                  Plan: <span className="text-asha-dark font-medium">{p ? `${p.sessions} × ${fmtMins(p.durationMins)}` : '—'}</span>
-                                </div>
-                                <div className="text-xs font-body text-asha-muted">
-                                  Done: <span className="text-asha-dark font-medium">
-                                    {a ? [a.sessions + ' sessions', dist, fmtSecs(a.durationSecs)].filter(Boolean).join(' · ') : '—'}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
+                const weekData = stats?.byWeek?.[weekIdx]
+                return <AthleteWeekCard key={athlete.id} athlete={athlete} weekData={weekData} />
               })}
             </div>
           )}
