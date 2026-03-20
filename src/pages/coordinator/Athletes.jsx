@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { getAllPlans } from '../../utils/plans'
 import { getTeamStats } from '../../utils/athleteStats'
+import { getCached, setCached } from '../../utils/cache'
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
@@ -443,7 +444,8 @@ function TrainingTab({ teams, athletes }) {
     setTeamPlan(null)
     setTeamStats([])
     let cancelled = false
-    getAllPlans()
+    const cachedPlans = getCached('allPlans')
+    ;(cachedPlans ? Promise.resolve(cachedPlans) : getAllPlans().then(p => { setCached('allPlans', p, 5 * 60 * 1000); return p }))
       .then(plans => {
         if (cancelled) return
         const plan = plans.find(p => p.isActive && p.teamIds?.includes(selectedTeamId))

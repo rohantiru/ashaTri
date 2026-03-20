@@ -1,6 +1,7 @@
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { COMPLETION_MAP } from './plans'
+import { getCached, setCached, invalidate } from './cache'
 
 const DAY_OFFSETS = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 }
 
@@ -93,7 +94,7 @@ export function computeStats(plan, activities) {
   return { planned, actual, byWeek }
 }
 
-/** Compute stats and persist to athleteStats/{uid}. */
+/** Compute stats and persist to athleteStats/{uid}. Invalidates cache on write. */
 export async function saveAthleteStats(uid, plan, activities) {
   const stats = computeStats(plan, activities)
   await setDoc(doc(db, 'athleteStats', uid), {
@@ -103,13 +104,20 @@ export async function saveAthleteStats(uid, plan, activities) {
     ...stats,
     updatedAt: serverTimestamp(),
   })
+  invalidate(`athleteStats_${uid}`, `teamStats_${uid}`)
 }
 
-export async function getAthleteStats(uid) {
+async function getAthleteStats(uid) {
+  const cacheKey = `athleteStats_${uid}`
+  const cached = getCached(cacheKey)
+  if (cached !== null) return cached
   const snap = await getDoc(doc(db, 'athleteStats', uid))
-  return snap.exists() ? { uid, ...snap.data() } : null
+  const result = snap.exists() ? { uid, ...snap.data() } : null
+  setCached(cacheKey, result, 5 * 60 * 1000) // 5 min — refreshes when athlete syncs
+  return result
 }
 
+/** Fetch stats for a list of uids — batched with 5-min in-memory cache per uid. */
 export async function getTeamStats(memberIds) {
   return Promise.all(memberIds.map(uid => getAthleteStats(uid)))
 }
