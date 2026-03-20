@@ -4,8 +4,12 @@ import {
   Activity, Bike, Waves, ChevronLeft, ChevronRight,
   AlertCircle, Loader2, RefreshCw, Zap, Timer, X, ExternalLink,
 } from 'lucide-react'
-import { stravaStatus, buildStravaAuthUrl, exchangeCode, getActivitiesForMonth, getAllCachedActivities } from '../../utils/strava'
+import {
+  stravaStatusForUser, buildStravaAuthUrl, exchangeCodeForUser,
+  getActivitiesForUserMonth, getAllLocalActivitiesForUser,
+} from '../../utils/strava'
 import { getActivePlans, buildPlanDateMap, mergePlanMaps, PLAN_SPORTS, COMPLETION_MAP } from '../../utils/plans'
+import { saveAthleteStats } from '../../utils/athleteStats'
 import { useAuth } from '../../contexts/AuthContext'
 
 // ── Sport config ──────────────────────────────────────────────────────────────
@@ -298,7 +302,15 @@ function CalendarView() {
   useEffect(() => {
     if (!user) return
     getActivePlans(user.uid)
-      .then(plans => setPlanMap(mergePlanMaps(plans.map(buildPlanDateMap))))
+      .then(plans => {
+        setPlanMap(mergePlanMaps(plans.map(buildPlanDateMap)))
+        // Background: save aggregated stats for coaches to read
+        if (plans.length > 0) {
+          const allActs = getAllLocalActivitiesForUser(user.uid)
+          // Save stats for the first plan (assumed one plan per team)
+          saveAthleteStats(user.uid, plans[0], allActs).catch(() => {})
+        }
+      })
       .catch(() => {}) // plans are supplemental — silently skip on error
   }, [user])
 
@@ -328,7 +340,7 @@ function CalendarView() {
     setError(null)
     if (!forceRefresh) setActivityMap({})
     try {
-      const acts = await getActivitiesForMonth(year, month, forceRefresh)
+      const acts = await getActivitiesForUserMonth(user.uid, year, month, forceRefresh)
       const map = {}
       acts.forEach(a => {
         const key = a.start_date_local.slice(0, 10)
@@ -726,7 +738,7 @@ function SparkLine({ data, color, inverted = false, fmt = v => v }) {
   )
 }
 
-function BaselinesTab() {
+function BaselinesTab({ uid }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [chartData, setChartData] = useState([]) // filled-gap monthly array
@@ -736,7 +748,7 @@ function BaselinesTab() {
     setLoading(true)
     setError(null)
     try {
-      const acts = await getAllCachedActivities()
+      const acts = getAllLocalActivitiesForUser(uid)
       setTotalActs(acts.length)
       const byMonth = groupByMonth(acts)
       const monthly = computeMonthlyBaselines(byMonth)
@@ -931,6 +943,7 @@ function ConnectScreen({ onError }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function TrainingCalendar() {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
@@ -940,6 +953,7 @@ export default function TrainingCalendar() {
   const [tab, setTab] = useState('calendar')
 
   useEffect(() => {
+    if (!user) return
     const code = searchParams.get('code')
     const oauthError = searchParams.get('error')
     const cleanPath = location.pathname
@@ -953,7 +967,7 @@ export default function TrainingCalendar() {
 
     if (code) {
       setExchanging(true)
-      exchangeCode(code)
+      exchangeCodeForUser(code, user.uid)
         .then(() => {
           navigate(cleanPath, { replace: true })
           setConnected(true)
@@ -965,9 +979,9 @@ export default function TrainingCalendar() {
         })
         .finally(() => setExchanging(false))
     } else {
-      stravaStatus().then(s => setConnected(s.connected))
+      stravaStatusForUser(user.uid).then(s => setConnected(s.connected))
     }
-  }, [])
+  }, [user])
 
   if (exchanging || connected === null) {
     return (
@@ -1021,7 +1035,7 @@ export default function TrainingCalendar() {
             ))}
           </div>
 
-          {tab === 'calendar' ? <CalendarView /> : <BaselinesTab />}
+          {tab === 'calendar' ? <CalendarView /> : <BaselinesTab uid={user.uid} />}
         </>
       ) : (
         <ConnectScreen onError={setError} />

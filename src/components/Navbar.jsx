@@ -38,7 +38,7 @@ export default function Navbar() {
     ...(swagEnabled ? [{ key: 'swag', label: 'Swag', icon: ShoppingBag, to: '/athlete/browse' }] : []),
     ...(racesEnabled ? [{ key: 'races', label: 'Races', icon: Flag, to: '/athlete/races' }] : []),
     ...(expensesEnabled ? [{ key: 'expenses', label: 'Expenses', icon: Receipt, to: '/athlete/expenses' }] : []),
-    ...(isOwner ? [{ key: 'training', label: 'Training', icon: Activity, to: '/athlete/training' }] : []),
+    { key: 'training', label: 'Training', icon: Activity, to: '/athlete/training' },
   ]
 
   const athleteSwagSub = swagEnabled ? [

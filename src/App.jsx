@@ -100,9 +100,7 @@ function AppRoutes() {
         {config.tabs.expenses && (
           <Route path="/athlete/expenses" element={<ProtectedRoute role="athlete"><Expenses /></ProtectedRoute>} />
         )}
-        {isOwner && (
-          <Route path="/athlete/training" element={<ProtectedRoute role="athlete"><TrainingCalendar /></ProtectedRoute>} />
-        )}
+        <Route path="/athlete/training" element={<ProtectedRoute role="athlete"><TrainingCalendar /></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to={user ? (isCoordLike ? '/coord' : '/athlete') : '/login'} replace />} />
       </Routes>

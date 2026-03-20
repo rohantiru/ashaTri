@@ -123,6 +123,17 @@ service cloud.firestore {
       allow read, write: if isOwnerRole();
     }
 
+    // Per-athlete Strava tokens — athlete reads/writes their own only
+    match /userSecrets/{uid} {
+      allow read, write: if isDocOwner(uid);
+    }
+
+    // Athlete training stats (plan vs actual) — athlete writes own, coaches read all
+    match /athleteStats/{uid} {
+      allow read, write: if isDocOwner(uid);
+      allow read: if isCoordOrAbove();
+    }
+
     // Swag responses
     // - Athletes can create their own with status 'interested' or 'ordered'
     // - Athletes can delete their own if still interested or ordered (not yet ready)

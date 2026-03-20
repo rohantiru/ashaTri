@@ -4,8 +4,10 @@ import {
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import {
-  Users, Plus, X, Pencil, Trash2, CheckSquare, Square, Search, UserPlus, Tag,
+  Users, Plus, X, Pencil, Trash2, CheckSquare, Square, Search, UserPlus, Tag, BarChart2,
 } from 'lucide-react'
+import { getAllPlans } from '../../utils/plans'
+import { getTeamStats } from '../../utils/athleteStats'
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
@@ -291,6 +293,161 @@ function TeamsTab({ athletes, teams, onAdd, onEdit, onDelete }) {
   )
 }
 
+// ── Training Tab ──────────────────────────────────────────────────────────────
+
+const SPORT_COLORS = { Run: '#FC4C02', Ride: '#16A34A', Swim: '#2563EB', Strength: '#7C3AED', Brick: '#D97706' }
+
+function fmtMins(mins) {
+  const h = Math.floor(mins / 60); const m = mins % 60
+  return h ? `${h}h ${m}m` : `${m}m`
+}
+function fmtSecs(secs) {
+  const h = Math.floor(secs / 3600); const m = Math.floor((secs % 3600) / 60)
+  return h ? `${h}h ${m}m` : `${m}m`
+}
+function fmtDist(distM, sport) {
+  if (!distM) return null
+  if (sport === 'Swim') return `${Math.round(distM * 1.09361)} yd`
+  return `${(distM / 1609.34).toFixed(1)} mi`
+}
+function PctBadge({ pct }) {
+  if (pct === null || pct === undefined) return null
+  const cls = pct >= 80 ? 'bg-green-100 text-green-700' : pct >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
+  return <span className={`text-xs font-body font-semibold px-2 py-0.5 rounded-full ${cls}`}>{pct}%</span>
+}
+
+function TrainingTab({ teams, athletes }) {
+  const [selectedTeamId, setSelectedTeamId] = useState(teams[0]?.id || '')
+  const [teamPlan, setTeamPlan] = useState(null)
+  const [teamStats, setTeamStats] = useState([])
+  const [planLoading, setPlanLoading] = useState(false)
+
+  const selectedTeam = teams.find(t => t.id === selectedTeamId)
+  const memberIds = selectedTeam?.memberIds || []
+  const memberAthletes = memberIds.map(uid => athletes.find(a => a.id === uid)).filter(Boolean)
+
+  useEffect(() => {
+    if (!selectedTeamId) return
+    setPlanLoading(true)
+    setTeamPlan(null)
+    setTeamStats([])
+    let cancelled = false
+    getAllPlans()
+      .then(plans => {
+        if (cancelled) return
+        const plan = plans.find(p => p.isActive && p.teamIds?.includes(selectedTeamId))
+        setTeamPlan(plan || null)
+        if (plan && memberIds.length > 0) return getTeamStats(memberIds)
+        return []
+      })
+      .then(stats => { if (!cancelled) setTeamStats(stats || []) })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setPlanLoading(false) })
+    return () => { cancelled = true }
+  }, [selectedTeamId])
+
+  const allSports = teamPlan
+    ? [...new Set(teamPlan.weeks.flatMap(w => (w.sessions || []).map(s => s.sport)).filter(s => s && s !== 'Rest'))]
+    : []
+
+  const statsById = Object.fromEntries((teamStats || []).filter(Boolean).map(s => [s.uid, s]))
+
+  if (teams.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-asha-border p-8 text-center">
+        <p className="font-body text-asha-muted text-sm">No teams yet — create one in the Teams tab.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Team selector */}
+      <div className="flex gap-2 flex-wrap">
+        {teams.map(t => (
+          <button key={t.id} onClick={() => setSelectedTeamId(t.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-body font-medium transition-all border ${
+              selectedTeamId === t.id
+                ? 'bg-asha-orange text-white border-asha-orange'
+                : 'bg-white text-asha-muted border-asha-border hover:text-asha-dark'
+            }`}>
+            {t.name}
+          </button>
+        ))}
+      </div>
+
+      {planLoading ? (
+        <div className="bg-white rounded-2xl border border-asha-border h-40 animate-pulse" />
+      ) : !teamPlan ? (
+        <div className="bg-white rounded-2xl border border-asha-border p-8 text-center">
+          <p className="font-body text-asha-muted text-sm">No active plan assigned to <strong>{selectedTeam?.name}</strong>.</p>
+          <p className="font-body text-asha-muted text-xs mt-1">Assign a plan to this team in Training Plans.</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-asha-border overflow-hidden">
+          <div className="px-5 py-3 border-b border-asha-border bg-asha-cream/50 flex items-center justify-between flex-wrap gap-2">
+            <span className="font-display font-semibold text-sm text-asha-dark">{teamPlan.name}</span>
+            <span className="font-body text-xs text-asha-muted">{teamPlan.weeks.length} weeks · starts {teamPlan.startDate}</span>
+          </div>
+
+          {memberAthletes.length === 0 ? (
+            <div className="p-6 text-center">
+              <p className="font-body text-asha-muted text-sm">No members in this team.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-asha-border">
+              {memberAthletes.map(athlete => {
+                const stats = statsById[athlete.id]
+                return (
+                  <div key={athlete.id} className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      {athlete.photoURL
+                        ? <img src={athlete.photoURL} alt={athlete.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                        : <div className="w-8 h-8 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-xs flex-shrink-0">{athlete.name?.[0]}</div>
+                      }
+                      <span className="font-body font-medium text-sm text-asha-dark">{athlete.name}</span>
+                      {!stats && <span className="text-xs font-body text-asha-muted italic">No data yet — athlete needs to open their Training tab</span>}
+                    </div>
+                    {stats && allSports.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                        {allSports.map(sport => {
+                          const p = stats.planned?.[sport]
+                          const a = stats.actual?.[sport]
+                          if (!p && !a) return null
+                          const pct = p?.sessions ? Math.min(100, Math.round(((a?.sessions || 0) / p.sessions) * 100)) : null
+                          const dist = fmtDist(a?.distanceM, sport)
+                          return (
+                            <div key={sport} className="rounded-xl border border-asha-border p-3 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-body font-semibold" style={{ color: SPORT_COLORS[sport] }}>{sport}</span>
+                                <PctBadge pct={pct} />
+                              </div>
+                              <div className="space-y-1">
+                                <div className="text-xs font-body text-asha-muted">
+                                  Plan: <span className="text-asha-dark font-medium">{p ? `${p.sessions} × ${fmtMins(p.durationMins)}` : '—'}</span>
+                                </div>
+                                <div className="text-xs font-body text-asha-muted">
+                                  Done: <span className="text-asha-dark font-medium">
+                                    {a ? [a.sessions + ' sessions', dist, fmtSecs(a.durationSecs)].filter(Boolean).join(' · ') : '—'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AthletesPage() {
@@ -392,10 +549,10 @@ export default function AthletesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-asha-cream rounded-xl p-1 w-fit">
-        {[['teams', Tag, 'Teams'], ['permissions', CheckSquare, 'Race Permissions']].map(([key, Icon, label]) => (
+      <div className="flex gap-1 mb-6 bg-asha-cream rounded-xl p-1 w-fit overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {[['teams', Tag, 'Teams'], ['training', BarChart2, 'Training'], ['permissions', CheckSquare, 'Race Permissions']].map(([key, Icon, label]) => (
           <button key={key} onClick={() => setTab(key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-body font-medium transition-all ${tab === key ? 'bg-white text-asha-dark shadow-sm' : 'text-asha-muted hover:text-asha-dark'}`}>
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-body font-medium transition-all whitespace-nowrap ${tab === key ? 'bg-white text-asha-dark shadow-sm' : 'text-asha-muted hover:text-asha-dark'}`}>
             <Icon size={14} />{label}
           </button>
         ))}
@@ -411,6 +568,8 @@ export default function AthletesPage() {
           onEdit={(team) => setModal({ team })}
           onDelete={deleteTeam}
         />
+      ) : tab === 'training' ? (
+        <TrainingTab athletes={athletes} teams={teams} />
       ) : (
         <PermissionsTab
           allUsers={athletes}

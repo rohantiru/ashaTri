@@ -142,6 +142,122 @@ export async function getActivitiesForMonth(year, month, forceRefresh = false) {
   return activities
 }
 
+// ── Per-user Auth & Activities ────────────────────────────────────────────────
+
+export async function stravaStatusForUser(uid) {
+  try {
+    const snap = await getDoc(doc(db, 'userSecrets', uid))
+    if (!snap.exists()) return { connected: false }
+    return { connected: !!snap.data().refreshToken }
+  } catch {
+    return { connected: false }
+  }
+}
+
+export async function exchangeCodeForUser(code, uid) {
+  const res = await fetch('/api/strava-token?action=exchange', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  })
+  const data = await res.json()
+  if (data.error) throw new Error(data.error)
+  await setDoc(doc(db, 'userSecrets', uid), {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    expiresAt: data.expires_at,
+  }, { merge: true })
+}
+
+async function getValidAccessTokenForUser(uid) {
+  const snap = await getDoc(doc(db, 'userSecrets', uid))
+  if (!snap.exists()) throw new Error('Strava not connected')
+  const { accessToken, refreshToken, expiresAt } = snap.data()
+
+  if (accessToken && expiresAt && Date.now() / 1000 < expiresAt - 300) return accessToken
+
+  const res = await fetch('/api/strava-token?action=refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  })
+  const data = await res.json()
+  if (data.error) throw new Error(data.error)
+
+  await setDoc(doc(db, 'userSecrets', uid), {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    expiresAt: data.expires_at,
+  }, { merge: true })
+
+  return data.access_token
+}
+
+/**
+ * Fetch activities for a specific user+month using their own Strava token.
+ * Caches in localStorage (keyed per-user) — same TTL logic as owner cache.
+ */
+export async function getActivitiesForUserMonth(uid, year, month, forceRefresh = false) {
+  if (year < MIN_YEAR) return []
+
+  const now = new Date()
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth()
+  const cacheKey = `stravaCache_${uid}_${cacheDocId(year, month)}`
+
+  if (!forceRefresh) {
+    try {
+      const raw = localStorage.getItem(cacheKey)
+      if (raw) {
+        const { activities, fetchedAt } = JSON.parse(raw)
+        const stale = isCurrentMonth && Date.now() - fetchedAt > CACHE_TTL_MS
+        if (!stale) return activities
+      }
+    } catch (_) {}
+  }
+
+  const token = await getValidAccessTokenForUser(uid)
+
+  const monthStart = new Date(year, month, 1)
+  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59)
+  const afterTs = Math.max(Math.floor(monthStart.getTime() / 1000), JAN_2026_TS)
+  const beforeTs = Math.floor(monthEnd.getTime() / 1000)
+
+  const url = new URL('https://www.strava.com/api/v3/athlete/activities')
+  url.searchParams.set('after', String(afterTs))
+  url.searchParams.set('before', String(beforeTs))
+  url.searchParams.set('per_page', '200')
+
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const raw = await res.json()
+  if (!Array.isArray(raw)) throw new Error(raw.message || 'Strava API error')
+
+  const activities = raw.map(slimActivity)
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify({ activities, fetchedAt: Date.now() }))
+  } catch (_) {}
+
+  return activities
+}
+
+/** Read all locally cached activities for a user (for baselines). */
+export function getAllLocalActivitiesForUser(uid) {
+  const activities = []
+  const prefix = `stravaCache_${uid}_`
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (!key?.startsWith(prefix)) continue
+      const raw = localStorage.getItem(key)
+      if (!raw) continue
+      const { activities: acts } = JSON.parse(raw)
+      if (Array.isArray(acts)) activities.push(...acts)
+    }
+  } catch (_) {}
+  return activities
+}
+
 // ── OAuth URL builder ─────────────────────────────────────────────────────────
 
 export function buildStravaAuthUrl(redirectUri) {
