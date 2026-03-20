@@ -104,7 +104,7 @@ export async function saveAthleteStats(uid, plan, activities) {
     ...stats,
     updatedAt: serverTimestamp(),
   })
-  invalidate(`athleteStats_${uid}`, `teamStats_${uid}`)
+  invalidate(`athleteStats_${uid}`)
 }
 
 async function getAthleteStats(uid) {
