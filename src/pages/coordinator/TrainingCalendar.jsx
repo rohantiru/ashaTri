@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import { doc, deleteDoc } from 'firebase/firestore'
+import { db } from '../../firebase'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import {
   Activity, Bike, Waves, ChevronLeft, ChevronRight,
@@ -6,7 +8,7 @@ import {
 } from 'lucide-react'
 import {
   stravaStatusForUser, buildStravaAuthUrl, exchangeCodeForUser,
-  getActivitiesForUserMonth, getAllLocalActivitiesForUser,
+  getActivitiesForUserMonth, getAllLocalActivitiesForUser,  // getAllLocalActivitiesForUser used in BaselinesTab
 } from '../../utils/strava'
 import { getActivePlans, buildPlanDateMap, mergePlanMaps, PLAN_SPORTS, COMPLETION_MAP } from '../../utils/plans'
 import { saveAthleteStats } from '../../utils/athleteStats'
@@ -19,8 +21,13 @@ const SPORT = {
   Ride: { label: 'Bike', color: '#16A34A', bg: '#F0FDF4', Icon: Bike    },
   Swim: { label: 'Swim', color: '#2563EB', bg: '#EFF6FF', Icon: Waves   },
 }
+const STRAVA_TYPE_NORM = {
+  VirtualRide: 'Ride', MountainBikeRide: 'Ride', GravelRide: 'Ride', EBikeRide: 'Ride',
+  VirtualRun: 'Run', TrailRun: 'Run',
+  OpenWaterSwim: 'Swim',
+}
 function getSport(type) {
-  return SPORT[type] || { label: type, color: '#9CA3AF', bg: '#F9FAFB', Icon: Activity }
+  return SPORT[STRAVA_TYPE_NORM[type] ?? type] || { label: type, color: '#9CA3AF', bg: '#F9FAFB', Icon: Activity }
 }
 
 // ── Format helpers ────────────────────────────────────────────────────────────
@@ -302,14 +309,28 @@ function CalendarView() {
   useEffect(() => {
     if (!user) return
     getActivePlans(user.uid)
-      .then(plans => {
+      .then(async plans => {
         setPlanMap(mergePlanMaps(plans.map(buildPlanDateMap)))
-        // Background: save aggregated stats for coaches to read
-        if (plans.length > 0) {
-          const allActs = getAllLocalActivitiesForUser(user.uid)
-          // Save stats for the first plan (assumed one plan per team)
-          saveAthleteStats(user.uid, plans[0], allActs).catch(() => {})
+        if (plans.length === 0) return
+        const plan = plans[0]
+
+        // Fetch every month covered by the plan (cached in localStorage, mostly instant on revisit)
+        const planStart = new Date(plan.startDate + 'T00:00:00')
+        const planEnd = new Date(planStart)
+        planEnd.setDate(planStart.getDate() + plan.weeks.length * 7)
+
+        const months = []
+        const cur = new Date(planStart.getFullYear(), planStart.getMonth(), 1)
+        while (cur <= planEnd) {
+          months.push([cur.getFullYear(), cur.getMonth()])
+          cur.setMonth(cur.getMonth() + 1)
         }
+
+        const allActs = (await Promise.all(
+          months.map(([y, m]) => getActivitiesForUserMonth(user.uid, y, m).catch(() => []))
+        )).flat()
+
+        saveAthleteStats(user.uid, plan, allActs).catch(() => {})
       })
       .catch(() => {}) // plans are supplemental — silently skip on error
   }, [user])
@@ -998,7 +1019,10 @@ export default function TrainingCalendar() {
         <h1 className="font-display font-bold text-3xl text-asha-dark">Training</h1>
         {connected && (
           <button
-            onClick={() => setConnected(false)}
+            onClick={async () => {
+              await deleteDoc(doc(db, 'userSecrets', user.uid)).catch(() => {})
+              setConnected(false)
+            }}
             className="text-xs font-body text-asha-muted hover:text-red-500 transition-colors"
           >
             Disconnect Strava
