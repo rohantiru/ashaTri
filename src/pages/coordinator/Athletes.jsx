@@ -4,7 +4,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import {
-  Users, Plus, X, Pencil, Trash2, CheckSquare, Square, Search, UserPlus, Tag, BarChart2,
+  Users, Plus, X, Pencil, Trash2, CheckSquare, Square, Search, Tag, BarChart2,
   ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { getAllPlans } from '../../utils/plans'
@@ -445,7 +445,7 @@ function TrainingTab({ teams, athletes }) {
     setTeamStats([])
     let cancelled = false
     const cachedPlans = getCached('allPlans')
-    ;(cachedPlans ? Promise.resolve(cachedPlans) : getAllPlans().then(p => { setCached('allPlans', p, 5 * 60 * 1000); return p }))
+    ;(cachedPlans ? Promise.resolve(cachedPlans) : getAllPlans().then(p => { setCached('allPlans', p, 30 * 60 * 1000); return p }))
       .then(plans => {
         if (cancelled) return
         const plan = plans.find(p => p.isActive && p.teamIds?.includes(selectedTeamId))

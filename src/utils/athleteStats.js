@@ -113,7 +113,7 @@ async function getAthleteStats(uid) {
   if (cached !== null) return cached
   const snap = await getDoc(doc(db, 'athleteStats', uid))
   const result = snap.exists() ? { uid, ...snap.data() } : null
-  setCached(cacheKey, result, 5 * 60 * 1000) // 5 min — refreshes when athlete syncs
+  setCached(cacheKey, result, 30 * 60 * 1000) // 30 min — coaches check once a day, staleness is fine
   return result
 }
 
