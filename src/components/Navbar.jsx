@@ -140,7 +140,7 @@ export default function Navbar() {
       </div>
 
       {/* Desktop layout */}
-      <div className="hidden sm:block">
+      <div className="hidden sm:block lg:hidden">
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
 
           {/* Brand */}

@@ -46,7 +46,7 @@ function PermissionsTable({ people, races, perms, onToggle, onToggleAll }) {
         <table className="w-full">
           <thead>
             <tr className="border-b border-asha-border bg-asha-cream/50">
-              <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide sticky left-0 bg-asha-cream/50 min-w-[160px]">
+              <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide sticky left-0 bg-asha-cream/50 min-w-[160px] lg:min-w-[200px]">
                 Member
               </th>
               <th className="px-2 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide text-center min-w-[40px]" title="Grant/revoke all">
@@ -241,6 +241,9 @@ function TeamModal({ initial, athletes, onSave, onClose }) {
 
 function TeamsTab({ athletes, teams, onAdd, onEdit, onDelete }) {
   const athleteMap = Object.fromEntries(athletes.map(a => [a.id, a]))
+  const [selectedTeamId, setSelectedTeamId] = useState(teams[0]?.id ?? null)
+  const selectedTeam = teams.find(t => t.id === selectedTeamId)
+  const selectedMembers = selectedTeam ? (selectedTeam.memberIds ?? []).map(uid => athleteMap[uid]).filter(Boolean) : []
 
   if (teams.length === 0) return (
     <div className="text-center py-16">
@@ -253,20 +256,39 @@ function TeamsTab({ athletes, teams, onAdd, onEdit, onDelete }) {
   )
 
   return (
-    <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
-      {teams.map(team => {
-        const members = (team.memberIds ?? []).map(uid => athleteMap[uid]).filter(Boolean)
-        return (
-          <div key={team.id}>
-            <div className="flex items-center gap-3 px-3.5 py-2.5">
-              <div className="w-8 h-8 rounded-lg bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
-                <Users size={14} className="text-asha-orange" />
+    <div className="lg:grid lg:grid-cols-[280px_1fr] lg:gap-6">
+      {/* Team list */}
+      <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
+        {teams.map(team => {
+          const members = (team.memberIds ?? []).map(uid => athleteMap[uid]).filter(Boolean)
+          return (
+            <div key={team.id}>
+              <div
+                onClick={() => setSelectedTeamId(team.id)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 cursor-pointer transition-colors ${selectedTeamId === team.id ? 'bg-asha-orangeDim' : 'hover:bg-asha-cream/50'}`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
+                  <Users size={14} className="text-asha-orange" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-body font-semibold text-sm text-asha-dark mb-0.5">{team.name}</div>
+                  {team.description && <p className="font-body text-xs text-asha-muted">{team.description}</p>}
+                  <span className="font-body text-xs text-asha-muted">{members.length} {members.length === 1 ? 'member' : 'members'}</span>
+                </div>
+                {/* Mobile: show members inline */}
+                <div className="lg:hidden flex items-center gap-1 flex-shrink-0">
+                  <button onClick={e => { e.stopPropagation(); onEdit(team) }} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-asha-muted hover:text-asha-dark">
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={e => { e.stopPropagation(); onDelete(team) }} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors text-asha-muted hover:text-red-500">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-body font-semibold text-sm text-asha-dark mb-0.5">{team.name}</div>
-                {team.description && <p className="font-body text-xs text-asha-muted mb-2">{team.description}</p>}
+              {/* Mobile: show member chips below (original behaviour) */}
+              <div className="lg:hidden px-3.5 pb-2.5">
                 {members.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5 mt-1">
+                  <div className="flex flex-wrap gap-1.5">
                     {members.map(m => (
                       <div key={m.id} className="flex items-center gap-1.5 bg-asha-cream rounded-lg px-2 py-1">
                         <Avatar user={m} size={4} />
@@ -278,19 +300,46 @@ function TeamsTab({ athletes, teams, onAdd, onEdit, onDelete }) {
                   <span className="font-body text-xs text-asha-muted">No members yet</span>
                 )}
               </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <span className="font-body text-xs text-asha-muted mr-1">{members.length} {members.length === 1 ? 'member' : 'members'}</span>
-                <button onClick={() => onEdit(team)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-asha-muted hover:text-asha-dark">
-                  <Pencil size={14} />
-                </button>
-                <button onClick={() => onDelete(team)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors text-asha-muted hover:text-red-500">
-                  <Trash2 size={14} />
-                </button>
-              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Right pane: selected team detail (desktop only) */}
+      {selectedTeam && (
+        <div className="hidden lg:block bg-white rounded-xl border border-asha-border p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-display font-bold text-asha-dark">{selectedTeam.name}</h3>
+              {selectedTeam.description && <p className="font-body text-sm text-asha-muted mt-0.5">{selectedTeam.description}</p>}
+            </div>
+            <div className="flex items-center gap-1">
+              <button onClick={() => onEdit(selectedTeam)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-asha-muted hover:text-asha-dark" title="Edit">
+                <Pencil size={14} />
+              </button>
+              <button onClick={() => onDelete(selectedTeam)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors text-asha-muted hover:text-red-500" title="Delete">
+                <Trash2 size={14} />
+              </button>
             </div>
           </div>
-        )
-      })}
+          {selectedMembers.length > 0 ? (
+            <div className="space-y-2">
+              <p className="font-body text-xs text-asha-muted uppercase tracking-wide font-medium mb-3">{selectedMembers.length} {selectedMembers.length === 1 ? 'Member' : 'Members'}</p>
+              {selectedMembers.map(m => (
+                <div key={m.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-asha-border bg-asha-cream/30">
+                  <Avatar user={m} size={8} />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-body font-medium text-sm text-asha-dark">{m.name || '—'}</div>
+                    <div className="font-body text-xs text-asha-muted">{m.email}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="font-body text-sm text-asha-muted">No members yet. Edit this team to add members.</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -674,7 +723,7 @@ export default function AthletesPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-full lg:px-6 px-4 py-4 sm:py-6">
       <div className="flex items-baseline justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">Athletes</h1>
         {tab === 'teams' && (

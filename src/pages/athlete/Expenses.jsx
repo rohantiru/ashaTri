@@ -129,7 +129,7 @@ export default function Expenses() {
   expenses.forEach(e => { byCategory[e.category] = (byCategory[e.category] || 0) + e.amount })
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
       <div className="flex items-baseline justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">My Expenses</h1>
         <button
@@ -140,62 +140,96 @@ export default function Expenses() {
         </button>
       </div>
 
-      {!loading && expenses.length > 0 && (
-        <>
-          {/* Total + breakdown */}
-          <div className="bg-white rounded-xl border border-asha-border p-3.5 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <span className="font-body font-medium text-sm text-asha-dark">Total Submitted</span>
-                <p className="font-body text-[10px] text-asha-muted mt-0.5">Pending reimbursement from Asha</p>
-              </div>
-              <span className="font-mono font-bold text-xl text-asha-orange">{fmtUSD(total)}</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {Object.entries(byCategory).map(([cat, amt]) => (
-                <div key={cat} className="flex items-center gap-1 bg-asha-cream rounded-lg px-2 py-0.5">
-                  <span className="font-body text-[10px] text-asha-muted">{cat}</span>
-                  <span className="font-mono text-[10px] font-semibold text-asha-dark">{fmtUSD(amt)}</span>
+      <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-8 lg:items-start">
+        {/* Left column: list */}
+        <div>
+          {!loading && expenses.length > 0 && (
+            <>
+              {/* Total + breakdown — mobile only */}
+              <div className="lg:hidden bg-white rounded-xl border border-asha-border p-3.5 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <span className="font-body font-medium text-sm text-asha-dark">Total Submitted</span>
+                    <p className="font-body text-[10px] text-asha-muted mt-0.5">Pending reimbursement from Asha</p>
+                  </div>
+                  <span className="font-mono font-bold text-xl text-asha-orange">{fmtUSD(total)}</span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* List */}
-          <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
-            {expenses.map(e => (
-              <div key={e.id} className="flex items-center gap-3 px-3.5 py-2.5">
-                <Receipt size={14} className="text-asha-orange flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-body font-medium text-sm text-asha-dark">{e.title}</div>
-                  <div className="font-body text-[10px] text-asha-muted">{e.date} · {e.category}</div>
-                  {e.notes && <div className="font-body text-[10px] text-asha-muted mt-0.5 truncate">{e.notes}</div>}
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="font-mono font-semibold text-sm text-asha-dark">{fmtUSD(e.amount)}</span>
-                  <button onClick={() => handleDelete(e.id)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors text-asha-muted hover:text-red-500">
-                    <Trash2 size={13} />
-                  </button>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(byCategory).map(([cat, amt]) => (
+                    <div key={cat} className="flex items-center gap-1 bg-asha-cream rounded-lg px-2 py-0.5">
+                      <span className="font-body text-[10px] text-asha-muted">{cat}</span>
+                      <span className="font-mono text-[10px] font-semibold text-asha-dark">{fmtUSD(amt)}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
+
+              {/* List */}
+              <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
+                {expenses.map(e => (
+                  <div key={e.id} className="flex items-center gap-3 px-3.5 py-2.5">
+                    <Receipt size={14} className="text-asha-orange flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-body font-medium text-sm text-asha-dark">{e.title}</div>
+                      <div className="font-body text-[10px] text-asha-muted">{e.date} · {e.category}</div>
+                      {e.notes && <div className="font-body text-[10px] text-asha-muted mt-0.5 truncate">{e.notes}</div>}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="font-mono font-semibold text-sm text-asha-dark">{fmtUSD(e.amount)}</span>
+                      <button onClick={() => handleDelete(e.id)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors text-asha-muted hover:text-red-500">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {!loading && expenses.length === 0 && (
+            <div className="text-center py-12">
+              <Receipt size={24} className="text-asha-muted mx-auto mb-2" />
+              <h3 className="font-display font-semibold text-sm text-asha-dark mb-1">No expenses yet</h3>
+              <p className="font-body text-asha-muted text-xs">Add your first expense to start tracking</p>
+            </div>
+          )}
+
+          {loading && (
+            <div className="space-y-2">
+              {[...Array(4)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-10 animate-pulse" />)}
+            </div>
+          )}
+        </div>
+
+        {/* Right rail — desktop only */}
+        {!loading && expenses.length > 0 && (
+          <div className="hidden lg:block lg:sticky lg:top-8">
+            <div className="bg-white rounded-xl border border-asha-border p-4">
+              <div className="mb-3">
+                <div className="font-body text-[10px] text-asha-muted uppercase tracking-widest mb-1">Total Submitted</div>
+                <div className="font-mono font-bold text-2xl text-asha-orange">{fmtUSD(total)}</div>
+                <div className="font-body text-[10px] text-asha-muted mt-0.5">Pending reimbursement from Asha</div>
+              </div>
+              <div className="space-y-2 mt-4">
+                {Object.entries(byCategory).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
+                  const pct = total > 0 ? Math.round((amt / total) * 100) : 0
+                  return (
+                    <div key={cat}>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="font-body text-xs text-asha-dark">{cat}</span>
+                        <span className="font-mono text-xs font-semibold text-asha-dark">{fmtUSD(amt)}</span>
+                      </div>
+                      <div className="h-1.5 bg-asha-cream rounded-full overflow-hidden">
+                        <div className="h-full bg-asha-orange rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
-        </>
-      )}
-
-      {!loading && expenses.length === 0 && (
-        <div className="text-center py-12">
-          <Receipt size={24} className="text-asha-muted mx-auto mb-2" />
-          <h3 className="font-display font-semibold text-sm text-asha-dark mb-1">No expenses yet</h3>
-          <p className="font-body text-asha-muted text-xs">Add your first expense to start tracking</p>
-        </div>
-      )}
-
-      {loading && (
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-10 animate-pulse" />)}
-        </div>
-      )}
+        )}
+      </div>
 
       {showModal && <ExpenseModal onSave={handleSave} onClose={() => setShowModal(false)} />}
     </div>

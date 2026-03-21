@@ -21,8 +21,10 @@ import RaceManagement from './pages/coordinator/RaceManagement'
 import TrainingCalendar from './pages/coordinator/TrainingCalendar'
 import TrainingPlans from './pages/coordinator/TrainingPlans'
 import Navbar from './components/Navbar'
+import Sidebar from './components/Sidebar'
 import BottomNav from './components/BottomNav'
 import More from './pages/More'
+import { SidebarProvider, useSidebar } from './contexts/SidebarContext'
 
 function ProtectedRoute({ children, role }) {
   const { user, profile, loading } = useAuth()
@@ -47,6 +49,7 @@ function LoadingScreen() {
 function AppRoutes() {
   const { user, profile, loading } = useAuth()
   const { config, loading: configLoading } = useAppConfig()
+  const { collapsed } = useSidebar()
 
   if (loading || configLoading) return <LoadingScreen />
 
@@ -56,8 +59,9 @@ function AppRoutes() {
   return (
     <div className="min-h-screen bg-asha-cream">
       {user && <Navbar />}
+      {user && <Sidebar />}
       {user && <BottomNav />}
-      <div className="pb-20 sm:pb-0">
+      <div className={`pb-20 sm:pb-0 lg:transition-all lg:duration-200 ${collapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
       <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to={isCoordLike ? '/coord' : '/athlete'} replace />} />
 
@@ -118,7 +122,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <AppConfigProvider>
-      <AppRoutes />
+      <SidebarProvider>
+        <AppRoutes />
+      </SidebarProvider>
     </AppConfigProvider>
   )
 }

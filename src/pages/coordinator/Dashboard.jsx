@@ -95,7 +95,7 @@ export default function CoordinatorDashboard() {
   const todayStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
 
       {/* Greeting */}
       <div className="flex items-baseline justify-between mb-4">
@@ -105,100 +105,108 @@ export default function CoordinatorDashboard() {
 
       {loading ? (
         <div className="space-y-2 mb-5">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 lg:grid-cols-5 gap-2">
             {[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-16 animate-pulse" />)}
           </div>
           <div className="bg-white rounded-xl border border-asha-border h-12 animate-pulse" />
           <div className="bg-white rounded-xl border border-asha-border h-12 animate-pulse" />
         </div>
       ) : (
-        <>
-          {/* Stats strip */}
-          <div className="grid grid-cols-3 gap-2 mb-5">
-            {[
-              { label: 'UPCOMING RACES', value: String(raceStats.upcoming), color: 'text-asha-dark' },
-              { label: 'ATHLETES IN', value: String(raceStats.participating), color: 'text-asha-dark' },
-              { label: 'PICKUP PENDING', value: String(swagStats.pendingPickup), color: swagStats.pendingPickup > 0 ? 'text-amber-500' : 'text-asha-dark' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="bg-white rounded-xl border border-asha-border p-3 text-center">
-                <div className={`font-mono font-bold text-2xl leading-none ${color}`}>{value}</div>
-                <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1 leading-tight">{label}</div>
-              </div>
-            ))}
+        <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-8 lg:items-start">
+          {/* Left column */}
+          <div>
+            {/* Stats strip */}
+            <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 mb-5">
+              {[
+                { label: 'UPCOMING RACES', value: String(raceStats.upcoming), color: 'text-asha-dark' },
+                { label: 'ATHLETES IN', value: String(raceStats.participating), color: 'text-asha-dark' },
+                { label: 'PICKUP PENDING', value: String(swagStats.pendingPickup), color: swagStats.pendingPickup > 0 ? 'text-amber-500' : 'text-asha-dark' },
+                { label: 'EVENTS', value: String(eventStats.upcoming), color: 'text-asha-dark' },
+                { label: 'PENDING', value: String(swagStats.pendingPickup), color: swagStats.pendingPickup > 0 ? 'text-amber-500' : 'text-asha-dark' },
+              ].map(({ label, value, color }, idx) => (
+                <div key={label + idx} className={`bg-white rounded-xl border border-asha-border p-3 text-center ${idx >= 3 ? 'hidden lg:block' : ''}`}>
+                  <div className={`font-mono font-bold text-2xl leading-none ${color}`}>{value}</div>
+                  <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1 leading-tight">{label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="mb-2">
+              <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase mb-2">Quick Actions</h2>
+            </div>
+            <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50 lg:divide-y-0 lg:grid lg:grid-cols-2 lg:gap-0">
+              {[
+                { to: '/coord/events', label: 'Manage Events', desc: 'Create events, send calendar invites', icon: Calendar },
+                { to: '/coord/races', label: 'Manage Races', desc: 'Add races, dates, registration links', icon: Flag },
+                ...(!isCoordinator ? [{ to: '/coord/athletes', label: 'Athletes', desc: 'Organize teams, set race permissions', icon: Users }] : []),
+                ...(!isCoach ? [{ to: '/coord/items', label: 'Manage Swag', desc: 'Add items, set prices, update inventory', icon: Package }] : []),
+                ...(!isCoach ? [{ to: '/coord/pickup', label: 'Pickups', desc: 'Mark items ready and track collection', icon: CheckSquare }] : []),
+              ].map(({ to, label, desc, icon: Icon }) => (
+                <Link key={label} to={to} className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-asha-cream/50 hover:border-asha-orange/40 hover:shadow-sm transition-colors group border border-transparent lg:border-asha-border/40 lg:rounded-xl lg:m-1">
+                  <Icon size={15} className="text-asha-orange flex-shrink-0 group-hover:text-asha-orange" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-body font-medium text-sm text-asha-dark">{label}</div>
+                    <div className="font-body text-[10px] text-asha-muted">{desc}</div>
+                  </div>
+                  <ChevronRight size={13} className="text-asha-muted group-hover:text-asha-orange transition-colors flex-shrink-0" />
+                </Link>
+              ))}
+            </div>
           </div>
 
-          {/* Next race countdown */}
-          {raceStats.nextRace && (
-            <Link to="/coord/races" className="block bg-asha-dark rounded-xl p-3.5 mb-3 relative overflow-hidden hover:bg-asha-mid transition-colors group">
-              <div className="absolute inset-0 bg-gradient-to-br from-asha-orange/15 to-transparent pointer-events-none" />
-              <div className="relative flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="font-body text-[10px] font-semibold text-asha-orange tracking-widest uppercase mb-0.5">Next Team Race</div>
-                  <div className="font-display font-bold text-white text-sm truncate">{raceStats.nextRace.name}</div>
-                  <div className="font-body text-[10px] text-asha-muted mt-0.5">
-                    {new Date(raceStats.nextRace.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  {nextDays !== null && (
-                    <div className="text-right">
-                      <div className={`font-mono font-bold text-3xl leading-none ${nextDays <= 14 ? 'text-red-400' : nextDays <= 60 ? 'text-amber-400' : 'text-white'}`}>{nextDays}</div>
-                      <div className="font-body text-[10px] text-asha-muted">days</div>
+          {/* Right column */}
+          <div className="lg:sticky lg:top-8 lg:space-y-4 mt-5 lg:mt-0">
+            {/* Next race countdown */}
+            {raceStats.nextRace && (
+              <Link to="/coord/races" className="block bg-asha-dark rounded-xl p-3.5 mb-3 lg:mb-0 relative overflow-hidden hover:bg-asha-mid transition-colors group">
+                <div className="absolute inset-0 bg-gradient-to-br from-asha-orange/15 to-transparent pointer-events-none" />
+                <div className="relative flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="font-body text-[10px] font-semibold text-asha-orange tracking-widest uppercase mb-0.5">Next Team Race</div>
+                    <div className="font-display font-bold text-white text-sm truncate">{raceStats.nextRace.name}</div>
+                    <div className="font-body text-[10px] text-asha-muted mt-0.5">
+                      {new Date(raceStats.nextRace.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </div>
-                  )}
-                  <ChevronRight size={14} className="text-asha-muted group-hover:text-white transition-colors" />
-                </div>
-              </div>
-            </Link>
-          )}
-
-          {/* Next event */}
-          {eventStats.nextEvent && (
-            <Link to="/coord/events" className="block bg-white rounded-xl border border-asha-border px-3.5 py-3 mb-5 hover:border-asha-orange/40 transition-colors group">
-              <div className="flex items-center gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="font-body text-[10px] font-semibold text-asha-muted tracking-widest uppercase mb-0.5">Next Event</div>
-                  <div className="font-body font-medium text-sm text-asha-dark truncate">{eventStats.nextEvent.title}</div>
-                  <div className="font-body text-[10px] text-asha-muted mt-0.5">
-                    {new Date(eventStats.nextEvent.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    {eventStats.nextEvent.location && ` · ${eventStats.nextEvent.location}`}
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    {nextDays !== null && (
+                      <div className="text-right">
+                        <div className={`font-mono font-bold text-3xl leading-none ${nextDays <= 14 ? 'text-red-400' : nextDays <= 60 ? 'text-amber-400' : 'text-white'}`}>{nextDays}</div>
+                        <div className="font-body text-[10px] text-asha-muted">days</div>
+                      </div>
+                    )}
+                    <ChevronRight size={14} className="text-asha-muted group-hover:text-white transition-colors" />
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {nextEventDays !== null && (
-                    <span className={`font-mono text-xs font-bold ${nextEventDays <= 7 ? 'text-red-600' : nextEventDays <= 30 ? 'text-amber-600' : 'text-asha-muted'}`}>
-                      {nextEventDays === 0 ? 'Today' : `${nextEventDays}d`}
-                    </span>
-                  )}
-                  <ChevronRight size={14} className="text-asha-muted group-hover:text-asha-orange transition-colors" />
-                </div>
-              </div>
-            </Link>
-          )}
-
-          {/* Quick Actions */}
-          <div className="mb-2">
-            <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase mb-2">Quick Actions</h2>
-          </div>
-          <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
-            {[
-              { to: '/coord/events', label: 'Manage Events', desc: 'Create events, send calendar invites', icon: Calendar },
-              { to: '/coord/races', label: 'Manage Races', desc: 'Add races, dates, registration links', icon: Flag },
-              ...(!isCoordinator ? [{ to: '/coord/athletes', label: 'Athletes', desc: 'Organize teams, set race permissions', icon: Users }] : []),
-              ...(!isCoach ? [{ to: '/coord/items', label: 'Manage Swag', desc: 'Add items, set prices, update inventory', icon: Package }] : []),
-              ...(!isCoach ? [{ to: '/coord/pickup', label: 'Pickups', desc: 'Mark items ready and track collection', icon: CheckSquare }] : []),
-            ].map(({ to, label, desc, icon: Icon }) => (
-              <Link key={label} to={to} className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-asha-cream/50 transition-colors group">
-                <Icon size={15} className="text-asha-orange flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-body font-medium text-sm text-asha-dark">{label}</div>
-                  <div className="font-body text-[10px] text-asha-muted">{desc}</div>
-                </div>
-                <ChevronRight size={13} className="text-asha-muted group-hover:text-asha-orange transition-colors flex-shrink-0" />
               </Link>
-            ))}
+            )}
+
+            {/* Next event */}
+            {eventStats.nextEvent && (
+              <Link to="/coord/events" className="block bg-white rounded-xl border border-asha-border px-3.5 py-3 mb-5 lg:mb-0 hover:border-asha-orange/40 transition-colors group">
+                <div className="flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-body text-[10px] font-semibold text-asha-muted tracking-widest uppercase mb-0.5">Next Event</div>
+                    <div className="font-body font-medium text-sm text-asha-dark truncate">{eventStats.nextEvent.title}</div>
+                    <div className="font-body text-[10px] text-asha-muted mt-0.5">
+                      {new Date(eventStats.nextEvent.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {eventStats.nextEvent.location && ` · ${eventStats.nextEvent.location}`}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {nextEventDays !== null && (
+                      <span className={`font-mono text-xs font-bold ${nextEventDays <= 7 ? 'text-red-600' : nextEventDays <= 30 ? 'text-amber-600' : 'text-asha-muted'}`}>
+                        {nextEventDays === 0 ? 'Today' : `${nextEventDays}d`}
+                      </span>
+                    )}
+                    <ChevronRight size={14} className="text-asha-muted group-hover:text-asha-orange transition-colors" />
+                  </div>
+                </div>
+              </Link>
+            )}
           </div>
-        </>
+        </div>
       )}
     </div>
   )

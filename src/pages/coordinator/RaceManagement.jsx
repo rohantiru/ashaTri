@@ -296,7 +296,7 @@ export default function RaceManagement() {
   })
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-full lg:px-6 px-4 py-4 sm:py-6">
       <div className="flex items-baseline justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">Race Management</h1>
         {tab === 'races' && (
@@ -344,46 +344,97 @@ export default function RaceManagement() {
           ) : filteredRaces.length === 0 ? (
             <div className="text-center py-12"><Flag size={28} className="text-asha-muted mx-auto mb-3" /><p className="font-body text-asha-muted text-sm">No races match this filter</p></div>
           ) : (
-            <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
-              {filteredRaces.map(race => {
-                const raceRegs = regs.filter(r => r.raceId === race.id)
-                return (
-                  <div key={race.id}>
-                    <div className="flex items-center gap-3 px-3.5 py-2.5">
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-0.5 ${race.isActive ? 'bg-green-400' : 'bg-gray-300'}`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <div className="font-body font-semibold text-sm text-asha-dark">{race.name}</div>
-                          <TypeBadge type={race.type} />
-                        </div>
-                        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                          <span className="font-body text-xs text-asha-muted flex items-center gap-1"><Calendar size={11} />{fmtDate(race.date)}</span>
-                          {race.location && <span className="font-body text-xs text-asha-muted flex items-center gap-1"><MapPin size={11} />{race.location}</span>}
-                          {race.registrationUrl && <a href={race.registrationUrl} target="_blank" rel="noopener noreferrer" className="font-body text-xs text-asha-orange flex items-center gap-1 hover:underline"><ExternalLink size={11} />Register</a>}
-                          {race.couponCode && <span className="font-body text-xs text-asha-muted flex items-center gap-1"><Tag size={10} />{race.couponCode}</span>}
-                        </div>
-                        {race.events?.length > 0 && (
-                          <div className="flex gap-1 mt-1.5 flex-wrap">
-                            {race.events.map(ev => <span key={ev} className="px-2 py-0.5 rounded-md bg-asha-cream font-body text-xs text-asha-muted">{ev}</span>)}
+            <>
+              {/* Desktop table */}
+              <div className="hidden lg:block overflow-x-auto bg-white rounded-xl border border-asha-border">
+                <table className="w-full">
+                  <thead className="bg-asha-cream/50 border-b border-asha-border">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide w-4"></th>
+                      <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Race</th>
+                      <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Date</th>
+                      <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Location</th>
+                      <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Events</th>
+                      <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Athletes</th>
+                      <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-asha-border/40">
+                    {filteredRaces.map(race => {
+                      const raceRegs = regs.filter(r => r.raceId === race.id)
+                      return (
+                        <tr key={race.id} className="hover:bg-asha-cream/30 transition-colors group">
+                          <td className="px-4 py-3">
+                            <div className={`w-2 h-2 rounded-full ${race.isActive ? 'bg-green-400' : 'bg-gray-300'}`} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="font-body font-semibold text-sm text-asha-dark">{race.name}</span>
+                              <TypeBadge type={race.type} />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 font-body text-sm text-asha-muted whitespace-nowrap">{fmtDate(race.date)}</td>
+                          <td className="px-4 py-3 font-body text-sm text-asha-muted">{race.location || '—'}</td>
+                          <td className="px-4 py-3 font-body text-sm text-asha-muted">{race.events?.join(', ') || '—'}</td>
+                          <td className="px-4 py-3 font-mono font-bold text-sm text-asha-orange">{raceRegs.length}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-0.5">
+                              <button onClick={() => handleToggleLock(race)} title={race.isLocked ? 'Unlock registrations' : 'Lock registrations'} className={`p-1.5 rounded-lg transition-colors ${race.isLocked ? 'text-asha-dark hover:bg-gray-100' : 'text-asha-muted hover:bg-gray-100 hover:text-asha-dark'}`}>
+                                {race.isLocked ? <Lock size={14} /> : <Unlock size={14} />}
+                              </button>
+                              <button onClick={() => setModal({ race })} title="Edit" className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-asha-muted hover:text-asha-dark"><Pencil size={14} /></button>
+                              <button onClick={() => handleDelete(race)} title="Delete" className="p-1.5 hover:bg-red-50 rounded-lg transition-colors text-asha-muted hover:text-red-500"><Trash2 size={14} /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile list */}
+              <div className="lg:hidden bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
+                {filteredRaces.map(race => {
+                  const raceRegs = regs.filter(r => r.raceId === race.id)
+                  return (
+                    <div key={race.id}>
+                      <div className="flex items-center gap-3 px-3.5 py-2.5">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-0.5 ${race.isActive ? 'bg-green-400' : 'bg-gray-300'}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <div className="font-body font-semibold text-sm text-asha-dark">{race.name}</div>
+                            <TypeBadge type={race.type} />
                           </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <div className="text-center mr-1">
-                          <div className="font-mono font-bold text-sm text-asha-orange leading-tight">{raceRegs.length}</div>
-                          <div className="font-body text-[10px] text-asha-muted">athletes</div>
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                            <span className="font-body text-xs text-asha-muted flex items-center gap-1"><Calendar size={11} />{fmtDate(race.date)}</span>
+                            {race.location && <span className="font-body text-xs text-asha-muted flex items-center gap-1"><MapPin size={11} />{race.location}</span>}
+                            {race.registrationUrl && <a href={race.registrationUrl} target="_blank" rel="noopener noreferrer" className="font-body text-xs text-asha-orange flex items-center gap-1 hover:underline"><ExternalLink size={11} />Register</a>}
+                            {race.couponCode && <span className="font-body text-xs text-asha-muted flex items-center gap-1"><Tag size={10} />{race.couponCode}</span>}
+                          </div>
+                          {race.events?.length > 0 && (
+                            <div className="flex gap-1 mt-1.5 flex-wrap">
+                              {race.events.map(ev => <span key={ev} className="px-2 py-0.5 rounded-md bg-asha-cream font-body text-xs text-asha-muted">{ev}</span>)}
+                            </div>
+                          )}
                         </div>
-                        <button onClick={() => handleToggleLock(race)} title={race.isLocked ? 'Unlock registrations' : 'Lock registrations'} className={`p-1.5 rounded-lg transition-colors ${race.isLocked ? 'text-asha-dark hover:bg-gray-100' : 'text-asha-muted hover:bg-gray-100 hover:text-asha-dark'}`}>
-                          {race.isLocked ? <Lock size={14} /> : <Unlock size={14} />}
-                        </button>
-                        <button onClick={() => setModal({ race })} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-asha-muted hover:text-asha-dark"><Pencil size={14} /></button>
-                        <button onClick={() => handleDelete(race)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors text-asha-muted hover:text-red-500"><Trash2 size={14} /></button>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="text-center mr-1">
+                            <div className="font-mono font-bold text-sm text-asha-orange leading-tight">{raceRegs.length}</div>
+                            <div className="font-body text-[10px] text-asha-muted">athletes</div>
+                          </div>
+                          <button onClick={() => handleToggleLock(race)} title={race.isLocked ? 'Unlock registrations' : 'Lock registrations'} className={`p-1.5 rounded-lg transition-colors ${race.isLocked ? 'text-asha-dark hover:bg-gray-100' : 'text-asha-muted hover:bg-gray-100 hover:text-asha-dark'}`}>
+                            {race.isLocked ? <Lock size={14} /> : <Unlock size={14} />}
+                          </button>
+                          <button onClick={() => setModal({ race })} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-asha-muted hover:text-asha-dark"><Pencil size={14} /></button>
+                          <button onClick={() => handleDelete(race)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors text-asha-muted hover:text-red-500"><Trash2 size={14} /></button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </>
 
@@ -395,73 +446,142 @@ export default function RaceManagement() {
         ) : (
           <>
             <FilterBar typeFilter={typeFilter} setTypeFilter={setTypeFilter} distanceFilter={distanceFilter} setDistanceFilter={setDistanceFilter} />
-            <div className="mb-4 flex flex-wrap gap-1.5">
-              {applyFilters(races).map(r => (
-                <button key={r.id} onClick={() => setSelectedRace(r.id)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-body font-medium border transition-all ${selectedRace === r.id ? 'bg-asha-dark text-white border-asha-dark' : 'bg-white border-asha-border text-asha-muted hover:border-asha-orange/40'}`}>
-                  {r.name}<TypeBadge type={r.type} />
-                </button>
-              ))}
-            </div>
-            {selectedRaceObj && (
-              <>
-                <div className="bg-white rounded-xl border border-asha-border p-3.5 mb-4">
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-body font-semibold text-sm text-asha-dark">{selectedRaceObj.name}</span>
-                        <TypeBadge type={selectedRaceObj.type} />
-                      </div>
-                      <div className="font-body text-[11px] text-asha-muted flex items-center gap-1 mt-0.5"><Calendar size={10} />{fmtDate(selectedRaceObj.date)}</div>
-                    </div>
-                    <div className="flex gap-4">
-                      <div className="text-center">
-                        <div className="font-mono font-bold text-xl text-asha-orange leading-tight">{selectedRegs.length}</div>
-                        <div className="font-body text-[10px] text-asha-muted uppercase tracking-wide">participating</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-mono font-bold text-xl text-green-500 leading-tight">{totalRegistered}</div>
-                        <div className="font-body text-[10px] text-asha-muted uppercase tracking-wide">registered</div>
-                      </div>
-                    </div>
-                  </div>
-                  {Object.keys(byEvent).length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-2.5 border-t border-asha-border">
-                      {Object.entries(byEvent).map(([ev, evRegs]) => (
-                        <div key={ev} className="flex items-center gap-1 bg-asha-cream rounded-md px-1.5 py-0.5">
-                          <span className="font-body text-[11px] text-asha-muted">{ev}</span>
-                          <span className="font-mono text-[11px] font-semibold text-asha-dark">{evRegs.length}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+
+            <div className="lg:flex lg:min-h-[600px] lg:gap-0 lg:border lg:border-asha-border lg:rounded-xl lg:overflow-hidden bg-white">
+              {/* Left: race selector — mobile pills, desktop vertical list */}
+              <div className="lg:w-72 lg:border-r lg:border-asha-border lg:overflow-y-auto lg:flex-shrink-0">
+                {/* Mobile pill buttons */}
+                <div className="mb-4 flex flex-wrap gap-1.5 lg:hidden">
+                  {applyFilters(races).map(r => (
+                    <button key={r.id} onClick={() => setSelectedRace(r.id)}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-body font-medium border transition-all ${selectedRace === r.id ? 'bg-asha-dark text-white border-asha-dark' : 'bg-white border-asha-border text-asha-muted hover:border-asha-orange/40'}`}>
+                      {r.name}<TypeBadge type={r.type} />
+                    </button>
+                  ))}
                 </div>
-                {selectedRegs.length === 0 ? (
-                  <div className="text-center py-12"><Users size={28} className="text-asha-muted mx-auto mb-3" /><p className="font-body text-asha-muted text-sm">No athletes have selected this race yet</p></div>
-                ) : (
-                  <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
-                    {[...selectedRegs].sort((a, b) => (a.event || '').localeCompare(b.event || '')).map(reg => {
-                      const u = users[reg.athleteId]
-                      return (
-                        <div key={reg.id} className="flex items-center gap-3 px-3.5 py-2.5">
-                          {u?.photoURL ? <img src={u.photoURL} alt="" className="w-7 h-7 rounded-full flex-shrink-0" /> : <div className="w-7 h-7 rounded-full bg-asha-cream flex items-center justify-center flex-shrink-0"><Users size={12} className="text-asha-muted" /></div>}
-                          <div className="flex-1 min-w-0">
-                            <div className="font-body font-medium text-sm text-asha-dark">{u?.name || reg.athleteId}</div>
-                            <div className="font-body text-[11px] text-asha-muted">{u?.email}</div>
+                {/* Desktop vertical list */}
+                <div className="hidden lg:block divide-y divide-asha-border/40">
+                  <div className="px-4 py-3 bg-asha-cream/50">
+                    <span className="font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Select Race</span>
+                  </div>
+                  {applyFilters(races).map(r => (
+                    <button key={r.id} onClick={() => setSelectedRace(r.id)}
+                      className={`w-full text-left px-4 py-3 transition-colors ${selectedRace === r.id ? 'bg-asha-orangeDim border-l-2 border-asha-orange' : 'hover:bg-asha-cream/30 border-l-2 border-transparent'}`}>
+                      <div className="font-body font-medium text-sm text-asha-dark truncate">{r.name}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <TypeBadge type={r.type} />
+                        <span className="font-body text-xs text-asha-muted">{fmtDate(r.date)}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right: selected race details */}
+              <div className="lg:flex-1 lg:p-6">
+                {selectedRaceObj && (
+                  <>
+                    <div className="bg-white rounded-xl border border-asha-border lg:border-0 lg:rounded-none p-3.5 lg:p-0 mb-4">
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-body font-semibold text-sm text-asha-dark">{selectedRaceObj.name}</span>
+                            <TypeBadge type={selectedRaceObj.type} />
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="px-2 py-0.5 rounded-md bg-asha-cream font-body text-xs font-medium text-asha-dark">{reg.event}</span>
-                            {reg.isRegistered
-                              ? <span className="flex items-center gap-1 text-green-600 font-body text-xs font-medium"><CheckCircle2 size={12} />Registered</span>
-                              : <span className="flex items-center gap-1 text-asha-muted font-body text-xs"><Circle size={12} />Not yet</span>}
+                          <div className="font-body text-[11px] text-asha-muted flex items-center gap-1 mt-0.5"><Calendar size={10} />{fmtDate(selectedRaceObj.date)}</div>
+                        </div>
+                        <div className="flex gap-4">
+                          <div className="text-center">
+                            <div className="font-mono font-bold text-xl text-asha-orange leading-tight">{selectedRegs.length}</div>
+                            <div className="font-body text-[10px] text-asha-muted uppercase tracking-wide">participating</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-mono font-bold text-xl text-green-500 leading-tight">{totalRegistered}</div>
+                            <div className="font-body text-[10px] text-asha-muted uppercase tracking-wide">registered</div>
                           </div>
                         </div>
-                      )
-                    })}
-                  </div>
+                      </div>
+                      {Object.keys(byEvent).length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-2.5 border-t border-asha-border">
+                          {Object.entries(byEvent).map(([ev, evRegs]) => (
+                            <div key={ev} className="flex items-center gap-1 bg-asha-cream rounded-md px-1.5 py-0.5">
+                              <span className="font-body text-[11px] text-asha-muted">{ev}</span>
+                              <span className="font-mono text-[11px] font-semibold text-asha-dark">{evRegs.length}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {selectedRegs.length === 0 ? (
+                      <div className="text-center py-12"><Users size={28} className="text-asha-muted mx-auto mb-3" /><p className="font-body text-asha-muted text-sm">No athletes have selected this race yet</p></div>
+                    ) : (
+                      <>
+                        {/* Desktop table */}
+                        <div className="hidden lg:block overflow-x-auto bg-white rounded-xl border border-asha-border">
+                          <table className="w-full">
+                            <thead className="bg-asha-cream/50 border-b border-asha-border">
+                              <tr>
+                                <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Athlete</th>
+                                <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Event</th>
+                                <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-asha-border/40">
+                              {[...selectedRegs].sort((a, b) => (a.event || '').localeCompare(b.event || '')).map(reg => {
+                                const u = users[reg.athleteId]
+                                return (
+                                  <tr key={reg.id} className="hover:bg-asha-cream/30 transition-colors">
+                                    <td className="px-4 py-3">
+                                      <div className="flex items-center gap-2">
+                                        {u?.photoURL ? <img src={u.photoURL} alt="" className="w-7 h-7 rounded-full flex-shrink-0" /> : <div className="w-7 h-7 rounded-full bg-asha-cream flex items-center justify-center flex-shrink-0"><Users size={12} className="text-asha-muted" /></div>}
+                                        <div>
+                                          <div className="font-body font-medium text-sm text-asha-dark">{u?.name || reg.athleteId}</div>
+                                          <div className="font-body text-xs text-asha-muted">{u?.email}</div>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <span className="px-2 py-0.5 rounded-md bg-asha-cream font-body text-xs font-medium text-asha-dark">{reg.event}</span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      {reg.isRegistered
+                                        ? <span className="flex items-center gap-1 text-green-600 font-body text-xs font-medium"><CheckCircle2 size={12} />Registered</span>
+                                        : <span className="flex items-center gap-1 text-asha-muted font-body text-xs"><Circle size={12} />Not yet</span>}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Mobile list */}
+                        <div className="lg:hidden bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
+                          {[...selectedRegs].sort((a, b) => (a.event || '').localeCompare(b.event || '')).map(reg => {
+                            const u = users[reg.athleteId]
+                            return (
+                              <div key={reg.id} className="flex items-center gap-3 px-3.5 py-2.5">
+                                {u?.photoURL ? <img src={u.photoURL} alt="" className="w-7 h-7 rounded-full flex-shrink-0" /> : <div className="w-7 h-7 rounded-full bg-asha-cream flex items-center justify-center flex-shrink-0"><Users size={12} className="text-asha-muted" /></div>}
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-body font-medium text-sm text-asha-dark">{u?.name || reg.athleteId}</div>
+                                  <div className="font-body text-[11px] text-asha-muted">{u?.email}</div>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <span className="px-2 py-0.5 rounded-md bg-asha-cream font-body text-xs font-medium text-asha-dark">{reg.event}</span>
+                                  {reg.isRegistered
+                                    ? <span className="flex items-center gap-1 text-green-600 font-body text-xs font-medium"><CheckCircle2 size={12} />Registered</span>
+                                    : <span className="flex items-center gap-1 text-asha-muted font-body text-xs"><Circle size={12} />Not yet</span>}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </>
                 )}
-              </>
-            )}
+              </div>
+            </div>
           </>
         )
 

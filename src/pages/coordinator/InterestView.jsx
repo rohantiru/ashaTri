@@ -102,8 +102,8 @@ export default function InterestView() {
           </div>
         </button>
 
-        {isOpen && (
-          <div className="border-t border-asha-border">
+        {(isOpen || true) && (
+          <div className={`border-t border-asha-border ${isOpen ? '' : 'hidden lg:block'}`}>
             {Object.keys(bySizeStatus).length > 0 && (
               <div className="p-4 border-b border-asha-border">
                 <h4 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase mb-3">Breakdown by Size</h4>
@@ -175,7 +175,7 @@ export default function InterestView() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-5xl mx-auto px-4 py-4 sm:py-6">
       <div className="flex items-baseline justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">Interest & Orders</h1>
         {grandTotal > 0 && (
@@ -200,13 +200,13 @@ export default function InterestView() {
           {inventoryItems.length > 0 && (
             <div>
               <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase mb-2">Inventory Orders</h2>
-              <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">{inventoryItems.map(renderItem)}</div>
+              <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50 lg:grid lg:grid-cols-2 lg:divide-y-0 lg:gap-0">{inventoryItems.map(renderItem)}</div>
             </div>
           )}
           {interestItems.length > 0 && (
             <div>
               <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase mb-2">Interest Polls</h2>
-              <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">{interestItems.map(renderItem)}</div>
+              <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50 lg:grid lg:grid-cols-2 lg:divide-y-0 lg:gap-0">{interestItems.map(renderItem)}</div>
             </div>
           )}
         </div>

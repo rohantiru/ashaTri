@@ -121,7 +121,7 @@ export default function AthleteRaces() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-5xl mx-auto px-4 py-4 sm:py-6">
       <div className="flex items-baseline justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">Races</h1>
       </div>
@@ -177,7 +177,7 @@ export default function AthleteRaces() {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
+        <div className="lg:grid lg:grid-cols-2 lg:gap-4 space-y-4 lg:space-y-0">
           {filtered.map(race => {
             const reg = myRegs[race.id]
             const days = daysUntil(race.date)
@@ -185,7 +185,7 @@ export default function AthleteRaces() {
             const isLocked = !!race.isLocked
 
             return (
-              <div key={race.id} className={`${reg ? 'bg-asha-orangeDim/10' : ''}`}>
+              <div key={race.id} className={`bg-white rounded-xl border border-asha-border overflow-hidden lg:hover:shadow-md transition-all ${reg ? 'bg-asha-orangeDim/10' : ''}`}>
                 <div className="flex items-start gap-3 px-3.5 py-3">
                   <div className={`w-1.5 self-stretch rounded-full flex-shrink-0 mt-0.5 ${reg ? 'bg-asha-orange' : 'bg-asha-border'}`} />
                   <div className="flex-1 min-w-0">

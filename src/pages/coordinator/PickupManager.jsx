@@ -89,7 +89,7 @@ export default function PickupManager() {
   const statusCounts = FULL_FLOW.map(s => ({ s, count: responses.filter(r => r.status === s).length }))
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">Pickup Manager</h1>
         <button
@@ -111,7 +111,7 @@ export default function PickupManager() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-5">
+      <div className="flex flex-wrap gap-2 mb-5 lg:flex lg:items-center lg:gap-4">
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-asha-muted" />
           <input
@@ -208,7 +208,7 @@ export default function PickupManager() {
                         <button
                           onClick={() => advanceStatus(r)}
                           disabled={isUpdating}
-                          className="text-xs font-body font-medium px-2.5 py-1 bg-asha-orange text-white rounded-lg hover:bg-asha-orangeLight transition-colors disabled:opacity-50"
+                          className="text-xs font-body font-medium px-2.5 py-1 bg-asha-orange text-white rounded-lg hover:bg-asha-orangeLight transition-colors disabled:opacity-50 lg:min-w-[140px]"
                         >
                           {isUpdating ? '…' : `→ ${nextLabel}`}
                         </button>

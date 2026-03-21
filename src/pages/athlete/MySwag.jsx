@@ -81,7 +81,7 @@ export default function MySwag() {
   const filtered = responses.filter(r => filterStatus === 'all' || r.status === filterStatus)
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
       <div className="flex items-baseline justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">My Swag</h1>
       </div>
@@ -159,7 +159,8 @@ export default function MySwag() {
             const StatusIcon = meta.icon
 
             return (
-              <div key={r.id} className="px-3.5 py-3">
+              <div key={r.id} className="px-3.5 py-3 lg:grid lg:grid-cols-[1fr_180px_auto] lg:gap-4 lg:items-center">
+                {/* Name + status description */}
                 <div className="flex items-center gap-3">
                   <StatusIcon size={14} className={`${meta.color} flex-shrink-0`} />
                   <div className="flex-1 min-w-0">
@@ -172,29 +173,39 @@ export default function MySwag() {
                     <div className="font-body text-[10px] text-asha-muted mt-0.5">{meta.desc}</div>
                     <ProgressBar status={r.status} itemType={item?.type} />
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {item?.price != null && (
-                      <span className="font-mono text-xs font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
-                    )}
-                    <StatusBadge status={r.status} />
-                  </div>
                 </div>
-                {/* Cancel button */}
-                {(r.status === 'interested' || r.status === 'ordered') && !item?.isLocked && (
-                  <div className="mt-2 pt-2 border-t border-asha-border/50">
-                    <button
-                      onClick={() => { if (confirm('Cancel this order?')) cancelResponse(r) }}
-                      className="text-xs font-body text-asha-muted hover:text-red-500 transition-colors"
-                    >
-                      Cancel order
-                    </button>
-                  </div>
-                )}
-                {item?.isLocked && (r.status === 'interested' || r.status === 'ordered') && (
-                  <div className="mt-2 pt-2 border-t border-asha-border/50">
-                    <span className="text-xs font-body text-asha-muted">Order locked by coordinator</span>
-                  </div>
-                )}
+                {/* Status badge + price */}
+                <div className="hidden lg:flex items-center gap-2">
+                  <StatusBadge status={r.status} />
+                  {item?.price != null && (
+                    <span className="font-mono text-xs font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
+                  )}
+                </div>
+                {/* Mobile: price + badge inline */}
+                <div className="lg:hidden flex items-center gap-2 flex-shrink-0 mt-2">
+                  {item?.price != null && (
+                    <span className="font-mono text-xs font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
+                  )}
+                  <StatusBadge status={r.status} />
+                </div>
+                {/* Cancel / locked */}
+                <div className="lg:flex lg:justify-end">
+                  {(r.status === 'interested' || r.status === 'ordered') && !item?.isLocked && (
+                    <div className="mt-2 pt-2 border-t border-asha-border/50 lg:mt-0 lg:pt-0 lg:border-0">
+                      <button
+                        onClick={() => { if (confirm('Cancel this order?')) cancelResponse(r) }}
+                        className="text-xs font-body text-asha-muted hover:text-red-500 transition-colors"
+                      >
+                        Cancel order
+                      </button>
+                    </div>
+                  )}
+                  {item?.isLocked && (r.status === 'interested' || r.status === 'ordered') && (
+                    <div className="mt-2 pt-2 border-t border-asha-border/50 lg:mt-0 lg:pt-0 lg:border-0">
+                      <span className="text-xs font-body text-asha-muted">Order locked by coordinator</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )
           })}

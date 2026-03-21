@@ -46,7 +46,7 @@ export default function ExpensesSummary() {
   const athleteEntries = Object.entries(byAthlete).sort((a, b) => b[1].total - a[1].total)
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
       <div className="flex items-baseline justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">Expenses Summary</h1>
       </div>
@@ -59,77 +59,107 @@ export default function ExpensesSummary() {
           <p className="font-body text-asha-muted text-sm">No expenses submitted yet</p>
         </div>
       ) : (
-        <>
-          {/* Grand total + category breakdown */}
-          <div className="bg-white rounded-xl border border-asha-border p-3.5 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-body font-semibold text-asha-dark text-sm">Total</span>
-              <span className="font-mono font-bold text-xl text-asha-orange">{fmtUSD(grandTotal)}</span>
+        <div className="lg:grid lg:grid-cols-[1fr_260px] lg:gap-8 lg:items-start">
+          {/* Left column */}
+          <div>
+            {/* Grand total + category breakdown (mobile) */}
+            <div className="bg-white rounded-xl border border-asha-border p-3.5 mb-4 lg:hidden">
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-body font-semibold text-asha-dark text-sm">Total</span>
+                <span className="font-mono font-bold text-xl text-asha-orange">{fmtUSD(grandTotal)}</span>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {CATEGORIES.map(cat => (
+                  <div key={cat} className="text-center p-2 bg-asha-cream rounded-xl">
+                    <div className="font-mono font-semibold text-xs text-asha-dark">{fmtUSD(byCategory[cat] || 0)}</div>
+                    <div className="font-body text-xs text-asha-muted mt-0.5">{cat}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {CATEGORIES.map(cat => (
-                <div key={cat} className="text-center p-2 bg-asha-cream rounded-xl">
-                  <div className="font-mono font-semibold text-xs text-asha-dark">{fmtUSD(byCategory[cat] || 0)}</div>
-                  <div className="font-body text-xs text-asha-muted mt-0.5">{cat}</div>
-                </div>
+
+            {/* Category filter */}
+            <div className="flex gap-2 mb-5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {['all', ...CATEGORIES].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setFilterCategory(cat)}
+                  className={`px-2.5 py-1 rounded-lg font-body font-medium text-xs transition-all whitespace-nowrap ${filterCategory === cat ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'}`}
+                >
+                  {cat === 'all' ? `All (${expenses.length})` : cat}
+                </button>
               ))}
             </div>
-          </div>
 
-          {/* Category filter */}
-          <div className="flex gap-2 mb-5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {['all', ...CATEGORIES].map(cat => (
-              <button
-                key={cat}
-                onClick={() => setFilterCategory(cat)}
-                className={`px-2.5 py-1 rounded-lg font-body font-medium text-xs transition-all ${filterCategory === cat ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'}`}
-              >
-                {cat === 'all' ? `All (${expenses.length})` : cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Per-athlete breakdown */}
-          <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
-            {athleteEntries.map(([athleteId, { total, items }]) => {
-              const u = users[athleteId]
-              const isOpen = expanded[athleteId]
-              const athleteItems = filterCategory === 'all' ? items : items.filter(e => e.category === filterCategory)
-              if (athleteItems.length === 0) return null
-              const athleteTotal = athleteItems.reduce((s, e) => s + (e.amount || 0), 0)
-              return (
-                <div key={athleteId} className="overflow-hidden">
-                  <button
-                    onClick={() => setExpanded(ex => ({ ...ex, [athleteId]: !ex[athleteId] }))}
-                    className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-gray-50/50 transition-colors"
-                  >
-                    {u?.photoURL && <img src={u.photoURL} alt="" className="w-8 h-8 rounded-full flex-shrink-0" />}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-body font-medium text-sm text-asha-dark">{u?.name || athleteId}</div>
-                      <div className="font-body text-xs text-asha-muted">{athleteItems.length} expense{athleteItems.length !== 1 ? 's' : ''}</div>
-                    </div>
-                    <span className="font-display font-bold text-asha-orange">{fmtUSD(athleteTotal)}</span>
-                    {isOpen ? <ChevronUp size={16} className="text-asha-muted" /> : <ChevronDown size={16} className="text-asha-muted" />}
-                  </button>
-                  {isOpen && (
-                    <div className="border-t border-asha-border">
-                      {athleteItems.sort((a, b) => b.date > a.date ? 1 : -1).map(e => (
-                        <div key={e.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-asha-border/40 last:border-0">
-                          <div className="flex-1 min-w-0">
-                            <div className="font-body text-sm text-asha-dark">{e.title}</div>
-                            <div className="font-body text-xs text-asha-muted">{e.date} · {e.category}</div>
-                            {e.notes && <div className="font-body text-xs text-asha-muted truncate">{e.notes}</div>}
+            {/* Per-athlete breakdown */}
+            <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
+              {athleteEntries.map(([athleteId, { total, items }]) => {
+                const u = users[athleteId]
+                const isOpen = expanded[athleteId]
+                const athleteItems = filterCategory === 'all' ? items : items.filter(e => e.category === filterCategory)
+                if (athleteItems.length === 0) return null
+                const athleteTotal = athleteItems.reduce((s, e) => s + (e.amount || 0), 0)
+                return (
+                  <div key={athleteId} className="overflow-hidden">
+                    <button
+                      onClick={() => setExpanded(ex => ({ ...ex, [athleteId]: !ex[athleteId] }))}
+                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-gray-50/50 transition-colors"
+                    >
+                      {u?.photoURL && <img src={u.photoURL} alt="" className="w-8 h-8 rounded-full flex-shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-body font-medium text-sm text-asha-dark">{u?.name || athleteId}</div>
+                        <div className="font-body text-xs text-asha-muted">{athleteItems.length} expense{athleteItems.length !== 1 ? 's' : ''}</div>
+                      </div>
+                      <span className="font-display font-bold text-asha-orange">{fmtUSD(athleteTotal)}</span>
+                      {isOpen ? <ChevronUp size={16} className="text-asha-muted" /> : <ChevronDown size={16} className="text-asha-muted" />}
+                    </button>
+                    {isOpen && (
+                      <div className="border-t border-asha-border">
+                        {athleteItems.sort((a, b) => b.date > a.date ? 1 : -1).map(e => (
+                          <div key={e.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-asha-border/40 last:border-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-body text-sm text-asha-dark">{e.title}</div>
+                              <div className="font-body text-xs text-asha-muted">{e.date} · {e.category}</div>
+                              {e.notes && <div className="font-body text-xs text-asha-muted truncate">{e.notes}</div>}
+                            </div>
+                            <span className="font-body font-semibold text-sm text-asha-dark flex-shrink-0">{fmtUSD(e.amount)}</span>
                           </div>
-                          <span className="font-body font-semibold text-sm text-asha-dark flex-shrink-0">{fmtUSD(e.amount)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        </>
+
+          {/* Right rail (desktop only) — summary card */}
+          <div className="hidden lg:block lg:sticky lg:top-8">
+            <div className="bg-white rounded-xl border border-asha-border p-4">
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-body font-semibold text-asha-dark text-sm">Total</span>
+                <span className="font-mono font-bold text-2xl text-asha-orange">{fmtUSD(grandTotal)}</span>
+              </div>
+              <div className="space-y-2 mb-4">
+                {CATEGORIES.filter(cat => byCategory[cat]).map(cat => {
+                  const val = byCategory[cat] || 0
+                  const pct = grandTotal > 0 ? Math.round((val / grandTotal) * 100) : 0
+                  return (
+                    <div key={cat}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-body text-xs text-asha-muted">{cat}</span>
+                        <span className="font-mono text-xs font-semibold text-asha-dark">{fmtUSD(val)}</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-asha-cream rounded-full overflow-hidden">
+                        <div className="h-full bg-asha-orange/70 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

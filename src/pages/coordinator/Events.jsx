@@ -152,6 +152,12 @@ function EventModal({ initial, allUsers, teams, calendarReady, onSave, onClose }
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
+  useEffect(() => {
+    const onKeyDown = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
   const handleSubmit = async () => {
     if (!form.title.trim() || !form.date || !form.startTime || !form.endTime) {
       setError('Title, date, and times are required.')
@@ -172,8 +178,8 @@ function EventModal({ initial, allUsers, teams, calendarReady, onSave, onClose }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-asha-border w-full max-w-lg max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 lg:items-stretch lg:justify-end">
+      <div className="bg-white rounded-2xl border border-asha-border w-full max-w-lg max-h-[92vh] lg:rounded-none lg:h-full lg:max-h-screen lg:max-w-[520px] flex flex-col">
         <div className="flex items-center justify-between p-5 border-b border-asha-border flex-shrink-0">
           <h2 className="font-display font-bold text-asha-dark">{initial ? 'Edit Event' : 'New Event'}</h2>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><X size={16} /></button>
@@ -402,7 +408,7 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
       <div className="flex items-baseline justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">Events</h1>
         <button onClick={() => setModal({ event: null })}
@@ -430,28 +436,73 @@ export default function EventsPage() {
           </button>
         </div>
       ) : (
-        <div className="space-y-5">
-          {upcoming.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase">Upcoming</h2>
+        <>
+          {/* Desktop table */}
+          <div className="hidden lg:block overflow-x-auto bg-white rounded-xl border border-asha-border">
+            <table className="w-full">
+              <thead className="bg-asha-cream/50 border-b border-asha-border">
+                <tr>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Event</th>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Date & Time</th>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Location</th>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Recipients</th>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-asha-border/40">
+                {events.map(ev => {
+                  const recipients = (ev.recipientIds ?? []).map(uid => userMap[uid]).filter(Boolean)
+                  return (
+                    <tr key={ev.id} className="hover:bg-asha-cream/30 transition-colors group">
+                      <td className="px-4 py-3">
+                        <div className="font-body font-medium text-sm text-asha-dark">{ev.title}</div>
+                        {ev.inviteSent && <span className="text-[9px] font-body text-green-600 bg-green-50 px-1.5 py-px rounded-full">Invited</span>}
+                      </td>
+                      <td className="px-4 py-3 font-body text-sm text-asha-muted whitespace-nowrap">
+                        <div>{fmtDate(ev.date)}</div>
+                        <div className="text-xs">{fmtTime(ev.startTime)}–{fmtTime(ev.endTime)}</div>
+                      </td>
+                      <td className="px-4 py-3 font-body text-sm text-asha-muted">{ev.location || '—'}</td>
+                      <td className="px-4 py-3 font-body text-sm text-asha-muted">
+                        {recipients.length > 0 ? `${recipients.length} recipient${recipients.length !== 1 ? 's' : ''}` : 'All'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-0.5">
+                          <button onClick={() => setModal({ event: ev })} className="p-1.5 hover:bg-gray-100 rounded-lg text-asha-muted" title="Edit"><Pencil size={13} /></button>
+                          <button onClick={() => handleDelete(ev)} className="p-1.5 hover:bg-red-50 rounded-lg text-asha-muted hover:text-red-500" title="Delete"><Trash2 size={13} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card list */}
+          <div className="lg:hidden space-y-5">
+            {upcoming.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase">Upcoming</h2>
+                </div>
+                <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
+                  {upcoming.map(e => <EventCard key={e.id} event={e} />)}
+                </div>
               </div>
-              <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
-                {upcoming.map(e => <EventCard key={e.id} event={e} />)}
+            )}
+            {past.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase">Past</h2>
+                </div>
+                <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50 opacity-60">
+                  {past.map(e => <EventCard key={e.id} event={e} />)}
+                </div>
               </div>
-            </div>
-          )}
-          {past.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase">Past</h2>
-              </div>
-              <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50 opacity-60">
-                {past.map(e => <EventCard key={e.id} event={e} />)}
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </>
       )}
 
       {modal && (

@@ -294,6 +294,7 @@ export default function TrainingPlans() {
   const [showUpload, setShowUpload] = useState(false)
   const [toggling, setToggling] = useState({})
   const [deleting, setDeleting] = useState(null)
+  const [selectedPlanId, setSelectedPlanId] = useState(null)
 
   // Teams (for plan assignment only — management is handled elsewhere)
   const [teams, setTeams] = useState([])
@@ -377,8 +378,10 @@ export default function TrainingPlans() {
   // ── teamName lookup helper ───────────────────────────────────────────────────
   const teamById = Object.fromEntries(teams.map(t => [t.id, t]))
 
+  const selectedPlan = plans.find(p => p.id === selectedPlanId) ?? plans[0] ?? null
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-full lg:px-6 px-4 py-4 sm:py-6">
 
       {/* Header */}
       <div className="flex items-baseline justify-between mb-4 flex-wrap gap-3">
@@ -424,157 +427,257 @@ export default function TrainingPlans() {
         </div>
 
       ) : (
-        <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
-          {plans.map(plan => {
-            const isExp = expanded.has(plan.id)
-            const end = planEndDate(plan)
-            const sessions = sessionCount(plan)
+        <div className="lg:grid lg:grid-cols-[280px_1fr] lg:gap-8 lg:items-start">
+          {/* Plan list */}
+          <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
+            {plans.map(plan => {
+              const isExp = expanded.has(plan.id)
+              const end = planEndDate(plan)
+              const sessions = sessionCount(plan)
+              const isSelected = (selectedPlanId ?? plans[0]?.id) === plan.id
 
-            return (
-              <div
-                key={plan.id}
-                className={`transition-all ${plan.isActive ? '' : 'opacity-60'}`}
-              >
-                {/* Row header */}
-                <div className="px-3.5 py-2.5 flex items-center gap-3">
-                  {/* Active dot */}
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${plan.isActive ? 'bg-emerald-500' : 'bg-asha-border'}`} />
+              return (
+                <div
+                  key={plan.id}
+                  className={`transition-all ${plan.isActive ? '' : 'opacity-60'}`}
+                >
+                  {/* Row header */}
+                  <div
+                    onClick={() => setSelectedPlanId(plan.id)}
+                    className={`px-3.5 py-2.5 flex items-center gap-3 cursor-pointer transition-colors ${isSelected ? 'bg-asha-orangeDim' : 'hover:bg-asha-cream/50'}`}
+                  >
+                    {/* Active dot */}
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${plan.isActive ? 'bg-emerald-500' : 'bg-asha-border'}`} />
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-body font-medium text-sm text-asha-dark leading-tight">{plan.name}</span>
-                      {(plan.teamIds || []).map(tid => teamById[tid] && (
-                        <span key={tid} className="text-[10px] font-body font-semibold px-2 py-0.5 rounded-full bg-asha-orangeDim text-asha-orange border border-asha-orange/20">
-                          {teamById[tid].name}
-                        </span>
-                      ))}
-                      {!(plan.teamIds?.length) && (
-                        <span className="text-[10px] font-body px-2 py-0.5 rounded-full bg-asha-cream text-asha-muted border border-asha-border">
-                          All athletes
-                        </span>
-                      )}
-                      {!plan.isActive && (
-                        <span className="text-[10px] font-body px-2 py-0.5 rounded-full bg-gray-100 text-asha-muted border border-asha-border">
-                          Inactive
-                        </span>
-                      )}
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-body font-medium text-sm text-asha-dark leading-tight">{plan.name}</span>
+                        {(plan.teamIds || []).map(tid => teamById[tid] && (
+                          <span key={tid} className="text-[10px] font-body font-semibold px-2 py-0.5 rounded-full bg-asha-orangeDim text-asha-orange border border-asha-orange/20">
+                            {teamById[tid].name}
+                          </span>
+                        ))}
+                        {!(plan.teamIds?.length) && (
+                          <span className="text-[10px] font-body px-2 py-0.5 rounded-full bg-asha-cream text-asha-muted border border-asha-border">
+                            All athletes
+                          </span>
+                        )}
+                        {!plan.isActive && (
+                          <span className="text-[10px] font-body px-2 py-0.5 rounded-full bg-gray-100 text-asha-muted border border-asha-border">
+                            Inactive
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1 text-xs font-body text-asha-muted flex-wrap">
+                        <Calendar size={10} />
+                        {fmtDate(plan.startDate)} → {fmtDate(end)}
+                        <span className="text-asha-border">·</span>
+                        {plan.weeks.length} wk{plan.weeks.length !== 1 ? 's' : ''}
+                        <span className="text-asha-border">·</span>
+                        {sessions} session{sessions !== 1 ? 's' : ''}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 mt-1 text-xs font-body text-asha-muted flex-wrap">
-                      <Calendar size={10} />
-                      {fmtDate(plan.startDate)} → {fmtDate(end)}
-                      <span className="text-asha-border">·</span>
-                      {plan.weeks.length} wk{plan.weeks.length !== 1 ? 's' : ''}
-                      <span className="text-asha-border">·</span>
-                      {sessions} session{sessions !== 1 ? 's' : ''}
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                      <button
+                        onClick={e => { e.stopPropagation(); handleToggleActive(plan) }}
+                        disabled={!!toggling[plan.id]}
+                        title={plan.isActive ? 'Deactivate (hide from athletes)' : 'Activate (show to athletes)'}
+                        className={`p-2 rounded-lg transition-colors ${plan.isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-asha-muted hover:bg-asha-cream'}`}
+                      >
+                        {toggling[plan.id]
+                          ? <Loader2 size={14} className="animate-spin" />
+                          : plan.isActive ? <Eye size={14} /> : <EyeOff size={14} />
+                        }
+                      </button>
+                      {/* Expand/collapse toggle (mobile only - on desktop use right pane) */}
+                      <button
+                        onClick={e => { e.stopPropagation(); toggleExpand(plan.id) }}
+                        className="p-2 rounded-lg text-asha-muted hover:text-asha-dark hover:bg-asha-cream transition-colors lg:hidden"
+                        title={isExp ? 'Collapse' : 'View schedule'}
+                      >
+                        {isExp ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); handleDelete(plan) }}
+                        disabled={deleting === plan.id}
+                        className="p-2 rounded-lg text-asha-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                        title="Delete plan"
+                      >
+                        {deleting === plan.id
+                          ? <Loader2 size={14} className="animate-spin" />
+                          : <Trash2 size={14} />
+                        }
+                      </button>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-0.5 flex-shrink-0">
-                    <button
-                      onClick={() => handleToggleActive(plan)}
-                      disabled={!!toggling[plan.id]}
-                      title={plan.isActive ? 'Deactivate (hide from athletes)' : 'Activate (show to athletes)'}
-                      className={`p-2 rounded-lg transition-colors ${plan.isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-asha-muted hover:bg-asha-cream'}`}
-                    >
-                      {toggling[plan.id]
-                        ? <Loader2 size={14} className="animate-spin" />
-                        : plan.isActive ? <Eye size={14} /> : <EyeOff size={14} />
-                      }
-                    </button>
-                    <button
-                      onClick={() => toggleExpand(plan.id)}
-                      className="p-2 rounded-lg text-asha-muted hover:text-asha-dark hover:bg-asha-cream transition-colors"
-                      title={isExp ? 'Collapse' : 'View schedule'}
-                    >
-                      {isExp ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(plan)}
-                      disabled={deleting === plan.id}
-                      className="p-2 rounded-lg text-asha-muted hover:text-red-500 hover:bg-red-50 transition-colors"
-                      title="Delete plan"
-                    >
-                      {deleting === plan.id
-                        ? <Loader2 size={14} className="animate-spin" />
-                        : <Trash2 size={14} />
-                      }
-                    </button>
-                  </div>
-                </div>
-
-                {/* Expanded: team assignment + week grid */}
-                {isExp && (
-                  <div className="border-t border-asha-border/50 px-4 pt-4 pb-5 space-y-4">
-                    {/* Team assignment */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-body font-semibold text-asha-muted uppercase tracking-wide">Assigned teams</span>
-                        {assigningPlanId === plan.id ? (
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => setAssigningPlanId(null)} className="text-xs font-body text-asha-muted hover:text-asha-dark transition-colors">Cancel</button>
+                  {/* Expanded (mobile): team assignment + week grid */}
+                  {isExp && (
+                    <div className="border-t border-asha-border/50 px-4 pt-4 pb-5 space-y-4 lg:hidden">
+                      {/* Team assignment */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-body font-semibold text-asha-muted uppercase tracking-wide">Assigned teams</span>
+                          {assigningPlanId === plan.id ? (
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => setAssigningPlanId(null)} className="text-xs font-body text-asha-muted hover:text-asha-dark transition-colors">Cancel</button>
+                              <button
+                                onClick={() => saveAssignTeams(plan.id)}
+                                disabled={savingTeams}
+                                className="flex items-center gap-1 text-xs font-body font-semibold text-white bg-asha-orange px-2.5 py-1 rounded-lg hover:bg-asha-orangeLight transition-colors disabled:opacity-40"
+                              >
+                                {savingTeams && <Loader2 size={11} className="animate-spin" />}
+                                Save
+                              </button>
+                            </div>
+                          ) : (
                             <button
-                              onClick={() => saveAssignTeams(plan.id)}
-                              disabled={savingTeams}
-                              className="flex items-center gap-1 text-xs font-body font-semibold text-white bg-asha-orange px-2.5 py-1 rounded-lg hover:bg-asha-orangeLight transition-colors disabled:opacity-40"
+                              onClick={() => startAssignTeams(plan)}
+                              className="flex items-center gap-1 text-xs font-body text-asha-muted hover:text-asha-dark transition-colors"
                             >
-                              {savingTeams && <Loader2 size={11} className="animate-spin" />}
-                              Save
+                              <Pencil size={11} /> Edit
                             </button>
-                          </div>
+                          )}
+                        </div>
+
+                        {assigningPlanId === plan.id ? (
+                          teams.length === 0 ? (
+                            <p className="text-xs text-asha-muted font-body">Create a team above first.</p>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              {teams.map(t => {
+                                const sel = draftTeamIds.includes(t.id)
+                                return (
+                                  <button
+                                    key={t.id}
+                                    onClick={() => toggleDraftTeam(t.id)}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-body font-semibold border transition-colors ${sel ? 'bg-asha-orange text-white border-asha-orange' : 'bg-asha-cream text-asha-muted border-asha-border hover:border-asha-orange'}`}
+                                  >
+                                    {sel && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                    {t.name}
+                                  </button>
+                                )
+                              })}
+                              {draftTeamIds.length === 0 && (
+                                <span className="text-xs font-body text-asha-muted italic">No teams selected = visible to all athletes</span>
+                              )}
+                            </div>
+                          )
                         ) : (
-                          <button
-                            onClick={() => startAssignTeams(plan)}
-                            className="flex items-center gap-1 text-xs font-body text-asha-muted hover:text-asha-dark transition-colors"
-                          >
-                            <Pencil size={11} /> Edit
-                          </button>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(plan.teamIds || []).length === 0 ? (
+                              <span className="text-xs font-body text-asha-muted italic">All athletes (no team restriction)</span>
+                            ) : (plan.teamIds || []).map(tid => teamById[tid] && (
+                              <span key={tid} className="px-2.5 py-1 rounded-full bg-asha-orangeDim text-asha-orange text-xs font-body font-semibold border border-asha-orange/20">
+                                {teamById[tid].name} · {teamById[tid].memberIds?.length ?? 0}
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
 
-                      {assigningPlanId === plan.id ? (
-                        teams.length === 0 ? (
-                          <p className="text-xs text-asha-muted font-body">Create a team above first.</p>
-                        ) : (
-                          <div className="flex flex-wrap gap-2">
-                            {teams.map(t => {
-                              const sel = draftTeamIds.includes(t.id)
-                              return (
-                                <button
-                                  key={t.id}
-                                  onClick={() => toggleDraftTeam(t.id)}
-                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-body font-semibold border transition-colors ${sel ? 'bg-asha-orange text-white border-asha-orange' : 'bg-asha-cream text-asha-muted border-asha-border hover:border-asha-orange'}`}
-                                >
-                                  {sel && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                                  {t.name}
-                                </button>
-                              )
-                            })}
-                            {draftTeamIds.length === 0 && (
-                              <span className="text-xs font-body text-asha-muted italic">No teams selected = visible to all athletes</span>
-                            )}
-                          </div>
-                        )
-                      ) : (
-                        <div className="flex flex-wrap gap-1.5">
-                          {(plan.teamIds || []).length === 0 ? (
-                            <span className="text-xs font-body text-asha-muted italic">All athletes (no team restriction)</span>
-                          ) : (plan.teamIds || []).map(tid => teamById[tid] && (
-                            <span key={tid} className="px-2.5 py-1 rounded-full bg-asha-orangeDim text-asha-orange text-xs font-body font-semibold border border-asha-orange/20">
-                              {teamById[tid].name} · {teamById[tid].memberIds?.length ?? 0}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      <WeekGrid weeks={plan.weeks} />
                     </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
 
-                    <WeekGrid weeks={plan.weeks} />
+          {/* Right pane: selected plan detail (desktop only) */}
+          {selectedPlan && (
+            <div className="hidden lg:block lg:bg-white lg:rounded-2xl lg:border lg:border-asha-border lg:p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="font-display font-bold text-asha-dark">{selectedPlan.name}</h3>
+                  <div className="flex items-center gap-1.5 mt-1 text-xs font-body text-asha-muted">
+                    <Calendar size={10} />
+                    {fmtDate(selectedPlan.startDate)} → {fmtDate(planEndDate(selectedPlan))}
+                    <span className="text-asha-border">·</span>
+                    {selectedPlan.weeks.length} weeks · {sessionCount(selectedPlan)} sessions
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleToggleActive(selectedPlan)}
+                    disabled={!!toggling[selectedPlan.id]}
+                    title={selectedPlan.isActive ? 'Deactivate' : 'Activate'}
+                    className={`p-2 rounded-lg transition-colors ${selectedPlan.isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-asha-muted hover:bg-asha-cream'}`}
+                  >
+                    {toggling[selectedPlan.id] ? <Loader2 size={14} className="animate-spin" /> : selectedPlan.isActive ? <Eye size={14} /> : <EyeOff size={14} />}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(selectedPlan)}
+                    disabled={deleting === selectedPlan.id}
+                    className="p-2 rounded-lg text-asha-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                    title="Delete"
+                  >
+                    {deleting === selectedPlan.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Team assignment (desktop right pane) */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-body font-semibold text-asha-muted uppercase tracking-wide">Assigned teams</span>
+                  {assigningPlanId === selectedPlan.id ? (
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setAssigningPlanId(null)} className="text-xs font-body text-asha-muted hover:text-asha-dark transition-colors">Cancel</button>
+                      <button
+                        onClick={() => saveAssignTeams(selectedPlan.id)}
+                        disabled={savingTeams}
+                        className="flex items-center gap-1 text-xs font-body font-semibold text-white bg-asha-orange px-2.5 py-1 rounded-lg hover:bg-asha-orangeLight transition-colors disabled:opacity-40"
+                      >
+                        {savingTeams && <Loader2 size={11} className="animate-spin" />}
+                        Save
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => startAssignTeams(selectedPlan)}
+                      className="flex items-center gap-1 text-xs font-body text-asha-muted hover:text-asha-dark transition-colors"
+                    >
+                      <Pencil size={11} /> Edit
+                    </button>
+                  )}
+                </div>
+                {assigningPlanId === selectedPlan.id ? (
+                  teams.length === 0 ? (
+                    <p className="text-xs text-asha-muted font-body">Create a team first.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {teams.map(t => {
+                        const sel = draftTeamIds.includes(t.id)
+                        return (
+                          <button key={t.id} onClick={() => toggleDraftTeam(t.id)}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-body font-semibold border transition-colors ${sel ? 'bg-asha-orange text-white border-asha-orange' : 'bg-asha-cream text-asha-muted border-asha-border hover:border-asha-orange'}`}>
+                            {sel && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            {t.name}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {(selectedPlan.teamIds || []).length === 0 ? (
+                      <span className="text-xs font-body text-asha-muted italic">All athletes (no team restriction)</span>
+                    ) : (selectedPlan.teamIds || []).map(tid => teamById[tid] && (
+                      <span key={tid} className="px-2.5 py-1 rounded-full bg-asha-orangeDim text-asha-orange text-xs font-body font-semibold border border-asha-orange/20">
+                        {teamById[tid].name} · {teamById[tid].memberIds?.length ?? 0}
+                      </span>
+                    ))}
                   </div>
                 )}
               </div>
-            )
-          })}
+
+              <WeekGrid weeks={selectedPlan.weeks} />
+            </div>
+          )}
         </div>
       )}
 

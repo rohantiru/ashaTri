@@ -45,8 +45,8 @@ function ItemModal({ item, onSave, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-asha-border w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 lg:items-stretch lg:justify-end">
+      <div className="bg-white rounded-2xl border border-asha-border w-full max-w-md max-h-[90vh] lg:rounded-none lg:h-full lg:max-h-screen lg:max-w-[480px] overflow-y-auto">
         <div className="flex items-center justify-between p-5 border-b border-asha-border">
           <h2 className="font-display font-bold text-asha-dark">{editing ? 'Edit Item' : 'Add Swag Item'}</h2>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><X size={16} /></button>
@@ -264,7 +264,7 @@ export default function SwagItems() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-5xl mx-auto px-4 py-4 sm:py-6">
       <div className="flex items-baseline justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">Swag Items</h1>
         <button
@@ -289,49 +289,112 @@ export default function SwagItems() {
           <p className="font-body text-asha-muted text-sm">Add your first item to get started</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
-          {items.map(item => (
-            <div key={item.id} className={`transition-all ${item.isActive ? '' : 'opacity-60'}`}>
-              <div className="flex items-center gap-3 px-3.5 py-2.5">
-                {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.name} className="w-8 h-8 rounded-lg object-cover border border-asha-border flex-shrink-0" onError={e => e.target.style.display='none'} />
-                ) : (
-                  <div className="w-8 h-8 rounded-lg bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
-                    <Package size={14} className="text-asha-orange" />
+        <>
+          {/* Desktop table */}
+          <div className="hidden lg:block overflow-x-auto bg-white rounded-xl border border-asha-border">
+            <table className="w-full">
+              <thead className="bg-asha-cream/50 border-b border-asha-border">
+                <tr>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide w-10"></th>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Item</th>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Type</th>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Price</th>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Sizes</th>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Status</th>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-asha-border/40">
+                {items.map(item => (
+                  <tr key={item.id} className={`hover:bg-asha-cream/30 transition-colors ${item.isActive ? '' : 'opacity-60'}`}>
+                    <td className="px-4 py-3">
+                      {item.imageUrl
+                        ? <img src={item.imageUrl} alt={item.name} className="w-8 h-8 rounded-lg object-cover border border-asha-border" onError={e => e.target.style.display='none'} />
+                        : <div className="w-8 h-8 rounded-lg bg-asha-orangeDim flex items-center justify-center"><Package size={14} className="text-asha-orange" /></div>
+                      }
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-body font-medium text-sm text-asha-dark">{item.name}</div>
+                      {item.description && <p className="font-body text-xs text-asha-muted truncate max-w-[200px]">{item.description}</p>}
+                    </td>
+                    <td className="px-4 py-3"><StatusBadge status={item.type} /></td>
+                    <td className="px-4 py-3 font-mono text-sm font-semibold text-asha-orange">{item.price != null ? fmtUSD(item.price) : '—'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {item.hasSizes && item.sizes?.length > 0 ? item.sizes.map(s => (
+                          <span key={s} className="text-xs bg-gray-100 text-asha-muted px-1.5 py-0.5 rounded font-body">
+                            {s}{item.type === 'inventory' && item.inventory?.[s] !== undefined ? ` (${item.inventory[s]})` : ''}
+                          </span>
+                        )) : <span className="text-xs text-asha-muted font-body">One Size</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {!item.isActive && <span className="text-xs font-body text-asha-muted">(hidden)</span>}
+                        {item.isLocked && <span className="flex items-center gap-0.5 text-xs font-body text-asha-dark bg-gray-100 px-1.5 py-0.5 rounded"><Lock size={10} /> Locked</span>}
+                        {item.isActive && !item.isLocked && <span className="text-xs font-body text-emerald-600">Live</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-0.5">
+                        <button onClick={() => toggleActive(item)} className={`p-1.5 rounded-lg text-xs font-body transition-colors ${item.isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-asha-muted hover:bg-gray-100'}`}>
+                          {item.isActive ? 'Live' : 'Off'}
+                        </button>
+                        <button onClick={() => setModal(item)} title="Edit" className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-asha-muted hover:text-asha-dark"><Pencil size={14} /></button>
+                        <button onClick={() => handleDelete(item.id)} title="Delete" className="p-1.5 hover:bg-red-50 rounded-lg transition-colors text-asha-muted hover:text-red-500"><Trash2 size={14} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile list */}
+          <div className="lg:hidden bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
+            {items.map(item => (
+              <div key={item.id} className={`transition-all ${item.isActive ? '' : 'opacity-60'}`}>
+                <div className="flex items-center gap-3 px-3.5 py-2.5">
+                  {item.imageUrl ? (
+                    <img src={item.imageUrl} alt={item.name} className="w-8 h-8 rounded-lg object-cover border border-asha-border flex-shrink-0" onError={e => e.target.style.display='none'} />
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
+                      <Package size={14} className="text-asha-orange" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-body font-medium text-sm text-asha-dark">{item.name}</span>
+                      <StatusBadge status={item.type} />
+                      {!item.isActive && <span className="text-xs font-body text-asha-muted">(hidden)</span>}
+                      {item.isLocked && <span className="flex items-center gap-0.5 text-xs font-body text-asha-dark bg-gray-100 px-1.5 py-0.5 rounded"><Lock size={10} /> Locked</span>}
+                      {item.price != null && (
+                        <span className="font-mono text-xs font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
+                      )}
+                      {item.hasSizes && item.sizes?.length > 0 && item.sizes.map(s => (
+                        <span key={s} className="text-xs bg-gray-100 text-asha-muted px-1.5 py-0.5 rounded font-body">
+                          {s}{item.type === 'inventory' && item.inventory?.[s] !== undefined ? ` (${item.inventory[s]})` : ''}
+                        </span>
+                      ))}
+                    </div>
+                    {item.description && <p className="font-body text-xs text-asha-muted truncate mt-0.5">{item.description}</p>}
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-body font-medium text-sm text-asha-dark">{item.name}</span>
-                    <StatusBadge status={item.type} />
-                    {!item.isActive && <span className="text-xs font-body text-asha-muted">(hidden)</span>}
-                    {item.isLocked && <span className="flex items-center gap-0.5 text-xs font-body text-asha-dark bg-gray-100 px-1.5 py-0.5 rounded"><Lock size={10} /> Locked</span>}
-                    {item.price != null && (
-                      <span className="font-mono text-xs font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
-                    )}
-                    {item.hasSizes && item.sizes?.length > 0 && item.sizes.map(s => (
-                      <span key={s} className="text-xs bg-gray-100 text-asha-muted px-1.5 py-0.5 rounded font-body">
-                        {s}{item.type === 'inventory' && item.inventory?.[s] !== undefined ? ` (${item.inventory[s]})` : ''}
-                      </span>
-                    ))}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button onClick={() => toggleActive(item)} className={`p-1.5 rounded-lg text-xs font-body transition-colors ${item.isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-asha-muted hover:bg-gray-100'}`}>
+                      {item.isActive ? 'Live' : 'Off'}
+                    </button>
+                    <button onClick={() => setModal(item)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-asha-muted hover:text-asha-dark">
+                      <Pencil size={14} />
+                    </button>
+                    <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-red-50 rounded-lg transition-colors text-asha-muted hover:text-red-500">
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                  {item.description && <p className="font-body text-xs text-asha-muted truncate mt-0.5">{item.description}</p>}
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button onClick={() => toggleActive(item)} className={`p-1.5 rounded-lg text-xs font-body transition-colors ${item.isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-asha-muted hover:bg-gray-100'}`}>
-                    {item.isActive ? 'Live' : 'Off'}
-                  </button>
-                  <button onClick={() => setModal(item)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-asha-muted hover:text-asha-dark">
-                    <Pencil size={14} />
-                  </button>
-                  <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-red-50 rounded-lg transition-colors text-asha-muted hover:text-red-500">
-                    <Trash2 size={14} />
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
 
       {modal && (

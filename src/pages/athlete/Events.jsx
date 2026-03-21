@@ -41,13 +41,13 @@ export default function AthleteEvents() {
   const past = events.filter(e => e.date < now)
 
   if (loading) return (
-    <div className="max-w-2xl mx-auto px-4 py-4 sm:py-6 space-y-2">
+    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6 space-y-2">
       {[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-12 animate-pulse" />)}
     </div>
   )
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-4 sm:py-6">
+    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
       <div className="flex items-baseline justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">Events</h1>
       </div>
@@ -58,7 +58,7 @@ export default function AthleteEvents() {
           <p className="font-body text-sm text-asha-muted">No events scheduled for you yet</p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-5 lg:space-y-0">
           {upcoming.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -79,8 +79,13 @@ export default function AthleteEvents() {
                     </div>
                     {event.calendarLink && (
                       <a href={event.calendarLink} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-[10px] font-body text-asha-orange flex-shrink-0">
-                        <ExternalLink size={10} />Add
+                        className="flex-shrink-0 text-asha-orange">
+                        <span className="flex items-center gap-1 text-[10px] font-body lg:hidden">
+                          <ExternalLink size={10} />Add
+                        </span>
+                        <span className="hidden lg:inline-flex lg:items-center lg:gap-1 text-xs font-body font-medium">
+                          <ExternalLink size={11} />Add to calendar
+                        </span>
                       </a>
                     )}
                   </div>

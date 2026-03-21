@@ -53,7 +53,7 @@ function CalendarSettings() {
   const set = (k, v) => setCreds(c => ({ ...c, [k]: v }))
 
   return (
-    <div className="bg-white rounded-2xl border border-asha-border p-5 mt-5">
+    <div className="bg-white rounded-2xl border border-asha-border p-5">
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <Calendar size={16} className="text-asha-orange" />
@@ -104,27 +104,31 @@ export default function Settings() {
   const { config, updateTabs } = useAppConfig()
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="font-display font-bold text-3xl text-asha-dark">Settings</h1>
         <p className="font-body text-asha-muted text-sm mt-1">Control what athletes can see and configure integrations</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-asha-border p-5">
-        <div className="flex items-center gap-2 mb-1">
-          <SettingsIcon size={16} className="text-asha-orange" />
-          <h2 className="font-display font-semibold text-asha-dark">Athlete Tabs</h2>
+      <div className="lg:grid lg:grid-cols-2 lg:gap-8">
+        <div className="bg-white rounded-2xl border border-asha-border p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <SettingsIcon size={16} className="text-asha-orange" />
+            <h2 className="font-display font-semibold text-asha-dark">Athlete Tabs</h2>
+          </div>
+          <p className="font-body text-xs text-asha-muted mb-4">Toggle which sections are visible to athletes. Changes take effect immediately.</p>
+
+          <Toggle label="Home"    desc="Athlete home dashboard"                                    enabled={config.tabs.home}    onChange={val => updateTabs({ home: val })} />
+          <Toggle label="Events"  desc="View scheduled team events and training sessions"           enabled={config.tabs.events}  onChange={val => updateTabs({ events: val })} />
+          <Toggle label="Races"   desc="View upcoming races and manage registrations"               enabled={config.tabs.races}   onChange={val => updateTabs({ races: val })} />
+          <Toggle label="Swag"    desc="Browse swag items, express interest, and track orders"      enabled={config.tabs.swag}    onChange={val => updateTabs({ swag: val })} />
+          <Toggle label="Expenses" desc="Submit and track personal triathlon expenses"              enabled={config.tabs.expenses} onChange={val => updateTabs({ expenses: val })} />
         </div>
-        <p className="font-body text-xs text-asha-muted mb-4">Toggle which sections are visible to athletes. Changes take effect immediately.</p>
 
-        <Toggle label="Home"    desc="Athlete home dashboard"                                    enabled={config.tabs.home}    onChange={val => updateTabs({ home: val })} />
-        <Toggle label="Events"  desc="View scheduled team events and training sessions"           enabled={config.tabs.events}  onChange={val => updateTabs({ events: val })} />
-        <Toggle label="Races"   desc="View upcoming races and manage registrations"               enabled={config.tabs.races}   onChange={val => updateTabs({ races: val })} />
-        <Toggle label="Swag"    desc="Browse swag items, express interest, and track orders"      enabled={config.tabs.swag}    onChange={val => updateTabs({ swag: val })} />
-        <Toggle label="Expenses" desc="Submit and track personal triathlon expenses"              enabled={config.tabs.expenses} onChange={val => updateTabs({ expenses: val })} />
+        <div className="mt-5 lg:mt-0">
+          <CalendarSettings />
+        </div>
       </div>
-
-      <CalendarSettings />
     </div>
   )
 }
