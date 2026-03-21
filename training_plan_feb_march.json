@@ -1,0 +1,140 @@
+{
+  "name": "3-Week Pre-Season Build",
+  "startDate": "2026-02-23",
+  "weeks": [
+    {
+      "label": "Week 1 — Shake Out",
+      "sessions": [
+        {
+          "day": "Mon",
+          "sport": "Swim",
+          "type": "Technique",
+          "duration": 40,
+          "notes": "Warm-up 300m easy. Main: 6×100m on CSS+15s, focus on catch and pull. Cool-down 200m. Total ~1300m."
+        },
+        {
+          "day": "Tue",
+          "sport": "Run",
+          "type": "Easy",
+          "duration": 30,
+          "notes": "Zone 2 only. Easy conversational pace. Cadence 170+ spm. No watch pressure."
+        },
+        {
+          "day": "Wed",
+          "sport": "Ride",
+          "type": "Easy",
+          "duration": 45,
+          "notes": "Flat terrain. Zone 2 throughout. Cadence 85-95 rpm. Just spin the legs out."
+        },
+        {
+          "day": "Fri",
+          "sport": "Strength",
+          "type": "Strength",
+          "duration": 30,
+          "notes": "Foundation session. 3×10 goblet squats, hip hinges, step-ups. 3×30s dead bugs, glute bridges. Focus on form."
+        },
+        {
+          "day": "Sat",
+          "sport": "Ride",
+          "type": "Long",
+          "duration": 75,
+          "notes": "Rolling terrain. Zone 2-3. Practice fuelling every 20 min. Stay seated on climbs."
+        },
+        {
+          "day": "Sun",
+          "sport": "Run",
+          "type": "Long",
+          "duration": 40,
+          "notes": "Easy long run. Zone 2. Last 5 min build slightly to tempo effort."
+        }
+      ]
+    },
+    {
+      "label": "Week 2 — Load",
+      "sessions": [
+        {
+          "day": "Mon",
+          "sport": "Swim",
+          "type": "Endurance",
+          "duration": 50,
+          "notes": "Warm-up 400m. Main: 8×150m at CSS+5s with 30s rest. Cool-down 200m. Total ~1900m."
+        },
+        {
+          "day": "Tue",
+          "sport": "Run",
+          "type": "Tempo",
+          "duration": 40,
+          "notes": "10 min easy warm-up. 20 min at tempo (Zone 3-4). 10 min easy cool-down. Feel comfortably hard."
+        },
+        {
+          "day": "Wed",
+          "sport": "Ride",
+          "type": "Intervals",
+          "duration": 60,
+          "notes": "Warm-up 15 min. Main: 3×10 min at threshold (Zone 4) with 5 min easy recovery. Cool-down 10 min."
+        },
+        {
+          "day": "Thu",
+          "sport": "Swim",
+          "type": "Technique",
+          "duration": 40,
+          "notes": "Drills: catch-up, fingertip drag, 6-kick. Then 8×50m at sprint pace with full recovery."
+        },
+        {
+          "day": "Sat",
+          "sport": "Brick",
+          "type": "Brick",
+          "duration": 70,
+          "notes": "40 min ride at Zone 3 effort, straight off bike into 20 min run at Zone 3. Practice quick T2. Note how legs feel in first mile."
+        },
+        {
+          "day": "Sun",
+          "sport": "Run",
+          "type": "Long",
+          "duration": 45,
+          "notes": "Easy Zone 2 long run. No pace target. Build aerobic base. Run by feel."
+        }
+      ]
+    },
+    {
+      "label": "Week 3 — Taper & Sharpen",
+      "sessions": [
+        {
+          "day": "Mon",
+          "sport": "Swim",
+          "type": "Race Pace",
+          "duration": 40,
+          "notes": "Warm-up 300m. Main: 6×100m at sprint tri race pace with 45s rest. Cool-down 200m. Feel sharp and fast."
+        },
+        {
+          "day": "Wed",
+          "sport": "Ride",
+          "type": "Easy",
+          "duration": 45,
+          "notes": "Easy spin. Zone 2 only. Legs should feel fresh. No pushing."
+        },
+        {
+          "day": "Thu",
+          "sport": "Run",
+          "type": "Tempo",
+          "duration": 30,
+          "notes": "10 min easy. 10 min at tempo. 10 min easy. Short and sharp — just a reminder to the legs."
+        },
+        {
+          "day": "Sat",
+          "sport": "Ride",
+          "type": "Easy",
+          "duration": 50,
+          "notes": "Final longer ride. Stay Zone 2. Relax and enjoy. Drink and eat well."
+        },
+        {
+          "day": "Sun",
+          "sport": "Run",
+          "type": "Easy",
+          "duration": 30,
+          "notes": "Easy 30 min shakeout run. Zone 2 max. Leave feeling good."
+        }
+      ]
+    }
+  ]
+}

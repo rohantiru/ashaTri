@@ -1,8 +1,8 @@
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
 
-const MIN_YEAR = 2026
-const JAN_2026_TS = 1735689600 // 2026-01-01 00:00:00 UTC
+const MIN_YEAR = 2024
+const JAN_2024_TS = 1704067200 // 2024-01-01 00:00:00 UTC
 const CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour — only applied to current month
 
 function cacheDocId(year, month) {
@@ -116,7 +116,7 @@ export async function getActivitiesForMonth(year, month, forceRefresh = false) {
 
   const monthStart = new Date(year, month, 1)
   const monthEnd = new Date(year, month + 1, 0, 23, 59, 59)
-  const afterTs = Math.max(Math.floor(monthStart.getTime() / 1000), JAN_2026_TS)
+  const afterTs = Math.max(Math.floor(monthStart.getTime() / 1000), JAN_2024_TS)
   const beforeTs = Math.floor(monthEnd.getTime() / 1000)
 
   const url = new URL('https://www.strava.com/api/v3/athlete/activities')
@@ -219,7 +219,7 @@ export async function getActivitiesForUserMonth(uid, year, month, forceRefresh =
 
   const monthStart = new Date(year, month, 1)
   const monthEnd = new Date(year, month + 1, 0, 23, 59, 59)
-  const afterTs = Math.max(Math.floor(monthStart.getTime() / 1000), JAN_2026_TS)
+  const afterTs = Math.max(Math.floor(monthStart.getTime() / 1000), JAN_2024_TS)
   const beforeTs = Math.floor(monthEnd.getTime() / 1000)
 
   const url = new URL('https://www.strava.com/api/v3/athlete/activities')

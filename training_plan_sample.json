@@ -1,0 +1,188 @@
+{
+  "name": "4-Week Sprint Tri Base Block",
+  "team": "A Team",
+  "startDate": "2026-03-23",
+  "weeks": [
+    {
+      "label": "Week 1 — Aerobic Foundation",
+      "sessions": [
+        {
+          "day": "Mon",
+          "sport": "Swim",
+          "type": "Technique",
+          "duration": 45,
+          "notes": "Warm-up 400m easy. Main: 8×100m on CSS+10s focusing on high-elbow catch and early vertical forearm. Cool-down 200m easy. Total ~1400m."
+        },
+        {
+          "day": "Tue",
+          "sport": "Run",
+          "type": "Easy",
+          "duration": 35,
+          "notes": "Zone 2 only. Conversational pace — if you can't speak in full sentences you're too hard. Cadence goal: 170+ spm."
+        },
+        {
+          "day": "Wed",
+          "sport": "Ride",
+          "type": "Easy",
+          "duration": 60,
+          "notes": "Flat to rolling terrain. Stay Zone 2 the entire ride. Cadence 85-95 rpm. Drink every 15 min."
+        },
+        {
+          "day": "Thu",
+          "sport": "Swim",
+          "type": "Endurance",
+          "duration": 50,
+          "notes": "Warm-up 300m. Main: 5×300m at CSS+5s with 45s rest. Cool-down 200m. Total ~2000m."
+        },
+        {
+          "day": "Sat",
+          "sport": "Ride",
+          "type": "Long",
+          "duration": 90,
+          "notes": "Rolling terrain. Aerobic base ride, target Zone 2-3. Practice eating and drinking on the bike. Stay seated on climbs."
+        },
+        {
+          "day": "Sun",
+          "sport": "Run",
+          "type": "Long",
+          "duration": 45,
+          "notes": "Easy long run. Zone 2. Last 5 minutes gradually build to race pace to prime legs."
+        }
+      ]
+    },
+    {
+      "label": "Week 2 — Building Load",
+      "sessions": [
+        {
+          "day": "Mon",
+          "sport": "Swim",
+          "type": "Endurance",
+          "duration": 50,
+          "notes": "Warm-up 400m. Main: 10×100m at CSS+5s with 20s rest. Cool-down 200m. Total ~1800m."
+        },
+        {
+          "day": "Tue",
+          "sport": "Run",
+          "type": "Tempo",
+          "duration": 40,
+          "notes": "10 min easy warm-up. 20 min at tempo pace (Zone 3-4, comfortably hard). 10 min easy cool-down."
+        },
+        {
+          "day": "Wed",
+          "sport": "Ride",
+          "type": "Intervals",
+          "duration": 60,
+          "notes": "Warm-up 15 min. Main: 4×8 min at threshold (Zone 4) with 4 min easy recovery. Cool-down 15 min."
+        },
+        {
+          "day": "Thu",
+          "sport": "Swim",
+          "type": "Technique",
+          "duration": 45,
+          "notes": "Drills focus: catch-up drill, fingertip drag, 6-1-6 kick. Then 6×50m at sprint effort with full recovery."
+        },
+        {
+          "day": "Fri",
+          "sport": "Strength",
+          "type": "Strength",
+          "duration": 30,
+          "notes": "Posterior chain and hip stability. 3×10 deadlifts, hip thrusts, step-ups. 3×30s side planks, dead bugs. Focus on glute activation."
+        },
+        {
+          "day": "Sat",
+          "sport": "Brick",
+          "type": "Brick",
+          "duration": 75,
+          "notes": "45 min ride at Zone 3 effort, immediately off bike into a 20 min run at Zone 3. Practice T2 transition. Note how legs feel in first 5 min of run."
+        },
+        {
+          "day": "Sun",
+          "sport": "Run",
+          "type": "Long",
+          "duration": 50,
+          "notes": "Easy Zone 2 run. No pace target. Build aerobic base. Run by feel."
+        }
+      ]
+    },
+    {
+      "label": "Week 3 — Recovery",
+      "sessions": [
+        {
+          "day": "Tue",
+          "sport": "Swim",
+          "type": "Easy",
+          "duration": 35,
+          "notes": "Easy technique only. No intervals. Focus on feel of the water. Total ~1000m at comfortable pace."
+        },
+        {
+          "day": "Thu",
+          "sport": "Ride",
+          "type": "Recovery",
+          "duration": 45,
+          "notes": "Very easy spin. Zone 1-2 only. Legs should feel fresh by the end. No pushing."
+        },
+        {
+          "day": "Sat",
+          "sport": "Run",
+          "type": "Easy",
+          "duration": 35,
+          "notes": "Easy 35 min run. Zone 2 max. Leave feeling good, not tired."
+        }
+      ]
+    },
+    {
+      "label": "Week 4 — Peak Load",
+      "sessions": [
+        {
+          "day": "Mon",
+          "sport": "Swim",
+          "type": "Intervals",
+          "duration": 55,
+          "notes": "Warm-up 400m. Main: 8×100m at CSS with 25s rest, then 4×50m sprint with full recovery. Cool-down 200m."
+        },
+        {
+          "day": "Tue",
+          "sport": "Run",
+          "type": "Tempo",
+          "duration": 45,
+          "notes": "2×15 min at tempo pace with 5 min easy between. Finish strong on the second rep."
+        },
+        {
+          "day": "Wed",
+          "sport": "Ride",
+          "type": "Easy",
+          "duration": 75,
+          "notes": "Zone 2 aerobic ride. Longer than usual to build volume. Cadence 90 rpm."
+        },
+        {
+          "day": "Thu",
+          "sport": "Swim",
+          "type": "Race Pace",
+          "duration": 40,
+          "notes": "Warm-up 400m. Main: 4×200m at sprint tri race pace with 60s rest. Cool-down 200m. Feel the effort and practice sighting every 10 strokes."
+        },
+        {
+          "day": "Fri",
+          "sport": "Strength",
+          "type": "Strength",
+          "duration": 30,
+          "notes": "Posterior chain focus. Banded clamshells, RDLs, step-ups, Copenhagen planks. Keep intensity moderate — performance day tomorrow."
+        },
+        {
+          "day": "Sat",
+          "sport": "Ride",
+          "type": "Long",
+          "duration": 105,
+          "notes": "Hilly route. Keep power steady uphill. Zone 2-3. Fuel every 30 min. This is your longest ride of the block."
+        },
+        {
+          "day": "Sun",
+          "sport": "Run",
+          "type": "Long",
+          "duration": 55,
+          "notes": "Longest run of the block. Zone 2. Focus on relaxed form, especially in the last 15 min when fatigued."
+        }
+      ]
+    }
+  ]
+}

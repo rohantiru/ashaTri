@@ -26,6 +26,15 @@ const STRAVA_TYPE_NORM = {
   VirtualRun: 'Run', TrailRun: 'Run',
   OpenWaterSwim: 'Swim',
 }
+
+// Icons for plan sports (PLAN_SPORTS from plans.js has no Icon field)
+const PLAN_SPORT_ICONS = {
+  Run: Activity,
+  Ride: Bike,
+  Swim: Waves,
+  Strength: Zap,
+  Brick: Timer,
+}
 function getSport(type) {
   return SPORT[STRAVA_TYPE_NORM[type] ?? type] || { label: type, color: '#9CA3AF', bg: '#F9FAFB', Icon: Activity }
 }
@@ -68,38 +77,6 @@ function activityPace(activity) {
   return fmtRunPace(activity.moving_time, activity.distance)
 }
 
-// ── Activity card (calendar cell — compact) ───────────────────────────────────
-
-function ActivityCard({ activity, onClick }) {
-  const sport = getSport(activity.type)
-  const { Icon } = sport
-  const distStr = activityDist(activity)
-  const timeOfDay = new Date(activity.start_date_local).toLocaleTimeString('en-US', {
-    hour: 'numeric', minute: '2-digit',
-  })
-
-  return (
-    <div
-      onClick={onClick}
-      className="mb-1 rounded-lg overflow-hidden cursor-pointer hover:brightness-95 active:scale-[0.98] transition-all"
-      style={{ border: `1px solid ${sport.color}55`, borderLeft: `3px solid ${sport.color}` }}
-    >
-      <div className="flex items-center gap-1 px-1.5 py-0.5" style={{ background: sport.bg }}>
-        <Icon size={9} style={{ color: sport.color }} />
-        <span className="text-[10px] font-semibold leading-none" style={{ color: sport.color }}>
-          {sport.label}
-        </span>
-        <span className="text-[9px] text-gray-400 ml-auto leading-none">{timeOfDay}</span>
-      </div>
-      <div className="px-1.5 py-1 bg-white">
-        <div className="flex items-baseline justify-between gap-1">
-          <span className="text-[11px] font-bold text-asha-dark leading-tight">{distStr ?? fmtTime(activity.moving_time)}</span>
-          {distStr && <span className="text-[10px] text-asha-muted leading-tight">{fmtTime(activity.moving_time)}</span>}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ── Activity detail modal ─────────────────────────────────────────────────────
 
@@ -181,31 +158,105 @@ function ActivityDetailModal({ activity, onClose }) {
   )
 }
 
+// ── Activity card (calendar cell — compact) ───────────────────────────────────
+
+function ActivityCard({ activity, onClick }) {
+  const sport = getSport(activity.type)
+  const { Icon } = sport
+  const distStr = activityDist(activity)
+  return (
+    <div
+      onClick={onClick}
+      className="mb-1 rounded-lg overflow-hidden cursor-pointer hover:brightness-95 active:scale-[0.98] transition-all"
+      style={{ border: `1px solid ${sport.color}55`, borderLeft: `3px solid ${sport.color}` }}
+    >
+      <div className="flex items-center gap-1 px-1.5 py-0.5" style={{ background: sport.bg }}>
+        <Icon size={9} style={{ color: sport.color }} />
+        <span className="text-[10px] font-semibold leading-none" style={{ color: sport.color }}>{sport.label}</span>
+      </div>
+      <div className="px-1.5 py-1 bg-white">
+        <div className="flex items-baseline justify-between gap-1">
+          <span className="text-[11px] font-bold text-asha-dark leading-tight">{distStr ?? fmtTime(activity.moving_time)}</span>
+          {distStr && <span className="text-[10px] text-asha-muted leading-tight">{fmtTime(activity.moving_time)}</span>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Plan session detail modal ─────────────────────────────────────────────────
+
+function PlanSessionModal({ session, done, onClose }) {
+  const sport = PLAN_SPORTS[session.sport]
+  if (!sport) return null
+  const SportIcon = PLAN_SPORT_ICONS[session.sport] || Activity
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40" onClick={onClose}>
+      <div
+        className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4" style={{ background: sport.bg }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${sport.color}20` }}>
+            <SportIcon size={20} style={{ color: sport.color }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-display font-bold text-base text-asha-dark leading-tight">
+              {session.sport} — {session.type}
+            </div>
+            <div className="font-body text-xs text-asha-muted mt-0.5 flex items-center gap-2">
+              {session.duration > 0 && <span>{session.duration} min planned</span>}
+              {done
+                ? <span className="text-emerald-600 font-semibold">✓ Completed</span>
+                : <span className="text-asha-muted">Not yet logged</span>
+              }
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-black/10 transition-colors flex-shrink-0">
+            <X size={16} className="text-asha-muted" />
+          </button>
+        </div>
+
+        {/* Notes */}
+        {session.notes ? (
+          <div className="px-5 py-4">
+            <div className="font-body text-[10px] uppercase tracking-wide text-asha-muted mb-1.5">Session notes</div>
+            <p className="font-body text-sm text-asha-dark leading-relaxed">{session.notes}</p>
+          </div>
+        ) : (
+          <div className="px-5 py-4">
+            <p className="font-body text-sm text-asha-muted italic">No notes for this session.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Plan session chip ─────────────────────────────────────────────────────────
 
-function PlanChip({ session, stravaTypes }) {
+function PlanChip({ session, stravaTypes, onClick }) {
   const sport = PLAN_SPORTS[session.sport]
   if (!sport) return null
   const completedTypes = COMPLETION_MAP[session.sport] || []
   const done = stravaTypes.some(t => completedTypes.includes(t))
-
+  const SportIcon = PLAN_SPORT_ICONS[session.sport] || Activity
   return (
     <div
-      className="mb-0.5 flex items-center gap-1 rounded px-1 py-0.5 transition-opacity"
+      onClick={onClick}
+      className="mb-0.5 flex items-center gap-1 rounded px-1 py-0.5 cursor-pointer hover:brightness-95 active:scale-[0.98] transition-all"
       style={{
         background: sport.bg,
         borderTop: `1px dashed ${sport.color}40`,
         borderRight: `1px dashed ${sport.color}40`,
         borderBottom: `1px dashed ${sport.color}40`,
         borderLeft: `2px solid ${sport.color}`,
-        opacity: done ? 0.95 : 0.5,
+        opacity: done ? 0.95 : 0.55,
       }}
-      title={
-        session.notes
-          ? `${session.sport} — ${session.type}: ${session.notes}`
-          : `${session.sport} — ${session.type} (${session.duration}m) · ${session.planName}`
-      }
     >
+      <SportIcon size={8} style={{ color: sport.color, flexShrink: 0 }} />
       <span className="text-[9px] font-semibold leading-none truncate flex-1 min-w-0" style={{ color: sport.color }}>
         {session.type}
       </span>
@@ -217,158 +268,110 @@ function PlanChip({ session, stravaTypes }) {
   )
 }
 
-// ── Weekly totals sidebar cell ────────────────────────────────────────────────
-
-function WeekTotals({ week, activityMap }) {
-  const acts = week.flatMap(d => activityMap[dateKey(d)] || [])
-  const by = {}
-  acts.forEach(a => {
-    if (!by[a.type]) by[a.type] = { dist: 0, time: 0 }
-    by[a.type].dist += a.distance
-    by[a.type].time += a.moving_time
-  })
-
-  const present = ['Swim', 'Ride', 'Run'].filter(t => by[t])
-  if (!present.length) {
-    return <div className="text-center text-asha-muted/25 text-xs py-4">—</div>
-  }
-
-  return (
-    <div className="space-y-2 pt-1">
-      {present.map(type => {
-        const sport = getSport(type)
-        const { Icon } = sport
-        const { dist, time } = by[type]
-        const distStr = type === 'Swim'
-          ? `${Math.round(dist * 1.09361).toLocaleString()} yd`
-          : `${(dist / 1609.34).toFixed(1)} mi`
-        const h = Math.floor(time / 3600)
-        const m = Math.floor((time % 3600) / 60)
-        const timeStr = h ? `${h}:${String(m).padStart(2, '0')}` : `${m}m`
-
-        return (
-          <div key={type} className="flex items-start gap-1">
-            <Icon size={11} style={{ color: sport.color, marginTop: 1, flexShrink: 0 }} />
-            <div>
-              <div className="text-[11px] font-bold leading-tight" style={{ color: sport.color }}>{distStr}</div>
-              <div className="text-[10px] text-asha-muted leading-tight">{timeStr}</div>
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 // ── Calendar helpers ──────────────────────────────────────────────────────────
 
 function dateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function getMonthWeeks(year, month) {
-  const first = new Date(year, month, 1)
-  const last = new Date(year, month + 1, 0)
-  const start = new Date(first)
-  start.setDate(start.getDate() - start.getDay())          // back to Sunday
-  const end = new Date(last)
-  end.setDate(end.getDate() + (6 - end.getDay()))           // forward to Saturday
-
-  const weeks = []
-  const cur = new Date(start)
-  while (cur <= end) {
-    const week = []
-    for (let i = 0; i < 7; i++) {
-      week.push(new Date(cur))
-      cur.setDate(cur.getDate() + 1)
-    }
-    weeks.push(week)
-  }
-  return weeks
+function getWeekStart(date) {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  const dow = d.getDay()
+  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1)) // back to Monday
+  return d
 }
 
-// ── Calendar view ─────────────────────────────────────────────────────────────
+const WEEK_DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
-const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
-const MIN_YEAR = 2026
+// ── Calendar view (single week, grid style) ───────────────────────────────────
 
 function CalendarView() {
   const { user } = useAuth()
   const now = new Date()
-  const [viewYear, setViewYear] = useState(now.getFullYear())
-  const [viewMonth, setViewMonth] = useState(now.getMonth())
+  const todayKey = dateKey(now)
+
+  const [weekStart, setWeekStart] = useState(() => getWeekStart(now))
   const [activityMap, setActivityMap] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [showTotals, setShowTotals] = useState(true)
-
-  const [planMap, setPlanMap] = useState({}) // dateKey → [planned sessions]
+  const [planMap, setPlanMap] = useState({})
   const [selectedActivity, setSelectedActivity] = useState(null)
+  const [selectedSession, setSelectedSession] = useState(null) // { session, done }
 
-  // Load active plans once — cached 12h in localStorage, so nearly instant on repeat visits
+  // Mon–Sun days for the current week
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart)
+    d.setDate(weekStart.getDate() + i)
+    return d
+  })
+  const weekEnd = weekDays[6]
+
+  // Load plans once — also writes aggregated stats to Firestore for coaches
   useEffect(() => {
     if (!user) return
     getActivePlans(user.uid)
       .then(async plans => {
         setPlanMap(mergePlanMaps(plans.map(buildPlanDateMap)))
-        if (plans.length === 0) return
+        if (!plans.length) return
         const plan = plans[0]
-
-        // Fetch every month covered by the plan (cached in localStorage, mostly instant on revisit)
         const planStart = new Date(plan.startDate + 'T00:00:00')
         const planEnd = new Date(planStart)
-        planEnd.setDate(planStart.getDate() + plan.weeks.length * 7)
+        planEnd.setDate(planStart.getDate() + plan.weeks.length * 7 - 1)
 
-        const months = []
-        const cur = new Date(planStart.getFullYear(), planStart.getMonth(), 1)
-        while (cur <= planEnd) {
-          months.push([cur.getFullYear(), cur.getMonth()])
-          cur.setMonth(cur.getMonth() + 1)
+        // Snap to a meaningful week: last plan week if today is past it, first if before
+        const today = new Date()
+        if (today > planEnd) {
+          setWeekStart(getWeekStart(planEnd))
+        } else if (today < planStart) {
+          setWeekStart(getWeekStart(planStart))
         }
 
+        // Collect plan months + last 3 calendar months (for broader baselines coverage)
+        const monthSet = new Set()
+        const addMonth = (y, m) => monthSet.add(`${y}-${m}`)
+        const cur = new Date(planStart.getFullYear(), planStart.getMonth(), 1)
+        const planEndFull = new Date(plan.startDate + 'T00:00:00')
+        planEndFull.setDate(planEndFull.getDate() + plan.weeks.length * 7)
+        while (cur <= planEndFull) {
+          addMonth(cur.getFullYear(), cur.getMonth())
+          cur.setMonth(cur.getMonth() + 1)
+        }
+        // Always include recent months so post-plan Strava activity shows
+        for (let i = 0; i < 3; i++) {
+          const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
+          addMonth(d.getFullYear(), d.getMonth())
+        }
+
+        const months = [...monthSet].map(k => k.split('-').map(Number))
         const allActs = (await Promise.all(
           months.map(([y, m]) => getActivitiesForUserMonth(user.uid, y, m).catch(() => []))
         )).flat()
-
         saveAthleteStats(user.uid, plan, allActs).catch(() => {})
       })
-      .catch(() => {}) // plans are supplemental — silently skip on error
+      .catch(() => {})
   }, [user])
 
-  const todayKey = dateKey(now)
-  const weeks = getMonthWeeks(viewYear, viewMonth)
-  const isAtMin = viewYear === MIN_YEAR && viewMonth === 0
-  const isAtMax = viewYear === now.getFullYear() && viewMonth === now.getMonth()
-  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  // Load activities for the displayed week's months (cached — no extra API calls)
+  useEffect(() => { if (user) loadWeek() }, [weekStart, user])
 
-  function prevMonth() {
-    if (isAtMin) return
-    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
-    else setViewMonth(m => m - 1)
-  }
-  function nextMonth() {
-    if (isAtMax) return
-    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) }
-    else setViewMonth(m => m + 1)
-  }
-  function goToday() {
-    setViewYear(now.getFullYear())
-    setViewMonth(now.getMonth())
-  }
-
-  async function load(year, month, forceRefresh = false) {
+  async function loadWeek(forceRefresh = false) {
     setLoading(true)
     setError(null)
-    if (!forceRefresh) setActivityMap({})
     try {
-      const acts = await getActivitiesForUserMonth(user.uid, year, month, forceRefresh)
+      const monthKeys = [...new Set(weekDays.map(d => `${d.getFullYear()}-${d.getMonth()}`))]
+      const allActs = (await Promise.all(
+        monthKeys.map(k => {
+          const [y, m] = k.split('-').map(Number)
+          return getActivitiesForUserMonth(user.uid, y, m, forceRefresh).catch(() => [])
+        })
+      )).flat()
       const map = {}
-      acts.forEach(a => {
-        const key = a.start_date_local.slice(0, 10)
-        if (!map[key]) map[key] = []
-        map[key].push(a)
+      allActs.forEach(a => {
+        const k = a.start_date_local.slice(0, 10)
+        if (!map[k]) map[k] = []
+        map[k].push(a)
       })
-      // Sort each day's activities chronologically
       Object.values(map).forEach(arr =>
         arr.sort((a, b) => a.start_date_local.localeCompare(b.start_date_local))
       )
@@ -379,51 +382,43 @@ function CalendarView() {
     setLoading(false)
   }
 
-  useEffect(() => { load(viewYear, viewMonth) }, [viewYear, viewMonth])
+  function prevWeek() {
+    setWeekStart(d => { const n = new Date(d); n.setDate(d.getDate() - 7); return n })
+  }
+  function nextWeek() {
+    setWeekStart(d => { const n = new Date(d); n.setDate(d.getDate() + 7); return n })
+  }
+  function goToday() { setWeekStart(getWeekStart(new Date())) }
+
+  const isCurrentWeek = dateKey(weekStart) === dateKey(getWeekStart(now))
+  const weekLabel = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
 
   return (
     <div>
-      {/* Month navigation */}
+      {/* Week navigation */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-1">
-          <button
-            onClick={prevMonth}
-            disabled={isAtMin}
-            className="p-1.5 rounded-lg hover:bg-asha-cream disabled:opacity-25 transition-colors"
-          >
+          <button onClick={prevWeek} className="p-1.5 rounded-lg hover:bg-asha-cream transition-colors">
             <ChevronLeft size={16} className="text-asha-muted" />
           </button>
-          <span className="font-display font-bold text-lg text-asha-dark w-48 text-center">{monthLabel}</span>
-          <button
-            onClick={nextMonth}
-            disabled={isAtMax}
-            className="p-1.5 rounded-lg hover:bg-asha-cream disabled:opacity-25 transition-colors"
-          >
+          <span className="font-display font-bold text-base text-asha-dark w-52 text-center">{weekLabel}</span>
+          <button onClick={nextWeek} className="p-1.5 rounded-lg hover:bg-asha-cream transition-colors">
             <ChevronRight size={16} className="text-asha-muted" />
           </button>
-          {!isAtMax && (
+          {!isCurrentWeek && (
             <button onClick={goToday} className="text-xs font-body text-asha-orange hover:underline ml-1">
               Today
             </button>
           )}
         </div>
-
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => load(viewYear, viewMonth, true)}
-            disabled={loading}
-            className="flex items-center gap-1.5 text-xs font-body text-asha-muted hover:text-asha-dark transition-colors disabled:opacity-40"
-          >
-            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-            Refresh
-          </button>
-          <button
-            onClick={() => setShowTotals(v => !v)}
-            className="text-xs font-body text-asha-muted hover:text-asha-dark transition-colors"
-          >
-            {showTotals ? 'Hide' : 'Show'} weekly totals
-          </button>
-        </div>
+        <button
+          onClick={() => loadWeek(true)}
+          disabled={loading}
+          className="flex items-center gap-1.5 text-xs font-body text-asha-muted hover:text-asha-dark transition-colors disabled:opacity-40"
+        >
+          <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+          Refresh
+        </button>
       </div>
 
       {error && (
@@ -433,100 +428,141 @@ function CalendarView() {
         </div>
       )}
 
-      {/* Calendar grid — horizontally scrollable on mobile */}
-      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-      <div className="border border-asha-border rounded-2xl overflow-hidden min-w-[480px]">
+      {/* ── Mobile: stacked day list ── */}
+      <div className={`sm:hidden space-y-2 transition-opacity ${loading ? 'opacity-40' : ''}`}>
+        {weekDays.map(date => {
+          const key = dateKey(date)
+          const acts = activityMap[key] || []
+          const planned = planMap[key] || []
+          const isToday = key === todayKey
+          const hasContent = planned.length > 0 || acts.length > 0
 
-        {/* Day-of-week header row */}
-        <div className="flex border-b border-asha-border bg-asha-cream/60">
-          <div className="flex-1 grid grid-cols-7">
-            {DAYS.map(d => (
-              <div
-                key={d}
-                className="text-center text-[11px] font-body font-semibold text-asha-muted uppercase py-2 border-r border-asha-border/40 last:border-r-0"
-              >
-                {d}
+          return (
+            <div
+              key={key}
+              className={`bg-white rounded-2xl border overflow-hidden ${
+                isToday ? 'border-asha-orange/50 ring-1 ring-asha-orange/15' : 'border-asha-border'
+              }`}
+            >
+              {/* Day header */}
+              <div className={`flex items-center gap-3 px-4 py-2.5 ${isToday ? 'bg-asha-orange/5' : 'bg-asha-cream/40'}`}>
+                {isToday ? (
+                  <span className="w-8 h-8 bg-asha-orange text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                    {date.getDate()}
+                  </span>
+                ) : (
+                  <span className="text-xl font-display font-bold text-asha-dark flex-shrink-0 leading-none">
+                    {date.getDate()}
+                  </span>
+                )}
+                <span className={`text-xs font-body font-semibold uppercase tracking-wide ${isToday ? 'text-asha-orange' : 'text-asha-muted'}`}>
+                  {date.toLocaleDateString('en-US', { weekday: 'long', month: 'short' })}
+                </span>
+                {!hasContent && <span className="ml-auto text-xs text-asha-muted/35 font-body italic">Rest</span>}
               </div>
-            ))}
-          </div>
-          {showTotals && (
-            <div className="w-28 shrink-0 border-l border-asha-border/60 text-center text-[11px] font-body font-semibold text-asha-muted uppercase py-2 hidden sm:block">
-              Week
-            </div>
-          )}
-        </div>
 
-        {/* Week rows */}
-        {weeks.map((week, wi) => (
-          <div
-            key={wi}
-            className={`flex border-b border-asha-border/50 last:border-b-0 transition-opacity ${loading ? 'opacity-40' : 'opacity-100'}`}
-          >
-            {/* Day cells */}
-            <div className="flex-1 grid grid-cols-7">
-              {week.map(date => {
-                const key = dateKey(date)
-                const acts = activityMap[key] || []
-                const isToday = key === todayKey
-                const inMonth = date.getMonth() === viewMonth
-                const isFirstOfMonth = date.getDate() === 1
-
-                return (
-                  <div
-                    key={key}
-                    className={`border-r border-asha-border/40 last:border-r-0 p-1.5 min-h-[90px] ${
-                      isToday ? 'bg-asha-orange/5' : inMonth ? 'bg-white' : 'bg-asha-cream/30'
-                    }`}
-                  >
-                    {/* Date label */}
-                    <div className="mb-1">
-                      {isToday ? (
-                        <span className="w-5 h-5 bg-asha-orange text-white rounded-full flex items-center justify-center text-[11px] font-bold">
-                          {date.getDate()}
-                        </span>
-                      ) : !inMonth && isFirstOfMonth ? (
-                        <span className="text-[9px] text-asha-muted/60 font-medium">
-                          {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>
-                      ) : (
-                        <span className={`text-[11px] font-semibold ${inMonth ? 'text-asha-dark' : 'text-asha-muted/35'}`}>
-                          {date.getDate()}
-                        </span>
-                      )}
+              {/* Content */}
+              {hasContent && (
+                <div className="px-3 py-2.5 space-y-1">
+                  {planned.map((s, i) => {
+                    const completedTypes = COMPLETION_MAP[s.sport] || []
+                    const done = acts.some(a => completedTypes.includes(a.type))
+                    return (
+                      <PlanChip
+                        key={i}
+                        session={s}
+                        stravaTypes={acts.map(a => a.type)}
+                        onClick={() => setSelectedSession({ session: s, done })}
+                      />
+                    )
+                  })}
+                  {planned.length > 0 && acts.length > 0 && (
+                    <div className="flex items-center gap-0.5 my-0.5">
+                      <div className="flex-1 h-px bg-asha-border/60" />
+                      <span className="text-[7px] text-asha-muted/50 font-body uppercase tracking-wide leading-none">done</span>
+                      <div className="flex-1 h-px bg-asha-border/60" />
                     </div>
-
-                    {/* Plan session chips — dashed = planned, faded = not yet done */}
-                    {(planMap[key] || []).map((s, i) => (
-                      <PlanChip key={i} session={s} stravaTypes={acts.map(a => a.type)} />
-                    ))}
-
-                    {/* Divider when both plan chips and actual activities exist */}
-                    {planMap[key]?.length > 0 && acts.length > 0 && (
-                      <div className="flex items-center gap-0.5 my-0.5">
-                        <div className="flex-1 h-px bg-asha-border/60" />
-                        <span className="text-[7px] text-asha-muted/50 font-body uppercase tracking-wide leading-none">done</span>
-                        <div className="flex-1 h-px bg-asha-border/60" />
-                      </div>
-                    )}
-
-                    {/* Actual Strava activities — solid border, clickable */}
-                    {acts.map(a => (
-                      <ActivityCard key={a.id} activity={a} onClick={() => setSelectedActivity(a)} />
-                    ))}
-                  </div>
-                )
-              })}
+                  )}
+                  {acts.map(a => (
+                    <ActivityCard key={a.id} activity={a} onClick={() => setSelectedActivity(a)} />
+                  ))}
+                </div>
+              )}
             </div>
-
-            {/* Weekly totals */}
-            {showTotals && (
-              <div className="w-28 shrink-0 border-l border-asha-border/60 px-2 min-h-[90px] hidden sm:block">
-                <WeekTotals week={week} activityMap={activityMap} />
-              </div>
-            )}
-          </div>
-        ))}
+          )
+        })}
       </div>
+
+      {/* ── Desktop: 7-column grid ── */}
+      <div className="hidden sm:block overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className={`border border-asha-border rounded-2xl overflow-hidden transition-opacity ${loading ? 'opacity-40' : ''}`}>
+
+          {/* Day headers */}
+          <div className="grid grid-cols-7 border-b border-asha-border bg-asha-cream/60">
+            {weekDays.map((date, i) => {
+              const isToday = dateKey(date) === todayKey
+              return (
+                <div
+                  key={i}
+                  className={`text-center py-2.5 border-r border-asha-border/40 last:border-r-0 ${isToday ? 'bg-asha-orange/10' : ''}`}
+                >
+                  <div className="text-[10px] font-body font-semibold text-asha-muted uppercase tracking-wide">{WEEK_DAYS[i]}</div>
+                  <div className={`text-base font-display font-bold leading-tight ${isToday ? 'text-asha-orange' : 'text-asha-dark'}`}>
+                    {isToday
+                      ? <span className="inline-flex items-center justify-center w-7 h-7 bg-asha-orange text-white rounded-full text-sm">{date.getDate()}</span>
+                      : date.getDate()
+                    }
+                  </div>
+                  <div className="text-[9px] text-asha-muted/60 font-body leading-none mt-0.5">
+                    {date.toLocaleDateString('en-US', { month: 'short' })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Day cells */}
+          <div className="grid grid-cols-7">
+            {weekDays.map(date => {
+              const key = dateKey(date)
+              const acts = activityMap[key] || []
+              const planned = planMap[key] || []
+              const isToday = key === todayKey
+
+              return (
+                <div
+                  key={key}
+                  className={`border-r border-asha-border/40 last:border-r-0 p-1.5 min-h-[130px] ${
+                    isToday ? 'bg-asha-orange/5' : 'bg-white'
+                  }`}
+                >
+                  {planned.map((s, i) => {
+                    const completedTypes = COMPLETION_MAP[s.sport] || []
+                    const done = acts.some(a => completedTypes.includes(a.type))
+                    return (
+                      <PlanChip
+                        key={i}
+                        session={s}
+                        stravaTypes={acts.map(a => a.type)}
+                        onClick={() => setSelectedSession({ session: s, done })}
+                      />
+                    )
+                  })}
+                  {planned.length > 0 && acts.length > 0 && (
+                    <div className="flex items-center gap-0.5 my-0.5">
+                      <div className="flex-1 h-px bg-asha-border/60" />
+                      <span className="text-[7px] text-asha-muted/50 font-body uppercase tracking-wide leading-none">done</span>
+                      <div className="flex-1 h-px bg-asha-border/60" />
+                    </div>
+                  )}
+                  {acts.map(a => (
+                    <ActivityCard key={a.id} activity={a} onClick={() => setSelectedActivity(a)} />
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       {loading && (
@@ -538,19 +574,20 @@ function CalendarView() {
 
       {/* Strava attribution (required by API terms) */}
       <div className="mt-4 text-right">
-        <a
-          href="https://www.strava.com"
-          target="_blank"
-          rel="noreferrer"
-          className="text-[10px] text-asha-muted hover:text-asha-dark font-body"
-        >
+        <a href="https://www.strava.com" target="_blank" rel="noreferrer" className="text-[10px] text-asha-muted hover:text-asha-dark font-body">
           Powered by Strava
         </a>
       </div>
 
-      {/* Activity detail modal */}
       {selectedActivity && (
         <ActivityDetailModal activity={selectedActivity} onClose={() => setSelectedActivity(null)} />
+      )}
+      {selectedSession && (
+        <PlanSessionModal
+          session={selectedSession.session}
+          done={selectedSession.done}
+          onClose={() => setSelectedSession(null)}
+        />
       )}
     </div>
   )
@@ -828,7 +865,10 @@ function BaselinesTab({ uid }) {
     <div>
       <div className="flex items-center justify-between mb-6">
         <p className="font-body text-sm text-asha-muted">
-          {totalActs > 0 ? `${totalActs} cached activities across ${chartData.length} month${chartData.length !== 1 ? 's' : ''}` : 'Load months in the Calendar tab to populate baselines'}
+          {totalActs > 0
+            ? `${totalActs} activities across ${chartData.length} month${chartData.length !== 1 ? 's' : ''} · navigate the Schedule tab to load more history`
+            : 'Open the Schedule tab first — activities load automatically as you browse weeks'
+          }
         </p>
         <button
           onClick={compute}
@@ -1042,7 +1082,7 @@ export default function TrainingCalendar() {
           {/* Sub-tabs */}
           <div className="flex gap-1 mb-6 border-b border-asha-border">
             {[
-              { key: 'calendar', label: 'Calendar' },
+              { key: 'calendar', label: 'Schedule' },
               { key: 'baselines', label: 'Baselines' },
             ].map(t => (
               <button

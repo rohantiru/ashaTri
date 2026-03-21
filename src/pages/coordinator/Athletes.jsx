@@ -534,9 +534,20 @@ function TrainingTab({ teams, athletes }) {
               >
                 <ChevronLeft size={14} className="text-asha-muted" />
               </button>
-              <span className="font-body text-xs text-asha-dark font-medium text-center min-w-[160px]">
-                {teamPlan.weeks[weekIdx]?.label || `Week ${weekIdx + 1}`}
-              </span>
+              <div className="text-center min-w-[180px]">
+                <div className="font-body text-xs text-asha-dark font-medium">
+                  {teamPlan.weeks[weekIdx]?.label || `Week ${weekIdx + 1}`}
+                </div>
+                <div className="font-body text-[10px] text-asha-muted leading-tight">
+                  {(() => {
+                    const start = new Date(teamPlan.startDate + 'T00:00:00')
+                    start.setDate(start.getDate() + weekIdx * 7)
+                    const end = new Date(start)
+                    end.setDate(start.getDate() + 6)
+                    return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                  })()}
+                </div>
+              </div>
               <button
                 onClick={() => setWeekIdx(i => Math.min(numWeeks - 1, i + 1))}
                 disabled={weekIdx === numWeeks - 1}
@@ -552,13 +563,24 @@ function TrainingTab({ teams, athletes }) {
               <p className="font-body text-asha-muted text-sm">No members in this team.</p>
             </div>
           ) : (
-            <div className="divide-y divide-asha-border">
-              {memberAthletes.map(athlete => {
-                const stats = statsById[athlete.id]
-                const weekData = stats?.byWeek?.[weekIdx]
-                return <AthleteWeekCard key={athlete.id} athlete={athlete} weekData={weekData} />
-              })}
-            </div>
+            <>
+              {/* Warn if any athlete hasn't synced yet */}
+              {memberAthletes.some(a => !statsById[a.id]) && (
+                <div className="flex items-start gap-2 px-5 py-3 bg-amber-50 border-b border-amber-100 text-xs font-body text-amber-700">
+                  <span className="mt-0.5 flex-shrink-0">⚠</span>
+                  <span>
+                    Some athletes haven't synced yet — data updates when they open the Training tab in their app.
+                  </span>
+                </div>
+              )}
+              <div className="divide-y divide-asha-border">
+                {memberAthletes.map(athlete => {
+                  const stats = statsById[athlete.id]
+                  const weekData = stats?.byWeek?.[weekIdx]
+                  return <AthleteWeekCard key={athlete.id} athlete={athlete} weekData={weekData} />
+                })}
+              </div>
+            </>
           )}
         </div>
       )}
