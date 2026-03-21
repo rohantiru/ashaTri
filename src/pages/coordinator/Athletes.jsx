@@ -5,7 +5,7 @@ import {
 import { db } from '../../firebase'
 import {
   Users, Plus, X, Pencil, Trash2, CheckSquare, Square, Search, Tag, BarChart2,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { getAllPlans } from '../../utils/plans'
 import { getTeamStats } from '../../utils/athleteStats'
@@ -242,6 +242,11 @@ function TeamModal({ initial, athletes, onSave, onClose }) {
 function TeamsTab({ athletes, teams, onAdd, onEdit, onDelete }) {
   const athleteMap = Object.fromEntries(athletes.map(a => [a.id, a]))
   const [selectedTeamId, setSelectedTeamId] = useState(teams[0]?.id ?? null)
+  const [expandedIds, setExpandedIds] = useState(new Set())
+  const toggleExpand = (id, e) => {
+    e.stopPropagation()
+    setExpandedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
   const selectedTeam = teams.find(t => t.id === selectedTeamId)
   const selectedMembers = selectedTeam ? (selectedTeam.memberIds ?? []).map(uid => athleteMap[uid]).filter(Boolean) : []
 
@@ -275,8 +280,11 @@ function TeamsTab({ athletes, teams, onAdd, onEdit, onDelete }) {
                   {team.description && <p className="font-body text-xs text-asha-muted">{team.description}</p>}
                   <span className="font-body text-xs text-asha-muted">{members.length} {members.length === 1 ? 'member' : 'members'}</span>
                 </div>
-                {/* Mobile: show members inline */}
-                <div className="lg:hidden flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {/* Mobile: expand chevron */}
+                  <button onClick={e => toggleExpand(team.id, e)} className="lg:hidden p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-asha-muted">
+                    {expandedIds.has(team.id) ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
                   <button onClick={e => { e.stopPropagation(); onEdit(team) }} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-asha-muted hover:text-asha-dark">
                     <Pencil size={14} />
                   </button>
@@ -285,21 +293,23 @@ function TeamsTab({ athletes, teams, onAdd, onEdit, onDelete }) {
                   </button>
                 </div>
               </div>
-              {/* Mobile: show member chips below (original behaviour) */}
-              <div className="lg:hidden px-3.5 pb-2.5">
-                {members.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {members.map(m => (
-                      <div key={m.id} className="flex items-center gap-1.5 bg-asha-cream rounded-lg px-2 py-1">
-                        <Avatar user={m} size={4} />
-                        <span className="font-body text-xs text-asha-dark">{m.name?.split(' ')[0] || m.email}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="font-body text-xs text-asha-muted">No members yet</span>
-                )}
-              </div>
+              {/* Mobile: member chips shown only when expanded */}
+              {expandedIds.has(team.id) && (
+                <div className="lg:hidden px-3.5 pb-2.5">
+                  {members.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {members.map(m => (
+                        <div key={m.id} className="flex items-center gap-1.5 bg-asha-cream rounded-lg px-2 py-1">
+                          <Avatar user={m} size={4} />
+                          <span className="font-body text-xs text-asha-dark">{m.name?.split(' ')[0] || m.email}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="font-body text-xs text-asha-muted">No members yet</span>
+                  )}
+                </div>
+              )}
             </div>
           )
         })}
@@ -723,7 +733,7 @@ export default function AthletesPage() {
   }
 
   return (
-    <div className="max-w-full lg:px-6 px-4 py-4 sm:py-6">
+    <div className="max-w-full lg:px-6 px-4 py-4 sm:py-6 overflow-x-hidden">
       <div className="flex items-baseline justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">Athletes</h1>
         {tab === 'teams' && (

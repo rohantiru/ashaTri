@@ -45,14 +45,14 @@ function ItemModal({ item, onSave, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 lg:items-stretch lg:justify-end">
-      <div className="bg-white rounded-2xl border border-asha-border w-full max-w-md max-h-[90vh] lg:rounded-none lg:h-full lg:max-h-screen lg:max-w-[480px] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-asha-border">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 lg:items-stretch lg:justify-end">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl lg:rounded-none border border-asha-border w-full max-w-md max-h-[92vh] lg:h-full lg:max-h-screen lg:max-w-[480px] flex flex-col">
+        <div className="flex items-center justify-between p-5 border-b border-asha-border flex-shrink-0">
           <h2 className="font-display font-bold text-asha-dark">{editing ? 'Edit Item' : 'Add Swag Item'}</h2>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><X size={16} /></button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
           {/* Name */}
           <div>
             <label className="block text-xs font-body font-medium text-asha-muted mb-1.5 uppercase tracking-wide">Item Name *</label>
@@ -211,7 +211,7 @@ function ItemModal({ item, onSave, onClose }) {
           </div>
         </div>
 
-        <div className="flex gap-2 p-5 border-t border-asha-border">
+        <div className="flex gap-2 p-5 border-t border-asha-border flex-shrink-0">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-asha-border font-body font-medium text-sm text-asha-muted hover:bg-gray-50 transition-colors">
             Cancel
           </button>

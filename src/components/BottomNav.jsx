@@ -36,7 +36,7 @@ export default function BottomNav() {
   const isCoordinator = profile?.role === 'coordinator'
 
   // Pages reachable only via More — keep More tab lit on these paths
-  const athleteMorePaths = ['/athlete/more', '/athlete/training', '/athlete/expenses', '/athlete/my-swag']
+  const athleteMorePaths = ['/athlete/more', '/athlete/expenses', '/athlete/my-swag', ...(config.tabs.training ? ['/athlete/training'] : [])]
   const coordMorePaths = [
     '/coord/more', '/coord/training-plans', '/coord/items',
     '/coord/interest', '/coord/pickup', '/coord/expenses',

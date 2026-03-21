@@ -108,7 +108,9 @@ function AppRoutes() {
         {config.tabs.expenses && (
           <Route path="/athlete/expenses" element={<ProtectedRoute role="athlete"><Expenses /></ProtectedRoute>} />
         )}
-        <Route path="/athlete/training" element={<ProtectedRoute role="athlete"><TrainingCalendar /></ProtectedRoute>} />
+        {config.tabs.training && (
+          <Route path="/athlete/training" element={<ProtectedRoute role="athlete"><TrainingCalendar /></ProtectedRoute>} />
+        )}
         <Route path="/athlete/more" element={<ProtectedRoute role="athlete"><More /></ProtectedRoute>} />
         <Route path="/coord/more" element={<ProtectedRoute role="coordinator"><More /></ProtectedRoute>} />
 

@@ -20,12 +20,12 @@ function ExpenseModal({ onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-asha-border w-full max-w-md">
+      <div className="bg-white rounded-2xl border border-asha-border w-full max-w-md max-h-[92vh] flex flex-col">
         <div className="flex items-center justify-between p-5 border-b border-asha-border">
           <h2 className="font-display font-bold text-asha-dark">Add Expense</h2>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><X size={16} /></button>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
           <div>
             <label className="block text-xs font-body font-medium text-asha-muted mb-1.5 uppercase tracking-wide">Description *</label>
             <input

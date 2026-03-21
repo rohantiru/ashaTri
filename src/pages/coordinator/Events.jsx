@@ -178,8 +178,8 @@ function EventModal({ initial, allUsers, teams, calendarReady, onSave, onClose }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 lg:items-stretch lg:justify-end">
-      <div className="bg-white rounded-2xl border border-asha-border w-full max-w-lg max-h-[92vh] lg:rounded-none lg:h-full lg:max-h-screen lg:max-w-[520px] flex flex-col">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 lg:items-stretch lg:justify-end">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl lg:rounded-none border border-asha-border w-full max-w-lg max-h-[92vh] lg:h-full lg:max-h-screen lg:max-w-[520px] flex flex-col">
         <div className="flex items-center justify-between p-5 border-b border-asha-border flex-shrink-0">
           <h2 className="font-display font-bold text-asha-dark">{initial ? 'Edit Event' : 'New Event'}</h2>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><X size={16} /></button>

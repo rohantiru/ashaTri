@@ -123,6 +123,21 @@ export default function Settings() {
           <Toggle label="Races"   desc="View upcoming races and manage registrations"               enabled={config.tabs.races}   onChange={val => updateTabs({ races: val })} />
           <Toggle label="Swag"    desc="Browse swag items, express interest, and track orders"      enabled={config.tabs.swag}    onChange={val => updateTabs({ swag: val })} />
           <Toggle label="Expenses" desc="Submit and track personal triathlon expenses"              enabled={config.tabs.expenses} onChange={val => updateTabs({ expenses: val })} />
+          <div className="flex items-center justify-between py-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-body font-medium text-sm text-asha-dark">Training Calendar</span>
+                <span className="text-[10px] font-body font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Beta</span>
+              </div>
+              <div className="font-body text-xs text-asha-muted mt-0.5">Strava-connected training calendar and plan tracking</div>
+            </div>
+            <button
+              onClick={() => updateTabs({ training: !config.tabs.training })}
+              className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${config.tabs.training ? 'bg-asha-orange' : 'bg-gray-200'}`}
+            >
+              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${config.tabs.training ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
         </div>
 
         <div className="mt-5 lg:mt-0">

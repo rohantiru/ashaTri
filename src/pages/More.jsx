@@ -108,7 +108,9 @@ export default function More() {
         {/* ── Athlete menu (shown when in athlete mode) ── */}
         {isAthleteMode && (
           <MenuSection title="Athlete Menu">
-            <MenuRow icon={Activity}  color="orange" label="Training & Strava"         to="/athlete/training" />
+            {config.tabs.training && (
+              <MenuRow icon={Activity}  color="orange" label="Training & Strava"         to="/athlete/training" />
+            )}
             {config.tabs.expenses && (
               <MenuRow icon={Receipt}   color="blue"   label="Expenses & Reimbursements" to="/athlete/expenses" />
             )}

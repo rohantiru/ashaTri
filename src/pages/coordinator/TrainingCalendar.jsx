@@ -189,14 +189,31 @@ function ActivityCard({ activity, onClick }) {
 function MobileActivityChip({ activity, onClick }) {
   const sport = getSport(activity.type)
   const { Icon } = sport
+  const distStr = activityDist(activity)
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 rounded-full px-2.5 py-1 cursor-pointer active:scale-[0.96] transition-all"
-      style={{ background: sport.bg, border: `1px solid ${sport.color}50` }}
+      className="w-full rounded-lg px-2.5 py-2 text-left active:scale-[0.98] transition-all"
+      style={{
+        background: sport.bg,
+        borderTop: `1px solid ${sport.color}30`,
+        borderRight: `1px solid ${sport.color}30`,
+        borderBottom: `1px solid ${sport.color}30`,
+        borderLeft: `3px solid ${sport.color}`,
+      }}
     >
-      <Icon size={13} style={{ color: sport.color }} />
-      <span className="text-xs font-semibold leading-none" style={{ color: sport.color }}>{sport.label}</span>
+      <div className="flex items-center gap-1.5">
+        <div className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0" style={{ background: `${sport.color}25` }}>
+          <Icon size={9} style={{ color: sport.color }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[9px] font-body font-semibold uppercase tracking-wider leading-none mb-0.5" style={{ color: `${sport.color}90` }}>Done</div>
+          <div className="text-xs font-semibold leading-tight truncate" style={{ color: sport.color }}>
+            {distStr || fmtTime(activity.moving_time)}
+          </div>
+        </div>
+        {distStr && <span className="text-[10px] text-asha-muted flex-shrink-0">{fmtTime(activity.moving_time)}</span>}
+      </div>
     </button>
   )
 }
@@ -265,18 +282,31 @@ function PlanChip({ session, stravaTypes, onClick, mobile = false }) {
     return (
       <button
         onClick={onClick}
-        className="flex items-center gap-1.5 rounded-full px-2.5 py-1 cursor-pointer active:scale-[0.96] transition-all"
+        className="w-full rounded-lg px-2.5 py-2 text-left active:scale-[0.98] transition-all"
         style={{
-          background: sport.bg,
-          border: `1px dashed ${sport.color}70`,
-          opacity: done ? 1 : 0.65,
+          background: '#FAF6F1',
+          borderTop: '1px solid rgba(0,0,0,0.06)',
+          borderRight: '1px solid rgba(0,0,0,0.06)',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          borderLeft: `3px solid ${sport.color}`,
+          opacity: done ? 1 : 0.8,
         }}
       >
-        <SportIcon size={13} style={{ color: sport.color, flexShrink: 0 }} />
-        <span className="text-xs font-semibold leading-none" style={{ color: sport.color }}>
-          {session.sport}
-        </span>
-        {done && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />}
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0" style={{ background: `${sport.color}15` }}>
+            <SportIcon size={9} style={{ color: sport.color }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[9px] font-body font-semibold uppercase tracking-wider text-asha-muted/60 leading-none mb-0.5">Plan</div>
+            <div className="text-xs font-semibold leading-tight truncate" style={{ color: sport.color }}>
+              {session.type || session.sport}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {session.duration > 0 && <span className="text-[10px] text-asha-muted">{session.duration}m</span>}
+            {done && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+          </div>
+        </div>
       </button>
     )
   }
@@ -499,25 +529,42 @@ function CalendarView() {
                 {!hasContent && <span className="ml-auto text-xs text-asha-muted/35 font-body italic">Rest</span>}
               </div>
 
-              {/* Content — compact chips, tap for detail */}
+              {/* Content — plan left / done right when both exist */}
               {hasContent && (
-                <div className="px-3 py-2.5 flex flex-wrap gap-1.5">
-                  {planned.map((s, i) => {
-                    const completedTypes = COMPLETION_MAP[s.sport] || []
-                    const done = acts.some(a => completedTypes.includes(a.type))
-                    return (
-                      <PlanChip
-                        key={i}
-                        session={s}
-                        stravaTypes={acts.map(a => a.type)}
-                        onClick={() => setSelectedSession({ session: s, done })}
-                        mobile
-                      />
-                    )
-                  })}
-                  {acts.map(a => (
-                    <MobileActivityChip key={a.id} activity={a} onClick={() => setSelectedActivity(a)} />
-                  ))}
+                <div className="px-3 py-2.5">
+                  {planned.length > 0 && acts.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <div className="space-y-1">
+                        {planned.map((s, i) => {
+                          const completedTypes = COMPLETION_MAP[s.sport] || []
+                          const done = acts.some(a => completedTypes.includes(a.type))
+                          return (
+                            <PlanChip key={i} session={s} stravaTypes={acts.map(a => a.type)}
+                              onClick={() => setSelectedSession({ session: s, done })} mobile />
+                          )
+                        })}
+                      </div>
+                      <div className="space-y-1">
+                        {acts.map(a => (
+                          <MobileActivityChip key={a.id} activity={a} onClick={() => setSelectedActivity(a)} />
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {planned.map((s, i) => {
+                        const completedTypes = COMPLETION_MAP[s.sport] || []
+                        const done = acts.some(a => completedTypes.includes(a.type))
+                        return (
+                          <PlanChip key={i} session={s} stravaTypes={acts.map(a => a.type)}
+                            onClick={() => setSelectedSession({ session: s, done })} mobile />
+                        )
+                      })}
+                      {acts.map(a => (
+                        <MobileActivityChip key={a.id} activity={a} onClick={() => setSelectedActivity(a)} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
