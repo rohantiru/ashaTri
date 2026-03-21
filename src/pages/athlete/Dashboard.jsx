@@ -194,7 +194,7 @@ export default function AthleteDashboard() {
           )}
 
           {/* Training Log banner */}
-          <div className="mb-5">
+          {config.tabs.training && <div className="mb-5">
             <Link to="/athlete/training"
               className="flex items-center gap-3 bg-asha-dark rounded-xl px-3.5 py-3 hover:bg-asha-mid transition-colors">
               <Activity size={16} className="text-asha-orange flex-shrink-0" />
@@ -206,7 +206,7 @@ export default function AthleteDashboard() {
                 View <ArrowRight size={10} />
               </span>
             </Link>
-          </div>
+          </div>}
         </div>
 
         {/* Right column */}

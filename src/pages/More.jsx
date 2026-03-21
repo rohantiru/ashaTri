@@ -126,7 +126,7 @@ export default function More() {
             <MenuRow icon={Users}       color="teal"   label="Team Roster"       to="/coord/athletes" />
             <MenuRow icon={Flag}        color="red"    label="Race Management"   to="/coord/races" />
             <MenuRow icon={ShoppingBag} color="amber"  label="Swag Fulfillment"  to="/coord/items" />
-            <MenuRow icon={Settings}    color="gray"   label="Team Settings"     to="/coord/settings" />
+            {isOwner && <MenuRow icon={Settings}    color="gray"   label="Team Settings"     to="/coord/settings" />}
           </MenuSection>
         )}
 
