@@ -1,11 +1,21 @@
-import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth, COORD_ROLES } from '../contexts/AuthContext'
 import { useAppConfig } from '../contexts/AppConfigContext'
 import {
   LogOut, LayoutDashboard, ShoppingBag, Flag, Receipt, Settings,
-  Users, Menu, X, ArrowLeftRight, BarChart2, CheckSquare, Package, Calendar, Activity, BookOpen,
+  Users, ArrowLeftRight, BarChart2, CheckSquare, Package, Calendar, Activity, BookOpen,
 } from 'lucide-react'
+
+const MOBILE_TITLES = {
+  '/athlete': 'Home', '/athlete/races': 'Races', '/athlete/browse': 'Browse Swag',
+  '/athlete/my-swag': 'My Swag', '/athlete/events': 'Events', '/athlete/expenses': 'Expenses',
+  '/athlete/training': 'Training', '/athlete/more': 'More',
+  '/coord': 'Overview', '/coord/athletes': 'Team Roster', '/coord/races': 'Race Management',
+  '/coord/events': 'Events', '/coord/items': 'Swag Items', '/coord/interest': 'Swag Interest',
+  '/coord/pickup': 'Pickup', '/coord/expenses': 'Expenses',
+  '/coord/training-plans': 'Training Plans', '/coord/settings': 'Settings',
+  '/coord/users': 'Users', '/coord/more': 'More',
+}
 
 const ROLE_LABELS = {
   coordinator: 'Coordinator View',
@@ -18,7 +28,9 @@ export default function Navbar() {
   const { config } = useAppConfig()
   const location = useLocation()
   const navigate = useNavigate()
-  const [open, setOpen] = useState(false)
+
+  const mobilePageTitle = MOBILE_TITLES[location.pathname] ?? 'Asha Tri'
+  const initials = profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? '?'
 
   const isCoordLike = COORD_ROLES.includes(profile?.role)
   const isAthleteMode = location.pathname.startsWith('/athlete')
@@ -112,14 +124,23 @@ export default function Navbar() {
     navigate('/login')
   }
 
-  const handleNav = (to) => {
-    navigate(to)
-    setOpen(false)
-  }
-
   return (
-    <>
-      <nav className="sticky top-0 z-50 bg-asha-dark border-b border-asha-mid">
+    <nav className="sticky top-0 z-50 bg-asha-dark border-b border-asha-mid">
+
+      {/* Mobile top bar */}
+      <div className="sm:hidden flex items-center justify-between h-14 px-4">
+        <span className="font-display font-bold text-white text-base">{mobilePageTitle}</span>
+        {profile?.photoURL ? (
+          <img src={profile.photoURL} alt={profile.name} className="w-8 h-8 rounded-full object-cover border border-asha-mid flex-shrink-0" />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-asha-orange/20 border border-asha-orange/30 flex items-center justify-center flex-shrink-0">
+            <span className="font-body font-bold text-asha-orangeLight text-xs leading-none">{initials}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop layout */}
+      <div className="hidden sm:block">
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
 
           {/* Brand */}
@@ -131,14 +152,14 @@ export default function Navbar() {
               Asha <span className="text-asha-orange">Tri</span>
             </span>
             {isCoordLike && (
-              <span className="text-[10px] bg-asha-orange/20 text-asha-orangeLight border border-asha-orange/30 px-1.5 py-0.5 rounded-full font-body font-medium leading-none whitespace-nowrap hidden sm:inline-flex">
+              <span className="text-[10px] bg-asha-orange/20 text-asha-orangeLight border border-asha-orange/30 px-1.5 py-0.5 rounded-full font-body font-medium leading-none whitespace-nowrap">
                 {isAthleteMode ? 'Athlete View' : (ROLE_LABELS[profile?.role] ?? 'Coordinator')}
               </span>
             )}
           </div>
 
           {/* Desktop primary nav */}
-          <div className="hidden sm:flex items-center gap-1">
+          <div className="flex items-center gap-1">
             {primaryLinks.map(({ key, to, label, icon: Icon }) => {
               const active = activeKey === key
               return (
@@ -161,7 +182,7 @@ export default function Navbar() {
             {isCoordLike && (
               <button
                 onClick={() => navigate(isAthleteMode ? '/coord' : '/athlete')}
-                className="hidden sm:flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-body font-medium text-asha-muted hover:text-white hover:bg-asha-mid transition-all whitespace-nowrap"
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-body font-medium text-asha-muted hover:text-white hover:bg-asha-mid transition-all whitespace-nowrap"
               >
                 <ArrowLeftRight size={13} />
                 {isAthleteMode ? (ROLE_LABELS[profile?.role] ?? 'Coord View') : 'Athlete View'}
@@ -170,21 +191,15 @@ export default function Navbar() {
             {profile?.photoURL && (
               <img src={profile.photoURL} alt={profile.name} className="w-7 h-7 rounded-full object-cover border border-asha-mid flex-shrink-0" />
             )}
-            <button onClick={handleLogout} className="hidden sm:flex p-1.5 text-asha-muted hover:text-white hover:bg-asha-mid rounded-lg transition-all">
+            <button onClick={handleLogout} className="p-1.5 text-asha-muted hover:text-white hover:bg-asha-mid rounded-lg transition-all">
               <LogOut size={14} />
-            </button>
-            <button
-              onClick={() => setOpen(true)}
-              className="sm:hidden p-1.5 text-asha-muted hover:text-white hover:bg-asha-mid rounded-lg transition-all"
-            >
-              <Menu size={18} />
             </button>
           </div>
         </div>
 
-        {/* Sub-nav bar (desktop) */}
+        {/* Sub-nav bar (desktop only) */}
         {subLinks.length > 0 && (
-          <div className="border-t border-asha-mid/50 hidden sm:block">
+          <div className="border-t border-asha-mid/50">
             <div className="max-w-6xl mx-auto px-4 flex items-center gap-0.5 h-9">
               {subLinks.map(({ to, label }) => {
                 const active = location.pathname === to
@@ -203,92 +218,8 @@ export default function Navbar() {
             </div>
           </div>
         )}
-      </nav>
+      </div>
 
-      {/* Mobile drawer */}
-      {open && (
-        <div className="fixed inset-0 z-[60] sm:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
-          <div className="absolute top-0 right-0 h-full w-72 bg-asha-dark flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between px-5 h-14 border-b border-asha-mid flex-shrink-0">
-              <div className="flex items-center gap-2">
-                {profile?.photoURL && (
-                  <img src={profile.photoURL} alt={profile.name} className="w-7 h-7 rounded-full object-cover border border-asha-mid" />
-                )}
-                <div>
-                  <div className="font-body font-medium text-white text-sm leading-tight">{profile?.name?.split(' ')[0]}</div>
-                  {isCoordLike && (
-                    <div className="font-body text-xs text-asha-orange leading-tight">{isAthleteMode ? 'Athlete View' : (ROLE_LABELS[profile?.role] ?? 'Coordinator')}</div>
-                  )}
-                </div>
-              </div>
-              <button onClick={() => setOpen(false)} className="p-1.5 text-asha-muted hover:text-white rounded-lg transition-all">
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto py-3 px-3">
-              {primaryLinks.map(({ key, to, label, icon: Icon }) => {
-                const active = activeKey === key
-                const isSwagGroup = key === 'swag'
-                const drawerSubLinks = inCoordMode ? coordSwagSub : athleteSwagSub
-
-                return (
-                  <div key={key}>
-                    <button
-                      onClick={() => handleNav(to)}
-                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-body font-medium transition-all mb-0.5 ${
-                        active ? 'bg-asha-orange text-white' : 'text-asha-muted hover:text-white hover:bg-asha-mid'
-                      }`}
-                    >
-                      <Icon size={16} />
-                      {label}
-                    </button>
-                    {isSwagGroup && (
-                      <div className="ml-4 mb-1 space-y-0.5">
-                        {drawerSubLinks.map(sub => {
-                          const subActive = location.pathname === sub.to
-                          return (
-                            <button
-                              key={sub.to}
-                              onClick={() => handleNav(sub.to)}
-                              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-body font-medium transition-all ${
-                                subActive ? 'text-asha-orange' : 'text-asha-muted hover:text-white'
-                              }`}
-                            >
-                              {sub.icon && <sub.icon size={13} />}
-                              {sub.label}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-
-            <div className="px-3 pb-5 pt-3 border-t border-asha-mid flex-shrink-0 space-y-1">
-              {isCoordLike && (
-                <button
-                  onClick={() => { navigate(isAthleteMode ? '/coord' : '/athlete'); setOpen(false) }}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-body font-medium text-asha-muted hover:text-white hover:bg-asha-mid transition-all"
-                >
-                  <ArrowLeftRight size={16} />
-                  {isAthleteMode ? `Switch to ${ROLE_LABELS[profile?.role] ?? 'Coord View'}` : 'Switch to Athlete View'}
-                </button>
-              )}
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-body font-medium text-asha-muted hover:text-white hover:bg-asha-mid transition-all"
-              >
-                <LogOut size={16} />
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    </nav>
   )
 }

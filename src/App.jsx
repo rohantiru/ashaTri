@@ -21,6 +21,8 @@ import RaceManagement from './pages/coordinator/RaceManagement'
 import TrainingCalendar from './pages/coordinator/TrainingCalendar'
 import TrainingPlans from './pages/coordinator/TrainingPlans'
 import Navbar from './components/Navbar'
+import BottomNav from './components/BottomNav'
+import More from './pages/More'
 
 function ProtectedRoute({ children, role }) {
   const { user, profile, loading } = useAuth()
@@ -54,6 +56,8 @@ function AppRoutes() {
   return (
     <div className="min-h-screen bg-asha-cream">
       {user && <Navbar />}
+      {user && <BottomNav />}
+      <div className="pb-20 sm:pb-0">
       <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to={isCoordLike ? '/coord' : '/athlete'} replace />} />
 
@@ -101,9 +105,12 @@ function AppRoutes() {
           <Route path="/athlete/expenses" element={<ProtectedRoute role="athlete"><Expenses /></ProtectedRoute>} />
         )}
         <Route path="/athlete/training" element={<ProtectedRoute role="athlete"><TrainingCalendar /></ProtectedRoute>} />
+        <Route path="/athlete/more" element={<ProtectedRoute role="athlete"><More /></ProtectedRoute>} />
+        <Route path="/coord/more" element={<ProtectedRoute role="coordinator"><More /></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to={user ? (isCoordLike ? '/coord' : '/athlete') : '/login'} replace />} />
       </Routes>
+      </div>
     </div>
   )
 }
