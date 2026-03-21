@@ -549,7 +549,7 @@ export default function TrainingPlans() {
                                 <button
                                   key={t.id}
                                   onClick={() => toggleDraftTeam(t.id)}
-                                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-semibold border transition-colors ${sel ? 'bg-asha-orange text-white border-asha-orange' : 'bg-asha-cream text-asha-muted border-asha-border hover:border-asha-orange'}`}
+                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-body font-semibold border transition-colors ${sel ? 'bg-asha-orange text-white border-asha-orange' : 'bg-asha-cream text-asha-muted border-asha-border hover:border-asha-orange'}`}
                                 >
                                   {sel && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                                   {t.name}

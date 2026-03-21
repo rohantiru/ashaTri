@@ -253,7 +253,7 @@ export default function SwagBrowse() {
           <button
             key={val}
             onClick={() => setFilter(val)}
-            className={`px-4 py-2 rounded-xl font-body font-medium text-sm transition-all ${filter === val ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'}`}
+            className={`px-2.5 py-1 rounded-lg font-body font-medium text-xs transition-all ${filter === val ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'}`}
           >
             {label}
           </button>

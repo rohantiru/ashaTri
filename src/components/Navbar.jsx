@@ -131,7 +131,7 @@ export default function Navbar() {
               Asha <span className="text-asha-orange">Tri</span>
             </span>
             {isCoordLike && (
-              <span className="text-xs bg-asha-orange/20 text-asha-orangeLight border border-asha-orange/30 px-2 py-1 rounded-full font-body font-medium leading-none whitespace-nowrap hidden sm:inline-flex">
+              <span className="text-[10px] bg-asha-orange/20 text-asha-orangeLight border border-asha-orange/30 px-1.5 py-0.5 rounded-full font-body font-medium leading-none whitespace-nowrap hidden sm:inline-flex">
                 {isAthleteMode ? 'Athlete View' : (ROLE_LABELS[profile?.role] ?? 'Coordinator')}
               </span>
             )}

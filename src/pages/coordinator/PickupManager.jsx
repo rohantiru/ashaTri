@@ -211,7 +211,7 @@ export default function PickupManager() {
                         <button
                           onClick={() => advanceStatus(r)}
                           disabled={isUpdating}
-                          className="text-xs font-body font-medium px-3 py-1.5 bg-asha-orange text-white rounded-lg hover:bg-asha-orangeLight transition-colors disabled:opacity-50"
+                          className="text-xs font-body font-medium px-2.5 py-1 bg-asha-orange text-white rounded-lg hover:bg-asha-orangeLight transition-colors disabled:opacity-50"
                         >
                           {isUpdating ? '…' : `→ ${nextLabel}`}
                         </button>

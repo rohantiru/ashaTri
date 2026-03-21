@@ -210,7 +210,7 @@ export default function AthleteDashboard() {
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {!isPast && days !== null && (
-                      <span className={`text-xs font-body font-medium px-2 py-1 rounded-lg ${
+                      <span className={`text-[10px] font-body font-medium px-1.5 py-0.5 rounded-full ${
                         days <= 14 ? 'bg-red-50 text-red-600' :
                         days <= 60 ? 'bg-amber-50 text-amber-600' :
                         'bg-asha-cream text-asha-muted'
@@ -264,7 +264,7 @@ export default function AthleteDashboard() {
                     </div>
                   </div>
                   {days !== null && (
-                    <span className={`text-xs font-body font-medium px-2 py-1 rounded-lg flex-shrink-0 ${
+                    <span className={`text-[10px] font-body font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${
                       days === 0 ? 'bg-asha-orange/10 text-asha-orange' :
                       days <= 7 ? 'bg-red-50 text-red-600' :
                       days <= 30 ? 'bg-amber-50 text-amber-600' :

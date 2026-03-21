@@ -83,7 +83,7 @@ export default function ExpensesSummary() {
               <button
                 key={cat}
                 onClick={() => setFilterCategory(cat)}
-                className={`px-3 py-1.5 rounded-lg font-body font-medium text-xs transition-all ${filterCategory === cat ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'}`}
+                className={`px-2.5 py-1 rounded-lg font-body font-medium text-xs transition-all ${filterCategory === cat ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'}`}
               >
                 {cat === 'all' ? `All (${expenses.length})` : cat}
               </button>

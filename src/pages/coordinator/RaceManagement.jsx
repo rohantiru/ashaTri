@@ -171,7 +171,7 @@ function FilterBar({ typeFilter, setTypeFilter, distanceFilter, setDistanceFilte
       <div className="flex gap-2 flex-wrap">
         {[['all', 'All'], ['swim', 'Swim'], ['triathlon', 'Triathlon'], ['aquathon', 'Aquathon']].map(([key, label]) => (
           <button key={key} onClick={() => handleType(key)}
-            className={`px-3 py-1.5 rounded-lg font-body font-medium text-xs transition-all ${typeFilter === key ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'}`}>
+            className={`px-2.5 py-1 rounded-lg font-body font-medium text-xs transition-all ${typeFilter === key ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'}`}>
             {label}
           </button>
         ))}
@@ -431,7 +431,7 @@ export default function RaceManagement() {
                   {Object.keys(byEvent).length > 0 && (
                     <div className="flex flex-wrap gap-2 pt-3 border-t border-asha-border">
                       {Object.entries(byEvent).map(([ev, evRegs]) => (
-                        <div key={ev} className="flex items-center gap-1.5 bg-asha-cream rounded-lg px-3 py-1.5">
+                        <div key={ev} className="flex items-center gap-1.5 bg-asha-cream rounded-lg px-2 py-0.5">
                           <span className="font-body text-xs text-asha-muted">{ev}</span>
                           <span className="font-body text-xs font-semibold text-asha-dark">{evRegs.length}</span>
                         </div>

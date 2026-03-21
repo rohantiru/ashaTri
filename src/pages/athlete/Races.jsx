@@ -135,7 +135,7 @@ export default function AthleteRaces() {
               <button
                 key={key}
                 onClick={() => handleTypeFilter(key)}
-                className={`px-3 py-1.5 rounded-lg font-body font-medium text-xs transition-all ${
+                className={`px-2.5 py-1 rounded-lg font-body font-medium text-xs transition-all ${
                   typeFilter === key ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'
                 }`}
               >
@@ -149,7 +149,7 @@ export default function AthleteRaces() {
                 <button
                   key={label}
                   onClick={() => setDistanceFilter(distanceFilter === label ? null : label)}
-                  className={`px-3 py-1 rounded-lg font-body font-medium text-xs transition-all ${
+                  className={`px-2.5 py-0.5 rounded-lg font-body font-medium text-xs transition-all ${
                     distanceFilter === label ? 'bg-asha-orange text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'
                   }`}
                 >
@@ -208,12 +208,12 @@ export default function AthleteRaces() {
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {isLocked && (
-                        <span className="flex items-center gap-1 text-xs font-body font-medium px-2.5 py-1.5 rounded-xl bg-gray-100 text-gray-500">
-                          <Lock size={11} />Locked
+                        <span className="flex items-center gap-1 text-[10px] font-body font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                          <Lock size={9} />Locked
                         </span>
                       )}
                       {days !== null ? (
-                        <div className={`text-xs font-body font-semibold px-2.5 py-1.5 rounded-xl ${
+                        <div className={`text-[10px] font-body font-semibold px-1.5 py-0.5 rounded-full ${
                           isPast ? 'bg-gray-100 text-gray-400' :
                           days === 0 ? 'bg-asha-orange text-white' :
                           days <= 14 ? 'bg-red-50 text-red-600' :
@@ -223,7 +223,7 @@ export default function AthleteRaces() {
                           {isPast ? 'Past' : days === 0 ? 'Today!' : `${days}d away`}
                         </div>
                       ) : (
-                        <div className="text-xs font-body font-semibold px-2.5 py-1.5 rounded-xl bg-asha-cream text-asha-muted">TBD</div>
+                        <div className="text-[10px] font-body font-semibold px-1.5 py-0.5 rounded-full bg-asha-cream text-asha-muted">TBD</div>
                       )}
                     </div>
                   </div>
@@ -247,7 +247,7 @@ export default function AthleteRaces() {
                         </a>
                       )}
                       {race.couponCode && (
-                        <span className="flex items-center gap-1.5 font-body text-xs text-asha-muted bg-asha-cream px-2 py-1 rounded-lg">
+                        <span className="flex items-center gap-1.5 font-body text-xs text-asha-muted bg-asha-cream px-1.5 py-0.5 rounded">
                           <Tag size={10} />{race.couponCode}
                         </span>
                       )}
@@ -264,7 +264,7 @@ export default function AthleteRaces() {
                           key={ev}
                           onClick={() => !isPast && !isLocked && !saving[race.id] && handleEventSelect(race, ev)}
                           disabled={isPast || isLocked || saving[race.id]}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-body font-medium border transition-all ${
+                          className={`px-2.5 py-1 rounded-lg text-xs font-body font-medium border transition-all ${
                             reg?.event === ev
                               ? isLocked ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-asha-orange text-white border-asha-orange'
                               : isPast || isLocked

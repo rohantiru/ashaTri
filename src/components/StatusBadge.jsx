@@ -13,7 +13,7 @@ const configs = {
 export default function StatusBadge({ status }) {
   const cfg = configs[status] || { label: status, classes: 'bg-gray-100 text-gray-500 border-gray-200' }
   return (
-    <span className={`inline-flex items-center whitespace-nowrap px-2 py-1 rounded-full text-xs font-body font-medium border leading-none ${cfg.classes}`}>
+    <span className={`inline-flex items-center whitespace-nowrap px-1.5 py-0.5 rounded-full text-[10px] font-body font-medium border leading-none ${cfg.classes}`}>
       {cfg.label}
     </span>
   )

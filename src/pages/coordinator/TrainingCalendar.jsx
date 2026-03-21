@@ -192,7 +192,7 @@ function MobileActivityChip({ activity, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 rounded-full px-3 py-1.5 cursor-pointer active:scale-[0.96] transition-all"
+      className="flex items-center gap-1.5 rounded-full px-2.5 py-1 cursor-pointer active:scale-[0.96] transition-all"
       style={{ background: sport.bg, border: `1px solid ${sport.color}50` }}
     >
       <Icon size={13} style={{ color: sport.color }} />
@@ -265,7 +265,7 @@ function PlanChip({ session, stravaTypes, onClick, mobile = false }) {
     return (
       <button
         onClick={onClick}
-        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 cursor-pointer active:scale-[0.96] transition-all"
+        className="flex items-center gap-1.5 rounded-full px-2.5 py-1 cursor-pointer active:scale-[0.96] transition-all"
         style={{
           background: sport.bg,
           border: `1px dashed ${sport.color}70`,

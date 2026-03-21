@@ -94,7 +94,7 @@ export default function InterestView() {
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="flex items-center gap-1 bg-asha-orangeDim px-2.5 py-1 rounded-full">
+            <div className="flex items-center gap-1 bg-asha-orangeDim px-2 py-0.5 rounded-full">
               <Users size={12} className="text-asha-orange" />
               <span className="font-body font-medium text-xs text-asha-orange">{itemResponses.length}</span>
             </div>

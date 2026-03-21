@@ -131,7 +131,7 @@ export default function MySwag() {
           <button
             key={val}
             onClick={() => setFilterStatus(val)}
-            className={`px-3 py-1.5 rounded-lg font-body font-medium text-xs transition-all ${filterStatus === val ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'}`}
+            className={`px-2.5 py-1 rounded-lg font-body font-medium text-xs transition-all ${filterStatus === val ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'}`}
           >
             {label}
           </button>

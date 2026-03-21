@@ -156,7 +156,7 @@ export default function Expenses() {
             </div>
             <div className="flex flex-wrap gap-2">
               {Object.entries(byCategory).map(([cat, amt]) => (
-                <div key={cat} className="flex items-center gap-1.5 bg-asha-cream rounded-lg px-3 py-1.5">
+                <div key={cat} className="flex items-center gap-1.5 bg-asha-cream rounded-lg px-2 py-0.5">
                   <span className="font-body text-xs text-asha-muted">{cat}</span>
                   <span className="font-body text-xs font-semibold text-asha-dark">{fmtUSD(amt)}</span>
                 </div>
