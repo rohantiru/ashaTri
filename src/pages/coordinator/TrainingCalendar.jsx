@@ -158,7 +158,7 @@ function ActivityDetailModal({ activity, onClose }) {
   )
 }
 
-// ── Activity card (calendar cell — compact) ───────────────────────────────────
+// ── Activity card (calendar cell — compact, desktop grid) ────────────────────
 
 function ActivityCard({ activity, onClick }) {
   const sport = getSport(activity.type)
@@ -181,6 +181,23 @@ function ActivityCard({ activity, onClick }) {
         </div>
       </div>
     </div>
+  )
+}
+
+// ── Mobile activity chip (tap for detail) ─────────────────────────────────────
+
+function MobileActivityChip({ activity, onClick }) {
+  const sport = getSport(activity.type)
+  const { Icon } = sport
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 rounded-full px-3 py-1.5 cursor-pointer active:scale-[0.96] transition-all"
+      style={{ background: sport.bg, border: `1px solid ${sport.color}50` }}
+    >
+      <Icon size={13} style={{ color: sport.color }} />
+      <span className="text-xs font-semibold leading-none" style={{ color: sport.color }}>{sport.label}</span>
+    </button>
   )
 }
 
@@ -237,12 +254,33 @@ function PlanSessionModal({ session, done, onClose }) {
 
 // ── Plan session chip ─────────────────────────────────────────────────────────
 
-function PlanChip({ session, stravaTypes, onClick }) {
+function PlanChip({ session, stravaTypes, onClick, mobile = false }) {
   const sport = PLAN_SPORTS[session.sport]
   if (!sport) return null
   const completedTypes = COMPLETION_MAP[session.sport] || []
   const done = stravaTypes.some(t => completedTypes.includes(t))
   const SportIcon = PLAN_SPORT_ICONS[session.sport] || Activity
+
+  if (mobile) {
+    return (
+      <button
+        onClick={onClick}
+        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 cursor-pointer active:scale-[0.96] transition-all"
+        style={{
+          background: sport.bg,
+          border: `1px dashed ${sport.color}70`,
+          opacity: done ? 1 : 0.65,
+        }}
+      >
+        <SportIcon size={13} style={{ color: sport.color, flexShrink: 0 }} />
+        <span className="text-xs font-semibold leading-none" style={{ color: sport.color }}>
+          {session.sport}
+        </span>
+        {done && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />}
+      </button>
+    )
+  }
+
   return (
     <div
       onClick={onClick}
@@ -461,9 +499,9 @@ function CalendarView() {
                 {!hasContent && <span className="ml-auto text-xs text-asha-muted/35 font-body italic">Rest</span>}
               </div>
 
-              {/* Content */}
+              {/* Content — compact chips, tap for detail */}
               {hasContent && (
-                <div className="px-3 py-2.5 space-y-1">
+                <div className="px-3 py-2.5 flex flex-wrap gap-1.5">
                   {planned.map((s, i) => {
                     const completedTypes = COMPLETION_MAP[s.sport] || []
                     const done = acts.some(a => completedTypes.includes(a.type))
@@ -473,18 +511,12 @@ function CalendarView() {
                         session={s}
                         stravaTypes={acts.map(a => a.type)}
                         onClick={() => setSelectedSession({ session: s, done })}
+                        mobile
                       />
                     )
                   })}
-                  {planned.length > 0 && acts.length > 0 && (
-                    <div className="flex items-center gap-0.5 my-0.5">
-                      <div className="flex-1 h-px bg-asha-border/60" />
-                      <span className="text-[7px] text-asha-muted/50 font-body uppercase tracking-wide leading-none">done</span>
-                      <div className="flex-1 h-px bg-asha-border/60" />
-                    </div>
-                  )}
                   {acts.map(a => (
-                    <ActivityCard key={a.id} activity={a} onClick={() => setSelectedActivity(a)} />
+                    <MobileActivityChip key={a.id} activity={a} onClick={() => setSelectedActivity(a)} />
                   ))}
                 </div>
               )}
