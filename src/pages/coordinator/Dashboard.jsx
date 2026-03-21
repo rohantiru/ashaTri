@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
-import { Package, CheckSquare, TrendingUp, Users, ArrowRight, DollarSign, Flag, Calendar, CheckCircle2, MapPin } from 'lucide-react'
+import { Package, CheckSquare, TrendingUp, Users, ArrowRight, DollarSign, Flag, Calendar, CheckCircle2, MapPin, ChevronRight } from 'lucide-react'
 import { fmtUSD } from '../../utils/format'
 import { getCached, setCached } from '../../utils/cache'
 
@@ -91,157 +91,115 @@ export default function CoordinatorDashboard() {
   const nextDays = raceStats.nextRace ? daysUntil(raceStats.nextRace.date) : null
   const nextEventDays = eventStats.nextEvent ? daysUntil(eventStats.nextEvent.date) : null
 
+  const firstName = profile?.name?.split(' ')[0]
+  const todayStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <p className="font-body text-asha-muted text-sm mb-1">Welcome back, {profile?.name?.split(' ')[0]}</p>
-        <h1 className="font-display font-bold text-3xl text-asha-dark">Coordinator Overview</h1>
+    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+
+      {/* Greeting */}
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">Hey, {firstName}!</h1>
+        <span className="font-body text-xs text-asha-muted">{todayStr}</span>
       </div>
 
       {loading ? (
-        <div className="space-y-4 mb-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border p-5 animate-pulse h-28" />)}
+        <div className="space-y-2 mb-5">
+          <div className="grid grid-cols-3 gap-2">
+            {[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-16 animate-pulse" />)}
           </div>
+          <div className="bg-white rounded-xl border border-asha-border h-12 animate-pulse" />
+          <div className="bg-white rounded-xl border border-asha-border h-12 animate-pulse" />
         </div>
       ) : (
         <>
-          {/* Next race banner */}
-          {raceStats.nextRace && (
-            <Link to="/coord/races" className="block bg-asha-dark rounded-2xl p-5 mb-6 hover:bg-asha-mid transition-colors group">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-asha-orange/20 flex items-center justify-center flex-shrink-0">
-                    <Flag size={18} className="text-asha-orange" />
-                  </div>
-                  <div>
-                    <p className="font-body text-xs text-asha-muted uppercase tracking-wide mb-0.5">Next Team Race</p>
-                    <p className="font-display font-bold text-white">{raceStats.nextRace.name}</p>
-                    <p className="font-body text-xs text-asha-muted flex items-center gap-1 mt-0.5">
-                      <Calendar size={11} />
-                      {new Date(raceStats.nextRace.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  {nextDays !== null && (
-                    <div className={`text-center px-4 py-2 rounded-xl ${nextDays <= 14 ? 'bg-red-500/20' : nextDays <= 60 ? 'bg-amber-500/20' : 'bg-white/10'}`}>
-                      <div className={`font-display font-bold text-2xl leading-tight ${nextDays <= 14 ? 'text-red-400' : nextDays <= 60 ? 'text-amber-400' : 'text-white'}`}>{nextDays}</div>
-                      <div className="font-body text-xs text-asha-muted">days away</div>
-                    </div>
-                  )}
-                  <ArrowRight size={16} className="text-asha-muted group-hover:text-white transition-colors hidden sm:block" />
-                </div>
-              </div>
-            </Link>
-          )}
-
-          {/* Next event banner */}
-          {eventStats.nextEvent && (
-            <Link to="/coord/events" className="block bg-asha-dark rounded-2xl p-5 mb-6 hover:bg-asha-mid transition-colors group">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-asha-orange/20 flex items-center justify-center flex-shrink-0">
-                    <Calendar size={18} className="text-asha-orange" />
-                  </div>
-                  <div>
-                    <p className="font-body text-xs text-asha-muted uppercase tracking-wide mb-0.5">Next Event</p>
-                    <p className="font-display font-bold text-white">{eventStats.nextEvent.title}</p>
-                    <p className="font-body text-xs text-asha-muted flex items-center gap-2 mt-0.5">
-                      <span className="flex items-center gap-1"><Calendar size={11} />{new Date(eventStats.nextEvent.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                      {eventStats.nextEvent.location && <span className="flex items-center gap-1"><MapPin size={11} />{eventStats.nextEvent.location}</span>}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  {nextEventDays !== null && (
-                    <div className={`text-center px-4 py-2 rounded-xl ${nextEventDays <= 7 ? 'bg-red-500/20' : nextEventDays <= 30 ? 'bg-amber-500/20' : 'bg-white/10'}`}>
-                      <div className={`font-display font-bold text-2xl leading-tight ${nextEventDays <= 7 ? 'text-red-400' : nextEventDays <= 30 ? 'text-amber-400' : 'text-white'}`}>{nextEventDays}</div>
-                      <div className="font-body text-xs text-asha-muted">days away</div>
-                    </div>
-                  )}
-                  <ArrowRight size={16} className="text-asha-muted group-hover:text-white transition-colors hidden sm:block" />
-                </div>
-              </div>
-            </Link>
-          )}
-
-          {/* Race stats */}
-          <h2 className="font-display font-semibold text-base text-asha-dark mb-3">Races</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Stats strip */}
+          <div className="grid grid-cols-3 gap-2 mb-5">
             {[
-              { label: 'Active Races', value: raceStats.total, sub: `${raceStats.upcoming} upcoming`, icon: Flag, to: '/coord/races', color: 'bg-blue-50 text-blue-600' },
-              { label: 'Upcoming', value: raceStats.upcoming, sub: 'with a date set', icon: Calendar, to: '/coord/races', color: 'bg-indigo-50 text-indigo-600' },
-              { label: 'Athletes In', value: raceStats.participating, sub: 'selected a race', icon: Users, to: '/coord/races', color: 'bg-purple-50 text-purple-600' },
-              { label: 'Confirmed', value: raceStats.confirmed, sub: 'registered for race', icon: CheckCircle2, to: '/coord/races', color: 'bg-emerald-50 text-emerald-600' },
-            ].map(({ label, value, sub, icon: Icon, to, color }) => (
-              <Link key={label} to={to} className="bg-white rounded-2xl border border-asha-border p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
-                <div className={`w-9 h-9 rounded-xl ${color} flex items-center justify-center mb-3`}><Icon size={16} /></div>
-                <div className="font-display font-bold text-2xl text-asha-dark">{value}</div>
-                <div className="font-body font-medium text-sm text-asha-dark mt-0.5">{label}</div>
-                <div className="font-body text-xs text-asha-muted mt-0.5">{sub}</div>
-              </Link>
+              { label: 'UPCOMING RACES', value: String(raceStats.upcoming), color: 'text-asha-dark' },
+              { label: 'ATHLETES IN', value: String(raceStats.participating), color: 'text-asha-dark' },
+              { label: 'PICKUP PENDING', value: String(swagStats.pendingPickup), color: swagStats.pendingPickup > 0 ? 'text-amber-500' : 'text-asha-dark' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="bg-white rounded-xl border border-asha-border p-3 text-center">
+                <div className={`font-mono font-bold text-2xl leading-none ${color}`}>{value}</div>
+                <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1 leading-tight">{label}</div>
+              </div>
             ))}
           </div>
 
-          {/* Swag stats — coordinators and owners only */}
-          {!isCoach && <h2 className="font-display font-semibold text-base text-asha-dark mb-3">Swag</h2>}
-          {!isCoach && <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {[
-              { label: 'Swag Items', value: swagStats.items, sub: `${swagStats.interestItems} interest · ${swagStats.inventoryItems} inventory`, icon: Package, to: '/coord/items', color: 'bg-blue-50 text-blue-600' },
-              { label: 'Total Responses', value: swagStats.totalResponses, sub: 'across all items', icon: TrendingUp, to: '/coord/interest', color: 'bg-purple-50 text-purple-600' },
-              { label: 'Awaiting Pickup', value: swagStats.pendingPickup, sub: 'ready to collect', icon: CheckSquare, to: '/coord/pickup', color: 'bg-amber-50 text-amber-600' },
-              { label: 'Orders Value', value: fmtUSD(swagStats.totalValue), sub: 'committed orders', icon: DollarSign, to: '/coord/interest', color: 'bg-emerald-50 text-emerald-600' },
-            ].map(({ label, value, sub, icon: Icon, to, color }) => (
-              <Link key={label} to={to} className="bg-white rounded-2xl border border-asha-border p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
-                <div className={`w-9 h-9 rounded-xl ${color} flex items-center justify-center mb-3`}><Icon size={16} /></div>
-                <div className="font-display font-bold text-2xl text-asha-dark">{value}</div>
-                <div className="font-body font-medium text-sm text-asha-dark mt-0.5">{label}</div>
-                <div className="font-body text-xs text-asha-muted mt-0.5">{sub}</div>
-              </Link>
-            ))}
-          </div>}
+          {/* Next race countdown */}
+          {raceStats.nextRace && (
+            <Link to="/coord/races" className="block bg-asha-dark rounded-xl p-3.5 mb-3 relative overflow-hidden hover:bg-asha-mid transition-colors group">
+              <div className="absolute inset-0 bg-gradient-to-br from-asha-orange/15 to-transparent pointer-events-none" />
+              <div className="relative flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="font-body text-[10px] font-semibold text-asha-orange tracking-widest uppercase mb-0.5">Next Team Race</div>
+                  <div className="font-display font-bold text-white text-sm truncate">{raceStats.nextRace.name}</div>
+                  <div className="font-body text-[10px] text-asha-muted mt-0.5">
+                    {new Date(raceStats.nextRace.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  {nextDays !== null && (
+                    <div className="text-right">
+                      <div className={`font-mono font-bold text-3xl leading-none ${nextDays <= 14 ? 'text-red-400' : nextDays <= 60 ? 'text-amber-400' : 'text-white'}`}>{nextDays}</div>
+                      <div className="font-body text-[10px] text-asha-muted">days</div>
+                    </div>
+                  )}
+                  <ChevronRight size={14} className="text-asha-muted group-hover:text-white transition-colors" />
+                </div>
+              </div>
+            </Link>
+          )}
 
-          {/* Events stats */}
-          <h2 className="font-display font-semibold text-base text-asha-dark mb-3">Events</h2>
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          {/* Next event */}
+          {eventStats.nextEvent && (
+            <Link to="/coord/events" className="block bg-white rounded-xl border border-asha-border px-3.5 py-3 mb-5 hover:border-asha-orange/40 transition-colors group">
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="font-body text-[10px] font-semibold text-asha-muted tracking-widest uppercase mb-0.5">Next Event</div>
+                  <div className="font-body font-medium text-sm text-asha-dark truncate">{eventStats.nextEvent.title}</div>
+                  <div className="font-body text-[10px] text-asha-muted mt-0.5">
+                    {new Date(eventStats.nextEvent.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {eventStats.nextEvent.location && ` · ${eventStats.nextEvent.location}`}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {nextEventDays !== null && (
+                    <span className={`font-mono text-xs font-bold ${nextEventDays <= 7 ? 'text-red-600' : nextEventDays <= 30 ? 'text-amber-600' : 'text-asha-muted'}`}>
+                      {nextEventDays === 0 ? 'Today' : `${nextEventDays}d`}
+                    </span>
+                  )}
+                  <ChevronRight size={14} className="text-asha-muted group-hover:text-asha-orange transition-colors" />
+                </div>
+              </div>
+            </Link>
+          )}
+
+          {/* Quick Actions */}
+          <div className="mb-2">
+            <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase mb-2">Quick Actions</h2>
+          </div>
+          <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
             {[
-              { label: 'Upcoming Events', value: eventStats.upcoming, sub: 'scheduled ahead', icon: Calendar, to: '/coord/events', color: 'bg-violet-50 text-violet-600' },
-              { label: 'Total Events', value: eventStats.total, sub: 'created all time', icon: CheckCircle2, to: '/coord/events', color: 'bg-indigo-50 text-indigo-600' },
-            ].map(({ label, value, sub, icon: Icon, to, color }) => (
-              <Link key={label} to={to} className="bg-white rounded-2xl border border-asha-border p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
-                <div className={`w-9 h-9 rounded-xl ${color} flex items-center justify-center mb-3`}><Icon size={16} /></div>
-                <div className="font-display font-bold text-2xl text-asha-dark">{value}</div>
-                <div className="font-body font-medium text-sm text-asha-dark mt-0.5">{label}</div>
-                <div className="font-body text-xs text-asha-muted mt-0.5">{sub}</div>
+              { to: '/coord/events', label: 'Manage Events', desc: 'Create events, send calendar invites', icon: Calendar },
+              { to: '/coord/races', label: 'Manage Races', desc: 'Add races, dates, registration links', icon: Flag },
+              ...(!isCoordinator ? [{ to: '/coord/athletes', label: 'Athletes', desc: 'Organize teams, set race permissions', icon: Users }] : []),
+              ...(!isCoach ? [{ to: '/coord/items', label: 'Manage Swag', desc: 'Add items, set prices, update inventory', icon: Package }] : []),
+              ...(!isCoach ? [{ to: '/coord/pickup', label: 'Pickups', desc: 'Mark items ready and track collection', icon: CheckSquare }] : []),
+            ].map(({ to, label, desc, icon: Icon }) => (
+              <Link key={label} to={to} className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-asha-cream/50 transition-colors group">
+                <Icon size={15} className="text-asha-orange flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-body font-medium text-sm text-asha-dark">{label}</div>
+                  <div className="font-body text-[10px] text-asha-muted">{desc}</div>
+                </div>
+                <ChevronRight size={13} className="text-asha-muted group-hover:text-asha-orange transition-colors flex-shrink-0" />
               </Link>
             ))}
           </div>
         </>
       )}
-
-      {/* Quick Actions */}
-      <h2 className="font-display font-semibold text-lg text-asha-dark mb-4">Quick Actions</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[
-          { to: '/coord/events', label: 'Manage Events', desc: 'Create events, send calendar invites to athletes', icon: Calendar },
-          { to: '/coord/races', label: 'Manage Races', desc: 'Add races, set dates, registration links and coupon codes', icon: Flag },
-          ...(!isCoordinator ? [{ to: '/coord/athletes', label: 'Manage Athletes', desc: 'Organize teams, set race permissions for athletes', icon: Users }] : []),
-          ...(!isCoach ? [{ to: '/coord/items', label: 'Manage Swag', desc: 'Add items, set prices, update inventory', icon: Package }] : []),
-          ...(!isCoach ? [{ to: '/coord/pickup', label: 'Manage Pickups', desc: 'Mark items as ready and track collection', icon: CheckSquare }] : []),
-        ].map(({ to, label, desc, icon: Icon }) => (
-          <Link key={label} to={to} className="bg-white rounded-2xl border border-asha-border p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
-              <Icon size={18} className="text-asha-orange" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-display font-semibold text-asha-dark text-sm">{label}</div>
-              <div className="font-body text-xs text-asha-muted mt-0.5 leading-relaxed">{desc}</div>
-            </div>
-            <ArrowRight size={14} className="text-asha-muted group-hover:text-asha-orange transition-colors flex-shrink-0 mt-1" />
-          </Link>
-        ))}
-      </div>
     </div>
   )
 }

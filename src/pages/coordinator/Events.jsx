@@ -365,57 +365,49 @@ export default function EventsPage() {
   const EventCard = ({ event }) => {
     const recipients = (event.recipientIds ?? []).map(uid => userMap[uid]).filter(Boolean)
     return (
-      <div className="bg-white rounded-2xl border border-asha-border p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-body font-semibold text-sm text-asha-dark">{event.title}</span>
-              {event.inviteSent && (
-                <span className="flex items-center gap-1 text-xs font-body text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                  <CheckCircle2 size={11} />Invited
-                </span>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mb-2">
-              <span className="font-body text-xs text-asha-muted flex items-center gap-1"><Calendar size={11} />{fmtDate(event.date)}</span>
-              <span className="font-body text-xs text-asha-muted flex items-center gap-1"><Clock size={11} />{fmtTime(event.startTime)} – {fmtTime(event.endTime)}</span>
-              {event.location && <span className="font-body text-xs text-asha-muted flex items-center gap-1"><MapPin size={11} />{event.location}</span>}
-            </div>
-            {recipients.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <div className="flex -space-x-1.5">
-                  {recipients.slice(0, 5).map(r => (
-                    r.photoURL
-                      ? <img key={r.id} src={r.photoURL} alt="" className="w-5 h-5 rounded-full border border-white" />
-                      : <div key={r.id} className="w-5 h-5 rounded-full bg-asha-orangeDim border border-white flex items-center justify-center"><Users size={9} className="text-asha-orange" /></div>
-                  ))}
-                </div>
-                <span className="font-body text-xs text-asha-muted">{recipients.length} recipient{recipients.length !== 1 ? 's' : ''}</span>
-                {event.calendarLink && (
-                  <a href={event.calendarLink} target="_blank" rel="noopener noreferrer" className="font-body text-xs text-asha-orange hover:underline ml-1">View in Calendar</a>
-                )}
-              </div>
+      <div className="flex items-center gap-3 px-3.5 py-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="font-body font-medium text-sm text-asha-dark">{event.title}</span>
+            {event.inviteSent && (
+              <span className="text-[9px] font-body text-green-600 bg-green-50 px-1.5 py-px rounded-full">Invited</span>
             )}
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <button onClick={() => setModal({ event })} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-asha-muted hover:text-asha-dark"><Pencil size={14} /></button>
-            <button onClick={() => handleDelete(event)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors text-asha-muted hover:text-red-500"><Trash2 size={14} /></button>
+          <div className="font-body text-[10px] text-asha-muted">
+            {fmtDate(event.date)} · {fmtTime(event.startTime)}–{fmtTime(event.endTime)}
+            {event.location && ` · ${event.location}`}
           </div>
+          {recipients.length > 0 && (
+            <div className="flex items-center gap-1 mt-0.5">
+              <div className="flex -space-x-1">
+                {recipients.slice(0, 5).map(r => (
+                  r.photoURL
+                    ? <img key={r.id} src={r.photoURL} alt="" className="w-4 h-4 rounded-full border border-white" />
+                    : <div key={r.id} className="w-4 h-4 rounded-full bg-asha-orangeDim border border-white flex items-center justify-center"><Users size={8} className="text-asha-orange" /></div>
+                ))}
+              </div>
+              <span className="font-body text-[10px] text-asha-muted ml-1">{recipients.length} recipient{recipients.length !== 1 ? 's' : ''}</span>
+              {event.calendarLink && (
+                <a href={event.calendarLink} target="_blank" rel="noopener noreferrer" className="font-body text-[10px] text-asha-orange ml-1">Calendar</a>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          <button onClick={() => setModal({ event })} className="p-1.5 hover:bg-gray-100 rounded-lg text-asha-muted"><Pencil size={13} /></button>
+          <button onClick={() => handleDelete(event)} className="p-1.5 hover:bg-red-50 rounded-lg text-asha-muted hover:text-red-500"><Trash2 size={13} /></button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-display font-bold text-3xl text-asha-dark">Events</h1>
-          <p className="font-body text-asha-muted text-sm mt-1">Schedule events and send calendar invites to your athletes</p>
-        </div>
+    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">Events</h1>
         <button onClick={() => setModal({ event: null })}
-          className="flex items-center gap-2 bg-asha-orange text-white px-4 py-2.5 rounded-xl font-body font-medium text-sm hover:bg-asha-orangeLight transition-colors">
-          <Plus size={16} /> New Event
+          className="flex items-center gap-1.5 bg-asha-orange text-white px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-asha-orangeLight transition-colors">
+          <Plus size={13} /> New Event
         </button>
       </div>
 
@@ -427,28 +419,36 @@ export default function EventsPage() {
       )}
 
       {loading ? (
-        <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border h-24 animate-pulse" />)}</div>
+        <div className="space-y-2">{[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-12 animate-pulse" />)}</div>
       ) : events.length === 0 ? (
-        <div className="text-center py-16">
-          <Calendar size={32} className="text-asha-muted mx-auto mb-3" />
-          <p className="font-body text-asha-muted mb-4">No events yet.</p>
+        <div className="text-center py-12">
+          <Calendar size={24} className="text-asha-muted mx-auto mb-2" />
+          <p className="font-body text-sm text-asha-muted mb-3">No events yet.</p>
           <button onClick={() => setModal({ event: null })}
-            className="flex items-center gap-2 mx-auto bg-asha-orange text-white px-4 py-2.5 rounded-xl font-body font-medium text-sm hover:bg-asha-orangeLight transition-colors">
-            <Plus size={15} /> New Event
+            className="flex items-center gap-1.5 mx-auto bg-asha-orange text-white px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-asha-orangeLight transition-colors">
+            <Plus size={13} /> New Event
           </button>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {upcoming.length > 0 && (
             <div>
-              <h2 className="font-body font-medium text-xs text-asha-muted uppercase tracking-wide mb-3">Upcoming</h2>
-              <div className="space-y-3">{upcoming.map(e => <EventCard key={e.id} event={e} />)}</div>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase">Upcoming</h2>
+              </div>
+              <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
+                {upcoming.map(e => <EventCard key={e.id} event={e} />)}
+              </div>
             </div>
           )}
           {past.length > 0 && (
             <div>
-              <h2 className="font-body font-medium text-xs text-asha-muted uppercase tracking-wide mb-3">Past</h2>
-              <div className="space-y-3 opacity-60">{past.map(e => <EventCard key={e.id} event={e} />)}</div>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase">Past</h2>
+              </div>
+              <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50 opacity-60">
+                {past.map(e => <EventCard key={e.id} event={e} />)}
+              </div>
             </div>
           )}
         </div>

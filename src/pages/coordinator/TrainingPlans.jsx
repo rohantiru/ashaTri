@@ -378,21 +378,16 @@ export default function TrainingPlans() {
   const teamById = Object.fromEntries(teams.map(t => [t.id, t]))
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-8 flex-wrap gap-3">
-        <div>
-          <h1 className="font-display font-bold text-3xl text-asha-dark">Training Plans</h1>
-          <p className="font-body text-sm text-asha-muted mt-1">
-            Upload JSON plans and assign them to teams. Active plans appear in the athlete calendar.
-          </p>
-        </div>
+      <div className="flex items-baseline justify-between mb-4 flex-wrap gap-3">
+        <h1 className="font-display font-bold text-xl text-asha-dark">Training Plans</h1>
         <button
           onClick={() => setShowUpload(true)}
-          className="flex items-center gap-2 bg-asha-orange text-white px-4 py-2.5 rounded-xl font-body font-semibold text-sm hover:bg-asha-orangeLight transition-colors flex-shrink-0"
+          className="flex items-center gap-1.5 bg-asha-orange text-white px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-asha-orangeLight transition-colors flex-shrink-0"
         >
-          <Upload size={15} />
+          <Upload size={13} />
           Upload Plan
         </button>
       </div>
@@ -429,7 +424,7 @@ export default function TrainingPlans() {
         </div>
 
       ) : (
-        <div className="space-y-3">
+        <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
           {plans.map(plan => {
             const isExp = expanded.has(plan.id)
             const end = planEndDate(plan)
@@ -438,17 +433,17 @@ export default function TrainingPlans() {
             return (
               <div
                 key={plan.id}
-                className={`bg-white rounded-2xl border transition-all ${plan.isActive ? 'border-asha-border' : 'border-asha-border/50 opacity-60'}`}
+                className={`transition-all ${plan.isActive ? '' : 'opacity-60'}`}
               >
-                {/* Card header */}
-                <div className="p-4 flex items-start gap-3">
+                {/* Row header */}
+                <div className="px-3.5 py-2.5 flex items-center gap-3">
                   {/* Active dot */}
-                  <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${plan.isActive ? 'bg-emerald-500' : 'bg-asha-border'}`} />
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${plan.isActive ? 'bg-emerald-500' : 'bg-asha-border'}`} />
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-display font-bold text-base text-asha-dark leading-tight">{plan.name}</span>
+                      <span className="font-body font-medium text-sm text-asha-dark leading-tight">{plan.name}</span>
                       {(plan.teamIds || []).map(tid => teamById[tid] && (
                         <span key={tid} className="text-[10px] font-body font-semibold px-2 py-0.5 rounded-full bg-asha-orangeDim text-asha-orange border border-asha-orange/20">
                           {teamById[tid].name}

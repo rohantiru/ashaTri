@@ -264,67 +264,58 @@ export default function SwagItems() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="font-display font-bold text-3xl text-asha-dark">Swag Items</h1>
-          <p className="font-body text-asha-muted text-sm mt-1">Manage interest polls and inventory items</p>
-        </div>
+    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">Swag Items</h1>
         <button
           onClick={() => setModal('new')}
-          className="flex items-center gap-2 bg-asha-orange text-white px-4 py-2.5 rounded-xl font-body font-medium text-sm hover:bg-asha-orangeLight transition-colors"
+          className="flex items-center gap-1.5 bg-asha-orange text-white px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-asha-orangeLight transition-colors"
         >
-          <Plus size={16} />
+          <Plus size={14} />
           Add Item
         </button>
       </div>
 
       {loading ? (
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border h-20 animate-pulse" />)}
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-10 animate-pulse" />)}
         </div>
       ) : items.length === 0 ? (
         <div className="text-center py-16">
-          <div className="w-14 h-14 rounded-2xl bg-asha-orangeDim flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded-xl bg-asha-orangeDim flex items-center justify-center mx-auto mb-4">
             <Package size={24} className="text-asha-orange" />
           </div>
           <h3 className="font-display font-semibold text-asha-dark mb-1">No swag items yet</h3>
           <p className="font-body text-asha-muted text-sm">Add your first item to get started</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
           {items.map(item => (
-            <div key={item.id} className={`bg-white rounded-2xl border transition-all ${item.isActive ? 'border-asha-border' : 'border-dashed border-gray-200 opacity-60'}`}>
-              <div className="flex items-center gap-4 p-4">
+            <div key={item.id} className={`transition-all ${item.isActive ? '' : 'opacity-60'}`}>
+              <div className="flex items-center gap-3 px-3.5 py-2.5">
                 {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.name} className="w-12 h-12 rounded-xl object-cover border border-asha-border flex-shrink-0" onError={e => e.target.style.display='none'} />
+                  <img src={item.imageUrl} alt={item.name} className="w-8 h-8 rounded-lg object-cover border border-asha-border flex-shrink-0" onError={e => e.target.style.display='none'} />
                 ) : (
-                  <div className="w-12 h-12 rounded-xl bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
-                    <Package size={20} className="text-asha-orange" />
+                  <div className="w-8 h-8 rounded-lg bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
+                    <Package size={14} className="text-asha-orange" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-display font-semibold text-asha-dark">{item.name}</span>
+                    <span className="font-body font-medium text-sm text-asha-dark">{item.name}</span>
                     <StatusBadge status={item.type} />
                     {!item.isActive && <span className="text-xs font-body text-asha-muted">(hidden)</span>}
                     {item.isLocked && <span className="flex items-center gap-0.5 text-xs font-body text-asha-dark bg-gray-100 px-1.5 py-0.5 rounded"><Lock size={10} /> Locked</span>}
-                  </div>
-                  <div className="flex items-center gap-3 mt-0.5">
                     {item.price != null && (
-                      <span className="font-body text-sm font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
+                      <span className="font-mono text-xs font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
                     )}
-                    {item.description && <p className="font-body text-xs text-asha-muted truncate">{item.description}</p>}
+                    {item.hasSizes && item.sizes?.length > 0 && item.sizes.map(s => (
+                      <span key={s} className="text-xs bg-gray-100 text-asha-muted px-1.5 py-0.5 rounded font-body">
+                        {s}{item.type === 'inventory' && item.inventory?.[s] !== undefined ? ` (${item.inventory[s]})` : ''}
+                      </span>
+                    ))}
                   </div>
-                  {item.hasSizes && item.sizes?.length > 0 && (
-                    <div className="flex gap-1 mt-1.5 flex-wrap">
-                      {item.sizes.map(s => (
-                        <span key={s} className="text-xs bg-gray-100 text-asha-muted px-1.5 py-0.5 rounded font-body">
-                          {s}{item.type === 'inventory' && item.inventory?.[s] !== undefined ? ` (${item.inventory[s]})` : ''}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  {item.description && <p className="font-body text-xs text-asha-muted truncate mt-0.5">{item.description}</p>}
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button onClick={() => toggleActive(item)} className={`p-1.5 rounded-lg text-xs font-body transition-colors ${item.isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-asha-muted hover:bg-gray-100'}`}>

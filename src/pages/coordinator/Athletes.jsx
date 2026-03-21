@@ -253,14 +253,14 @@ function TeamsTab({ athletes, teams, onAdd, onEdit, onDelete }) {
   )
 
   return (
-    <div className="space-y-3">
+    <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
       {teams.map(team => {
         const members = (team.memberIds ?? []).map(uid => athleteMap[uid]).filter(Boolean)
         return (
-          <div key={team.id} className="bg-white rounded-2xl border border-asha-border">
-            <div className="flex items-start gap-4 p-4">
-              <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
-                <Users size={18} className="text-asha-orange" />
+          <div key={team.id}>
+            <div className="flex items-center gap-3 px-3.5 py-2.5">
+              <div className="w-8 h-8 rounded-lg bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
+                <Users size={14} className="text-asha-orange" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-body font-semibold text-sm text-asha-dark mb-0.5">{team.name}</div>
@@ -674,16 +674,13 @@ export default function AthletesPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-display font-bold text-3xl text-asha-dark">Athletes</h1>
-          <p className="font-body text-asha-muted text-sm mt-1">Manage athlete groups and race access</p>
-        </div>
+    <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">Athletes</h1>
         {tab === 'teams' && (
           <button onClick={() => setModal({ team: null })}
-            className="flex items-center gap-2 bg-asha-orange text-white px-4 py-2.5 rounded-xl font-body font-medium text-sm hover:bg-asha-orangeLight transition-colors">
-            <Plus size={16} /> New Team
+            className="flex items-center gap-1.5 bg-asha-orange text-white px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-asha-orangeLight transition-colors">
+            <Plus size={14} /> New Team
           </button>
         )}
       </div>
@@ -699,7 +696,7 @@ export default function AthletesPage() {
       </div>
 
       {loading ? (
-        <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border h-20 animate-pulse" />)}</div>
+        <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-10 animate-pulse" />)}</div>
       ) : tab === 'teams' ? (
         <TeamsTab
           athletes={athletes}

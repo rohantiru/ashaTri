@@ -65,14 +65,14 @@ export default function InterestView() {
     })
 
     return (
-      <div key={item.id} className="bg-white rounded-2xl border border-asha-border overflow-hidden">
+      <div key={item.id} className="overflow-hidden">
         <button
           onClick={() => toggle(item.id)}
-          className="w-full flex items-center gap-4 p-4 text-left hover:bg-gray-50/50 transition-colors"
+          className="w-full flex items-center gap-4 px-3.5 py-2.5 text-left hover:bg-gray-50/50 transition-colors"
         >
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-display font-semibold text-asha-dark">{item.name}</span>
+              <span className="font-body font-medium text-sm text-asha-dark">{item.name}</span>
               <StatusBadge status={item.type} />
               {item.price != null && (
                 <span className="font-body text-xs text-asha-orange font-semibold">{fmtUSD(item.price)} ea</span>
@@ -106,7 +106,7 @@ export default function InterestView() {
           <div className="border-t border-asha-border">
             {Object.keys(bySizeStatus).length > 0 && (
               <div className="p-4 border-b border-asha-border">
-                <h4 className="font-display font-semibold text-sm text-asha-dark mb-3">Breakdown by Size</h4>
+                <h4 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase mb-3">Breakdown by Size</h4>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -142,7 +142,7 @@ export default function InterestView() {
             )}
 
             <div className="p-4">
-              <h4 className="font-display font-semibold text-sm text-asha-dark mb-3">Individual Responses</h4>
+              <h4 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase mb-3">Individual Responses</h4>
               {itemResponses.length === 0 ? (
                 <p className="font-body text-asha-muted text-sm">No responses yet</p>
               ) : (
@@ -175,41 +175,38 @@ export default function InterestView() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="font-display font-bold text-3xl text-asha-dark">Interest & Orders</h1>
-          <p className="font-body text-asha-muted text-sm mt-1">Demand across all swag items</p>
-        </div>
+    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">Interest & Orders</h1>
         {grandTotal > 0 && (
-          <div className="bg-asha-orangeDim border border-asha-orange/20 rounded-2xl px-4 py-3 text-right">
-            <div className="font-body text-xs text-asha-muted uppercase tracking-wide mb-0.5">Total Committed</div>
-            <div className="font-display font-bold text-2xl text-asha-orange">{fmtUSD(grandTotal)}</div>
+          <div className="bg-asha-orangeDim border border-asha-orange/20 rounded-xl px-3 py-2 text-right">
+            <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mb-0.5">Total Committed</div>
+            <div className="font-mono font-bold text-xl text-asha-orange">{fmtUSD(grandTotal)}</div>
           </div>
         )}
       </div>
 
       {loading ? (
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border h-20 animate-pulse" />)}
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-10 animate-pulse" />)}
         </div>
       ) : items.length === 0 ? (
         <div className="text-center py-16">
-          <BarChart2 size={32} className="text-asha-muted mx-auto mb-3" />
-          <p className="font-body text-asha-muted">No swag items created yet</p>
+          <BarChart2 size={24} className="text-asha-muted mx-auto mb-3" />
+          <p className="font-body text-asha-muted text-sm">No swag items created yet</p>
         </div>
       ) : (
         <div className="space-y-6">
           {inventoryItems.length > 0 && (
             <div>
-              <h2 className="font-display font-semibold text-base text-asha-dark mb-3">Inventory Orders</h2>
-              <div className="space-y-3">{inventoryItems.map(renderItem)}</div>
+              <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase mb-2">Inventory Orders</h2>
+              <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">{inventoryItems.map(renderItem)}</div>
             </div>
           )}
           {interestItems.length > 0 && (
             <div>
-              <h2 className="font-display font-semibold text-base text-asha-dark mb-3">Interest Polls</h2>
-              <div className="space-y-3">{interestItems.map(renderItem)}</div>
+              <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase mb-2">Interest Polls</h2>
+              <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">{interestItems.map(renderItem)}</div>
             </div>
           )}
         </div>

@@ -14,8 +14,8 @@ function TabButton({ tab, active }) {
       className="flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[44px] transition-colors"
     >
       <Icon
-        size={22}
-        strokeWidth={active ? 2.5 : 1.75}
+        size={20}
+        strokeWidth={active ? 2.5 : 1.5}
         className={active ? 'text-asha-orange' : 'text-asha-muted'}
       />
       <span className={`font-body text-[10px] font-medium leading-none ${active ? 'text-asha-orange' : 'text-asha-muted'}`}>
@@ -70,7 +70,7 @@ export default function BottomNav() {
         className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-asha-card border-t border-asha-border"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="flex items-stretch h-16">
+        <div className="flex items-stretch h-14">
           {tabs.map(tab => (
             <TabButton key={tab.key} tab={tab} active={activeKey === tab.key} />
           ))}

@@ -19,6 +19,13 @@ export default {
           card: '#FFFFFF',
           border: '#EDE5DB',
         },
+        asphalt: {
+          900: '#0F0F13',
+          800: '#18181F',
+          700: '#242430',
+          600: '#2E2E3C',
+        },
+        neon: '#00E5CC',
       },
     },
   },

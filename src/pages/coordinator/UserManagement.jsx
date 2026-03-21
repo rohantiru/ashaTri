@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
-import { Users, ShieldCheck, User, Search } from 'lucide-react'
+import { Users, User, Search } from 'lucide-react'
 
 const ALL_ROLES = ['athlete', 'coordinator', 'coach', 'serviceUser', 'owner']
 
@@ -57,29 +57,23 @@ export default function UserManagement() {
   const assignableRoles = amIOwner ? ALL_ROLES : ALL_ROLES.filter(r => r !== 'owner')
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="font-display font-bold text-3xl text-asha-dark">User Management</h1>
-        <p className="font-body text-asha-muted text-sm mt-1">Assign roles to members of the team</p>
+    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">User Management</h1>
       </div>
 
       {/* Summary */}
       {!loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
           {[
-            { label: 'Total Members', val: counts.total,        icon: Users,       color: 'bg-blue-50 text-blue-600' },
-            { label: 'Coordinators',  val: counts.coordinators, icon: ShieldCheck, color: 'bg-asha-orangeDim text-asha-orange' },
-            { label: 'Coaches',       val: counts.coaches,      icon: ShieldCheck, color: 'bg-blue-50 text-blue-600' },
-            { label: 'Athletes',      val: counts.athletes,     icon: User,        color: 'bg-gray-100 text-asha-muted' },
-          ].map(({ label, val, icon: Icon, color }) => (
-            <div key={label} className="bg-white rounded-2xl border border-asha-border p-4 flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center flex-shrink-0`}>
-                <Icon size={18} />
-              </div>
-              <div>
-                <div className="font-display font-bold text-xl text-asha-dark">{val}</div>
-                <div className="font-body text-xs text-asha-muted">{label}</div>
-              </div>
+            { label: 'Total Members', val: counts.total },
+            { label: 'Coordinators',  val: counts.coordinators },
+            { label: 'Coaches',       val: counts.coaches },
+            { label: 'Athletes',      val: counts.athletes },
+          ].map(({ label, val }) => (
+            <div key={label} className="bg-white rounded-xl border border-asha-border p-2.5 text-center">
+              <div className="font-mono font-bold text-xl text-asha-dark leading-none">{val}</div>
+              <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1">{label}</div>
             </div>
           ))}
         </div>
@@ -92,22 +86,22 @@ export default function UserManagement() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search by name or email…"
-          className="w-full pl-8 pr-4 py-2.5 border border-asha-border rounded-xl font-body text-sm focus:outline-none focus:border-asha-orange transition-colors"
+          className="w-full pl-8 pr-4 py-2 border border-asha-border rounded-xl font-body text-sm focus:outline-none focus:border-asha-orange transition-colors"
         />
       </div>
 
       {/* User list */}
       {loading ? (
         <div className="space-y-2">
-          {[...Array(5)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border h-16 animate-pulse" />)}
+          {[...Array(5)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-10 animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
-          <Users size={32} className="text-asha-muted mx-auto mb-3" />
-          <p className="font-body text-asha-muted">No users found</p>
+          <Users size={24} className="text-asha-muted mx-auto mb-3" />
+          <p className="font-body text-asha-muted text-sm">No users found</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-asha-border overflow-hidden">
+        <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
           {filtered.map((u, idx) => {
             const isMe = u.id === me.uid
             const isUpdating = updating[u.id]
@@ -117,14 +111,14 @@ export default function UserManagement() {
             return (
               <div
                 key={u.id}
-                className={`flex items-center gap-4 px-4 py-3 ${idx !== filtered.length - 1 ? 'border-b border-asha-border/50' : ''} ${isMe ? 'bg-asha-cream/40' : 'hover:bg-gray-50/50'} transition-colors`}
+                className={`flex items-center gap-3 px-3.5 py-2.5 ${isMe ? 'bg-asha-cream/40' : 'hover:bg-gray-50/50'} transition-colors`}
               >
                 {/* Avatar */}
                 {u.photoURL ? (
-                  <img src={u.photoURL} alt={u.name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                  <img src={u.photoURL} alt={u.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
-                    <User size={16} className="text-asha-orange" />
+                  <div className="w-8 h-8 rounded-full bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
+                    <User size={14} className="text-asha-orange" />
                   </div>
                 )}
 
@@ -147,7 +141,7 @@ export default function UserManagement() {
                       value={u.role ?? 'athlete'}
                       disabled={isUpdating}
                       onChange={e => setRole(u.id, e.target.value)}
-                      className="text-xs font-body font-medium px-2 py-1.5 rounded-lg border border-asha-border text-asha-muted hover:border-asha-orange focus:border-asha-orange focus:outline-none transition-all disabled:opacity-40 bg-white"
+                      className="text-xs font-body font-medium px-2 py-1 rounded-lg border border-asha-border text-asha-muted hover:border-asha-orange focus:border-asha-orange focus:outline-none transition-all disabled:opacity-40 bg-white"
                     >
                       {assignableRoles.map(r => (
                         <option key={r} value={r}>{ROLE_META[r]?.label ?? r}</option>

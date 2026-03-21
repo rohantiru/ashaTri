@@ -296,23 +296,20 @@ export default function RaceManagement() {
   })
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-display font-bold text-3xl text-asha-dark">Race Management</h1>
-          <p className="font-body text-asha-muted text-sm mt-1">Manage races and track registrations</p>
-        </div>
+    <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">Race Management</h1>
         {tab === 'races' && (
           <div className="flex gap-2">
             {races.length === 0 && (
               <button onClick={handleSeed} disabled={seeding}
-                className="flex items-center gap-2 border border-asha-border text-asha-muted px-4 py-2.5 rounded-xl font-body font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-50">
-                <Download size={15} />{seeding ? 'Adding…' : 'Seed Races'}
+                className="flex items-center gap-1.5 border border-asha-border text-asha-muted px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-gray-50 transition-colors disabled:opacity-50">
+                <Download size={13} />{seeding ? 'Adding…' : 'Seed Races'}
               </button>
             )}
             <button onClick={() => setModal({ race: null })}
-              className="flex items-center gap-2 bg-asha-orange text-white px-4 py-2.5 rounded-xl font-body font-medium text-sm hover:bg-asha-orangeLight transition-colors">
-              <Plus size={16} /> Add Race
+              className="flex items-center gap-1.5 bg-asha-orange text-white px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-asha-orangeLight transition-colors">
+              <Plus size={14} /> Add Race
             </button>
           </div>
         )}
@@ -329,7 +326,7 @@ export default function RaceManagement() {
       </div>
 
       {loading ? (
-        <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border h-20 animate-pulse" />)}</div>
+        <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-10 animate-pulse" />)}</div>
       ) : tab === 'races' ? (
 
         /* ── Races tab ── */
@@ -347,12 +344,12 @@ export default function RaceManagement() {
           ) : filteredRaces.length === 0 ? (
             <div className="text-center py-12"><Flag size={28} className="text-asha-muted mx-auto mb-3" /><p className="font-body text-asha-muted text-sm">No races match this filter</p></div>
           ) : (
-            <div className="space-y-3">
+            <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
               {filteredRaces.map(race => {
                 const raceRegs = regs.filter(r => r.raceId === race.id)
                 return (
-                  <div key={race.id} className="bg-white rounded-2xl border border-asha-border">
-                    <div className="flex items-center gap-4 p-4">
+                  <div key={race.id}>
+                    <div className="flex items-center gap-3 px-3.5 py-2.5">
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-0.5 ${race.isActive ? 'bg-green-400' : 'bg-gray-300'}`} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
@@ -373,8 +370,8 @@ export default function RaceManagement() {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <div className="text-center mr-1">
-                          <div className="font-display font-bold text-lg text-asha-orange leading-tight">{raceRegs.length}</div>
-                          <div className="font-body text-xs text-asha-muted">athletes</div>
+                          <div className="font-mono font-bold text-sm text-asha-orange leading-tight">{raceRegs.length}</div>
+                          <div className="font-body text-[10px] text-asha-muted">athletes</div>
                         </div>
                         <button onClick={() => handleToggleLock(race)} title={race.isLocked ? 'Unlock registrations' : 'Lock registrations'} className={`p-1.5 rounded-lg transition-colors ${race.isLocked ? 'text-asha-dark hover:bg-gray-100' : 'text-asha-muted hover:bg-gray-100 hover:text-asha-dark'}`}>
                           {race.isLocked ? <Lock size={14} /> : <Unlock size={14} />}
@@ -398,42 +395,42 @@ export default function RaceManagement() {
         ) : (
           <>
             <FilterBar typeFilter={typeFilter} setTypeFilter={setTypeFilter} distanceFilter={distanceFilter} setDistanceFilter={setDistanceFilter} />
-            <div className="mb-5 flex flex-wrap gap-2">
+            <div className="mb-4 flex flex-wrap gap-1.5">
               {applyFilters(races).map(r => (
                 <button key={r.id} onClick={() => setSelectedRace(r.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-body font-medium border transition-all ${selectedRace === r.id ? 'bg-asha-dark text-white border-asha-dark' : 'bg-white border-asha-border text-asha-muted hover:border-asha-orange/40'}`}>
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-body font-medium border transition-all ${selectedRace === r.id ? 'bg-asha-dark text-white border-asha-dark' : 'bg-white border-asha-border text-asha-muted hover:border-asha-orange/40'}`}>
                   {r.name}<TypeBadge type={r.type} />
                 </button>
               ))}
             </div>
             {selectedRaceObj && (
               <>
-                <div className="bg-white rounded-2xl border border-asha-border p-5 mb-5">
-                  <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="bg-white rounded-xl border border-asha-border p-3.5 mb-4">
+                  <div className="flex items-center justify-between gap-3 mb-2">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <div className="font-display font-bold text-asha-dark">{selectedRaceObj.name}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-body font-semibold text-sm text-asha-dark">{selectedRaceObj.name}</span>
                         <TypeBadge type={selectedRaceObj.type} />
                       </div>
-                      <div className="font-body text-xs text-asha-muted flex items-center gap-1 mt-0.5"><Calendar size={11} />{fmtDate(selectedRaceObj.date)}</div>
+                      <div className="font-body text-[11px] text-asha-muted flex items-center gap-1 mt-0.5"><Calendar size={10} />{fmtDate(selectedRaceObj.date)}</div>
                     </div>
-                    <div className="flex gap-5">
+                    <div className="flex gap-4">
                       <div className="text-center">
-                        <div className="font-display font-bold text-2xl text-asha-orange leading-tight">{selectedRegs.length}</div>
-                        <div className="font-body text-xs text-asha-muted">participating</div>
+                        <div className="font-mono font-bold text-xl text-asha-orange leading-tight">{selectedRegs.length}</div>
+                        <div className="font-body text-[10px] text-asha-muted uppercase tracking-wide">participating</div>
                       </div>
                       <div className="text-center">
-                        <div className="font-display font-bold text-2xl text-green-500 leading-tight">{totalRegistered}</div>
-                        <div className="font-body text-xs text-asha-muted">registered</div>
+                        <div className="font-mono font-bold text-xl text-green-500 leading-tight">{totalRegistered}</div>
+                        <div className="font-body text-[10px] text-asha-muted uppercase tracking-wide">registered</div>
                       </div>
                     </div>
                   </div>
                   {Object.keys(byEvent).length > 0 && (
-                    <div className="flex flex-wrap gap-2 pt-3 border-t border-asha-border">
+                    <div className="flex flex-wrap gap-1.5 pt-2.5 border-t border-asha-border">
                       {Object.entries(byEvent).map(([ev, evRegs]) => (
-                        <div key={ev} className="flex items-center gap-1.5 bg-asha-cream rounded-lg px-2 py-0.5">
-                          <span className="font-body text-xs text-asha-muted">{ev}</span>
-                          <span className="font-body text-xs font-semibold text-asha-dark">{evRegs.length}</span>
+                        <div key={ev} className="flex items-center gap-1 bg-asha-cream rounded-md px-1.5 py-0.5">
+                          <span className="font-body text-[11px] text-asha-muted">{ev}</span>
+                          <span className="font-mono text-[11px] font-semibold text-asha-dark">{evRegs.length}</span>
                         </div>
                       ))}
                     </div>
@@ -442,21 +439,21 @@ export default function RaceManagement() {
                 {selectedRegs.length === 0 ? (
                   <div className="text-center py-12"><Users size={28} className="text-asha-muted mx-auto mb-3" /><p className="font-body text-asha-muted text-sm">No athletes have selected this race yet</p></div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
                     {[...selectedRegs].sort((a, b) => (a.event || '').localeCompare(b.event || '')).map(reg => {
                       const u = users[reg.athleteId]
                       return (
-                        <div key={reg.id} className="bg-white rounded-2xl border border-asha-border flex items-center gap-3 px-4 py-3">
-                          {u?.photoURL ? <img src={u.photoURL} alt="" className="w-8 h-8 rounded-full flex-shrink-0" /> : <div className="w-8 h-8 rounded-full bg-asha-cream flex items-center justify-center flex-shrink-0"><Users size={14} className="text-asha-muted" /></div>}
+                        <div key={reg.id} className="flex items-center gap-3 px-3.5 py-2.5">
+                          {u?.photoURL ? <img src={u.photoURL} alt="" className="w-7 h-7 rounded-full flex-shrink-0" /> : <div className="w-7 h-7 rounded-full bg-asha-cream flex items-center justify-center flex-shrink-0"><Users size={12} className="text-asha-muted" /></div>}
                           <div className="flex-1 min-w-0">
                             <div className="font-body font-medium text-sm text-asha-dark">{u?.name || reg.athleteId}</div>
-                            <div className="font-body text-xs text-asha-muted">{u?.email}</div>
+                            <div className="font-body text-[11px] text-asha-muted">{u?.email}</div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="px-2.5 py-1 rounded-lg bg-asha-cream font-body text-xs font-medium text-asha-dark">{reg.event}</span>
+                            <span className="px-2 py-0.5 rounded-md bg-asha-cream font-body text-xs font-medium text-asha-dark">{reg.event}</span>
                             {reg.isRegistered
-                              ? <span className="flex items-center gap-1 text-green-600 font-body text-xs font-medium"><CheckCircle2 size={13} />Registered</span>
-                              : <span className="flex items-center gap-1 text-asha-muted font-body text-xs"><Circle size={13} />Not yet</span>}
+                              ? <span className="flex items-center gap-1 text-green-600 font-body text-xs font-medium"><CheckCircle2 size={12} />Registered</span>
+                              : <span className="flex items-center gap-1 text-asha-muted font-body text-xs"><Circle size={12} />Not yet</span>}
                           </div>
                         </div>
                       )

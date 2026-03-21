@@ -46,31 +46,30 @@ export default function ExpensesSummary() {
   const athleteEntries = Object.entries(byAthlete).sort((a, b) => b[1].total - a[1].total)
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="font-display font-bold text-3xl text-asha-dark">Expenses Summary</h1>
-        <p className="font-body text-asha-muted text-sm mt-1">Team expense overview submitted by athletes</p>
+    <div className="max-w-5xl mx-auto px-4 py-4 sm:py-6">
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">Expenses Summary</h1>
       </div>
 
       {loading ? (
-        <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border h-16 animate-pulse" />)}</div>
+        <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-10 animate-pulse" />)}</div>
       ) : expenses.length === 0 ? (
         <div className="text-center py-16">
-          <Receipt size={32} className="text-asha-muted mx-auto mb-3" />
-          <p className="font-body text-asha-muted">No expenses submitted yet</p>
+          <Receipt size={24} className="text-asha-muted mx-auto mb-3" />
+          <p className="font-body text-asha-muted text-sm">No expenses submitted yet</p>
         </div>
       ) : (
         <>
           {/* Grand total + category breakdown */}
-          <div className="bg-white rounded-2xl border border-asha-border p-5 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-display font-semibold text-asha-dark">Total</span>
-              <span className="font-display font-bold text-2xl text-asha-orange">{fmtUSD(grandTotal)}</span>
+          <div className="bg-white rounded-xl border border-asha-border p-3.5 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-body font-semibold text-asha-dark text-sm">Total</span>
+              <span className="font-mono font-bold text-xl text-asha-orange">{fmtUSD(grandTotal)}</span>
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {CATEGORIES.map(cat => (
                 <div key={cat} className="text-center p-2 bg-asha-cream rounded-xl">
-                  <div className="font-body font-semibold text-sm text-asha-dark">{fmtUSD(byCategory[cat] || 0)}</div>
+                  <div className="font-mono font-semibold text-xs text-asha-dark">{fmtUSD(byCategory[cat] || 0)}</div>
                   <div className="font-body text-xs text-asha-muted mt-0.5">{cat}</div>
                 </div>
               ))}
@@ -91,7 +90,7 @@ export default function ExpensesSummary() {
           </div>
 
           {/* Per-athlete breakdown */}
-          <div className="space-y-3">
+          <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
             {athleteEntries.map(([athleteId, { total, items }]) => {
               const u = users[athleteId]
               const isOpen = expanded[athleteId]
@@ -99,10 +98,10 @@ export default function ExpensesSummary() {
               if (athleteItems.length === 0) return null
               const athleteTotal = athleteItems.reduce((s, e) => s + (e.amount || 0), 0)
               return (
-                <div key={athleteId} className="bg-white rounded-2xl border border-asha-border overflow-hidden">
+                <div key={athleteId} className="overflow-hidden">
                   <button
                     onClick={() => setExpanded(ex => ({ ...ex, [athleteId]: !ex[athleteId] }))}
-                    className="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-50/50 transition-colors"
+                    className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-gray-50/50 transition-colors"
                   >
                     {u?.photoURL && <img src={u.photoURL} alt="" className="w-8 h-8 rounded-full flex-shrink-0" />}
                     <div className="flex-1 min-w-0">

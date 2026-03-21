@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useAppConfig } from '../../contexts/AppConfigContext'
 import { fmtUSD } from '../../utils/format'
 import StatusBadge from '../../components/StatusBadge'
-import { ShoppingBag, Flag, Receipt, ArrowRight, Package, Calendar, CheckCircle2, Circle, MapPin } from 'lucide-react'
+import { Package, Flag, ArrowRight, Calendar, CheckCircle2, Circle, MapPin, Activity } from 'lucide-react'
 
 function fmtDate(dateStr) {
   if (!dateStr) return 'TBD'
@@ -60,7 +60,6 @@ export default function AthleteDashboard() {
       setRaceMap(races)
 
       const regs = regsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
-      // Sort: upcoming first (with date), then TBD
       regs.sort((a, b) => {
         const ra = races[a.raceId]
         const rb = races[b.raceId]
@@ -71,7 +70,6 @@ export default function AthleteDashboard() {
       })
       setMyRaceRegs(regs)
 
-      // Events
       const today2 = new Date(); today2.setHours(0, 0, 0, 0)
       const events = eventsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
       const upcomingEvents = events
@@ -87,140 +85,140 @@ export default function AthleteDashboard() {
   const readyItems = myResponses.filter(r => r.status === 'ready')
   const expenseTotal = expenses.reduce((sum, e) => sum + (e.amount || 0), 0)
 
-  // Next upcoming race
   const nextRaceReg = myRaceRegs.find(r => {
     const race = raceMap[r.raceId]
     const days = daysUntil(race?.date)
     return days === null || days >= 0
   })
   const nextRace = nextRaceReg ? raceMap[nextRaceReg.raceId] : null
+  const nextRaceDays = nextRace ? daysUntil(nextRace.date) : null
+
+  const firstName = profile?.name?.split(' ')[0]
+  const todayStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+
+  // Build stats
+  const stats = []
+  if (config.tabs.races) {
+    stats.push({
+      label: 'DAYS TO RACE',
+      value: nextRaceDays !== null ? String(nextRaceDays) : '—',
+      color: nextRaceDays !== null && nextRaceDays <= 30 ? 'text-asha-orange' : 'text-asha-dark',
+    })
+  }
+  if (config.tabs.events) {
+    stats.push({ label: 'EVENTS', value: String(myEvents.length), color: 'text-asha-dark' })
+  }
+  if (config.tabs.races) {
+    stats.push({ label: 'RACES', value: String(myRaceRegs.length), color: 'text-asha-dark' })
+  }
+  // Pad to at least 3 if we have fewer
+  while (stats.length < 3) {
+    stats.push({ label: '', value: '—', color: 'text-asha-muted' })
+  }
+  const displayStats = stats.slice(0, 3)
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
+    <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+
       {/* Greeting */}
-      <div className="mb-6 sm:mb-8">
-        <p className="font-body text-asha-muted text-sm mb-1">Welcome back</p>
-        <h1 className="font-display font-bold text-2xl sm:text-3xl text-asha-dark">{profile?.name?.split(' ')[0]} 👋</h1>
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">
+          Hey, {firstName}! 🏊🚴🏃
+        </h1>
+        <span className="font-body text-xs text-asha-muted">{todayStr}</span>
       </div>
+
+      {/* Stats strip */}
+      {!loading && (
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          {displayStats.map(({ label, value, color }) => (
+            <div key={label} className="bg-white rounded-xl border border-asha-border p-3 text-center">
+              <div className={`font-mono font-bold text-2xl leading-none ${color}`}>{value}</div>
+              <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1 leading-tight">{label}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Pickup alert */}
       {readyItems.length > 0 && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-5 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-            <Package size={18} className="text-emerald-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-display font-semibold text-emerald-800 text-sm">
-              {readyItems.length} item{readyItems.length > 1 ? 's' : ''} ready for pickup!
-            </div>
-            <div className="font-body text-xs text-emerald-700 mt-0.5">Your coordinator has your swag ready to collect.</div>
-          </div>
-          <Link to="/athlete/my-swag" className="text-xs font-body font-medium text-emerald-700 hover:text-emerald-900 flex items-center gap-1 flex-shrink-0">
-            View <ArrowRight size={12} />
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4 flex items-center gap-3">
+          <Package size={15} className="text-emerald-600 flex-shrink-0" />
+          <span className="font-body text-sm text-emerald-800 flex-1 min-w-0">
+            {readyItems.length} item{readyItems.length > 1 ? 's' : ''} ready for pickup
+          </span>
+          <Link to="/athlete/my-swag" className="text-xs font-body font-medium text-emerald-700 flex items-center gap-1 flex-shrink-0">
+            View <ArrowRight size={11} />
           </Link>
         </div>
       )}
 
-      {/* Quick links */}
-      {(() => {
-        const links = [
-          config.tabs.events && (
-            <Link key="events" to="/athlete/events" className="bg-asha-orange rounded-2xl p-5 hover:bg-asha-orangeLight transition-colors group">
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
-                <Calendar size={20} className="text-white" />
+      {/* Next race countdown */}
+      {nextRace && nextRaceDays !== null && nextRaceDays >= 0 && (
+        <div className="bg-asha-dark rounded-2xl p-4 mb-5 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-asha-orange/15 to-transparent pointer-events-none" />
+          <div className="relative flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="font-body text-[10px] font-semibold text-asha-orange tracking-widest uppercase mb-1">Next Race</div>
+              <div className="font-display font-bold text-white text-sm truncate">{nextRace.name}</div>
+              <div className="font-body text-xs text-asha-muted mt-0.5">
+                {nextRace.location
+                  ? <span className="flex items-center gap-1"><MapPin size={9} />{nextRace.location}</span>
+                  : fmtDate(nextRace.date)
+                }
               </div>
-              <div className="font-display font-bold text-white text-base sm:text-lg">Events</div>
-              <div className="font-body text-white/80 text-sm mt-1">Team events and calendar invites</div>
-              <div className="font-body text-white/70 text-xs mt-3">
-                {myEvents.length > 0 ? `${myEvents.length} upcoming event${myEvents.length !== 1 ? 's' : ''}` : 'Check your schedule'}
+            </div>
+            <div className="flex-shrink-0 text-right">
+              <div className="font-mono font-bold text-5xl text-white leading-none">
+                {nextRaceDays === 0 ? '0' : nextRaceDays}
               </div>
-            </Link>
-          ),
-          config.tabs.swag && (
-            <Link key="swag" to="/athlete/browse" className="bg-white border border-asha-border rounded-2xl p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
-              <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center mb-3">
-                <ShoppingBag size={20} className="text-asha-orange" />
+              <div className="font-body text-xs text-asha-muted mt-1">
+                {nextRaceDays === 0 ? 'today!' : 'days'}
               </div>
-              <div className="font-display font-bold text-asha-dark text-base sm:text-lg">Swag</div>
-              <div className="font-body text-asha-muted text-sm mt-1">Browse items and track orders</div>
-              <div className="font-body text-xs text-asha-muted mt-3">
-                {myResponses.length > 0 ? `${myResponses.length} item${myResponses.length !== 1 ? 's' : ''} requested` : "Explore what's available"}
-              </div>
-            </Link>
-          ),
-          config.tabs.races && (
-            <Link key="races" to="/athlete/races" className="bg-white border border-asha-border rounded-2xl p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
-              <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center mb-3">
-                <Flag size={20} className="text-asha-orange" />
-              </div>
-              <div className="font-display font-bold text-asha-dark text-base sm:text-lg">Races</div>
-              <div className="font-body text-asha-muted text-sm mt-1">Select events and track registration</div>
-              <div className="font-body text-xs text-asha-muted mt-3">
-                {myRaceRegs.length > 0 ? `${myRaceRegs.length} race${myRaceRegs.length !== 1 ? 's' : ''} selected` : 'View upcoming races'}
-              </div>
-            </Link>
-          ),
-          config.tabs.expenses && (
-            <Link key="expenses" to="/athlete/expenses" className="bg-white border border-asha-border rounded-2xl p-5 hover:border-asha-orange/40 hover:shadow-sm transition-all group">
-              <div className="w-10 h-10 rounded-xl bg-asha-orangeDim flex items-center justify-center mb-3">
-                <Receipt size={20} className="text-asha-orange" />
-              </div>
-              <div className="font-display font-bold text-asha-dark text-base sm:text-lg">Expenses</div>
-              <div className="font-body text-asha-muted text-sm mt-1">Submit for reimbursement</div>
-              <div className="font-body text-xs text-asha-orange font-semibold mt-3">
-                {expenses.length > 0 ? `${fmtUSD(expenseTotal)} submitted` : 'No expenses yet'}
-              </div>
-            </Link>
-          ),
-        ].filter(Boolean)
-        const cols = links.length >= 3 ? 'grid-cols-2 sm:grid-cols-4' : links.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
-        return <div className={`grid gap-3 mb-6 ${cols}`}>{links}</div>
-      })()}
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* My Races widget */}
-      {!loading && myRaceRegs.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display font-semibold text-base sm:text-lg text-asha-dark">My Races</h2>
+      {/* Upcoming Races */}
+      {!loading && myRaceRegs.length > 0 && config.tabs.races && (
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase">Upcoming Races</h2>
             {myRaceRegs.length > 3 && (
-              <Link to="/athlete/races" className="text-xs font-body text-asha-orange hover:underline flex items-center gap-1">
-                View all <ArrowRight size={11} />
+              <Link to="/athlete/races" className="text-[10px] font-body text-asha-orange flex items-center gap-0.5">
+                See all <ArrowRight size={10} />
               </Link>
             )}
           </div>
-          <div className="space-y-2">
+          <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
             {myRaceRegs.slice(0, 3).map(reg => {
               const race = raceMap[reg.raceId]
               if (!race) return null
               const days = daysUntil(race.date)
               const isPast = days !== null && days < 0
               return (
-                <div key={reg.id} className="bg-white rounded-2xl border border-asha-border flex items-center gap-3 px-4 py-3">
-                  <div className="w-8 h-8 rounded-lg bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
-                    <Flag size={14} className="text-asha-orange" />
-                  </div>
+                <div key={reg.id} className="flex items-center gap-3 px-3.5 py-2.5">
                   <div className="flex-1 min-w-0">
                     <div className="font-body font-medium text-sm text-asha-dark truncate">{race.name}</div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="font-body text-xs text-asha-muted flex items-center gap-1">
-                        <Calendar size={10} />{fmtDate(race.date)}
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded-md bg-asha-cream font-body text-xs text-asha-muted">{reg.event}</span>
+                      <span className="font-body text-[10px] text-asha-muted">{fmtDate(race.date)}</span>
+                      {reg.event && (
+                        <span className="font-body text-[10px] px-1.5 py-px rounded bg-asha-cream text-asha-muted">{reg.event}</span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     {!isPast && days !== null && (
-                      <span className={`text-[10px] font-body font-medium px-1.5 py-0.5 rounded-full ${
-                        days <= 14 ? 'bg-red-50 text-red-600' :
-                        days <= 60 ? 'bg-amber-50 text-amber-600' :
-                        'bg-asha-cream text-asha-muted'
-                      }`}>
-                        {days === 0 ? 'Today!' : `${days}d`}
-                      </span>
+                      <span className={`font-mono text-xs font-bold ${
+                        days <= 14 ? 'text-red-600' :
+                        days <= 60 ? 'text-amber-600' :
+                        'text-asha-muted'
+                      }`}>{days === 0 ? 'Today' : `${days}d`}</span>
                     )}
                     {reg.isRegistered
-                      ? <CheckCircle2 size={16} className="text-asha-orange" />
-                      : <Circle size={16} className="text-asha-muted" />
+                      ? <CheckCircle2 size={14} className="text-asha-orange" />
+                      : <Circle size={14} className="text-asha-muted" />
                     }
                   </div>
                 </div>
@@ -230,48 +228,52 @@ export default function AthleteDashboard() {
         </div>
       )}
 
-      {/* Upcoming events widget */}
+      {/* Training Log banner */}
+      <div className="mb-5">
+        <Link to="/athlete/training"
+          className="flex items-center gap-3 bg-asha-dark rounded-xl px-3.5 py-3 hover:bg-asha-mid transition-colors">
+          <Activity size={16} className="text-asha-orange flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="font-body font-medium text-sm text-white leading-none">Training Log</div>
+            <div className="font-body text-[10px] text-asha-muted mt-0.5">Strava activities</div>
+          </div>
+          <span className="font-body text-[10px] text-asha-orange flex items-center gap-0.5 flex-shrink-0">
+            View <ArrowRight size={10} />
+          </span>
+        </Link>
+      </div>
+
+      {/* Team Events */}
       {config.tabs.events && !loading && myEvents.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display font-semibold text-base sm:text-lg text-asha-dark">Upcoming Events</h2>
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-body font-semibold text-[10px] text-asha-muted tracking-widest uppercase">Team Events</h2>
             {myEvents.length > 3 && (
-              <Link to="/athlete/events" className="text-xs font-body text-asha-orange hover:underline flex items-center gap-1">
-                View all <ArrowRight size={11} />
+              <Link to="/athlete/events" className="text-[10px] font-body text-asha-orange flex items-center gap-0.5">
+                See all <ArrowRight size={10} />
               </Link>
             )}
           </div>
-          <div className="space-y-2">
+          <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
             {myEvents.slice(0, 3).map(event => {
               const days = daysUntil(event.date)
               return (
-                <div key={event.id} className="bg-white rounded-2xl border border-asha-border flex items-center gap-3 px-4 py-3">
-                  <div className="w-8 h-8 rounded-lg bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
-                    <Calendar size={14} className="text-asha-orange" />
-                  </div>
+                <div key={event.id} className="flex items-center gap-3 px-3.5 py-2.5">
                   <div className="flex-1 min-w-0">
                     <div className="font-body font-medium text-sm text-asha-dark truncate">{event.title}</div>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <span className="font-body text-xs text-asha-muted flex items-center gap-1">
-                        <Calendar size={10} />{new Date(event.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        {event.startTime && ` · ${event.startTime}`}
-                      </span>
-                      {event.location && (
-                        <span className="font-body text-xs text-asha-muted flex items-center gap-1">
-                          <MapPin size={10} />{event.location}
-                        </span>
-                      )}
+                    <div className="font-body text-[10px] text-asha-muted mt-0.5">
+                      {new Date(event.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {event.startTime && ` · ${event.startTime}`}
+                      {event.location && ` · ${event.location}`}
                     </div>
                   </div>
                   {days !== null && (
-                    <span className={`text-[10px] font-body font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-                      days === 0 ? 'bg-asha-orange/10 text-asha-orange' :
-                      days <= 7 ? 'bg-red-50 text-red-600' :
-                      days <= 30 ? 'bg-amber-50 text-amber-600' :
-                      'bg-asha-cream text-asha-muted'
-                    }`}>
-                      {days === 0 ? 'Today!' : `${days}d`}
-                    </span>
+                    <span className={`font-mono text-xs font-bold flex-shrink-0 ${
+                      days === 0 ? 'text-asha-orange' :
+                      days <= 7 ? 'text-red-600' :
+                      days <= 30 ? 'text-amber-600' :
+                      'text-asha-muted'
+                    }`}>{days === 0 ? 'Today' : `${days}d`}</span>
                   )}
                 </div>
               )
@@ -280,66 +282,6 @@ export default function AthleteDashboard() {
         </div>
       )}
 
-      {/* Expenses widget */}
-      {config.tabs.expenses && !loading && expenses.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display font-semibold text-base sm:text-lg text-asha-dark">Pending Reimbursement</h2>
-            <Link to="/athlete/expenses" className="text-xs font-body text-asha-orange hover:underline flex items-center gap-1">
-              View all <ArrowRight size={11} />
-            </Link>
-          </div>
-          <div className="bg-white rounded-2xl border border-asha-border overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-asha-border/50">
-              <span className="font-body text-sm text-asha-muted">{expenses.length} expense{expenses.length !== 1 ? 's' : ''} submitted</span>
-              <span className="font-display font-bold text-asha-orange">{fmtUSD(expenseTotal)}</span>
-            </div>
-            {expenses.slice(0, 3).map((e, i) => (
-              <div key={e.id} className={`flex items-center gap-3 px-4 py-2.5 ${i < Math.min(expenses.length, 3) - 1 ? 'border-b border-asha-border/30' : ''}`}>
-                <div className="w-7 h-7 rounded-lg bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
-                  <Receipt size={12} className="text-asha-orange" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-body text-sm text-asha-dark truncate">{e.title}</div>
-                  <div className="font-body text-xs text-asha-muted">{e.date} · {e.category}</div>
-                </div>
-                <span className="font-body text-sm font-medium text-asha-dark flex-shrink-0">{fmtUSD(e.amount)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Recent swag activity */}
-      {config.tabs.swag && !loading && myResponses.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display font-semibold text-base sm:text-lg text-asha-dark">Recent Swag</h2>
-            {myResponses.length > 4 && (
-              <Link to="/athlete/my-swag" className="text-xs font-body text-asha-orange hover:underline flex items-center gap-1">
-                View all <ArrowRight size={11} />
-              </Link>
-            )}
-          </div>
-          <div className="space-y-2">
-            {myResponses.slice(0, 4).map(r => {
-              const item = itemMap[r.itemId]
-              return (
-                <div key={r.id} className="bg-white rounded-xl border border-asha-border flex items-center gap-3 px-4 py-3">
-                  <div className="w-8 h-8 rounded-lg bg-asha-orangeDim flex items-center justify-center flex-shrink-0">
-                    <Package size={14} className="text-asha-orange" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-body font-medium text-sm text-asha-dark truncate">{item?.name || '—'}</div>
-                    {r.size && <div className="font-body text-xs text-asha-muted">Size: {r.size}</div>}
-                  </div>
-                  <StatusBadge status={r.status} />
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

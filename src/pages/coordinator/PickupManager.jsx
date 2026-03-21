@@ -89,26 +89,23 @@ export default function PickupManager() {
   const statusCounts = FULL_FLOW.map(s => ({ s, count: responses.filter(r => r.status === s).length }))
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-display font-bold text-3xl text-asha-dark">Pickup Manager</h1>
-          <p className="font-body text-asha-muted text-sm mt-1">Advance statuses and track collection</p>
-        </div>
+    <div className="max-w-5xl mx-auto px-4 py-4 sm:py-6">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">Pickup Manager</h1>
         <button
           onClick={bulkReady}
-          className="text-sm font-body font-medium px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors"
+          className="flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-emerald-700 transition-colors"
         >
           Bulk: Mark ordered → Ready
         </button>
       </div>
 
       {/* Status summary pills */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
         {statusCounts.map(({ s, count }) => (
-          <div key={s} className="bg-white rounded-xl border border-asha-border p-3 text-center">
-            <div className="font-display font-bold text-xl text-asha-dark">{count}</div>
-            <div className="font-body text-xs text-asha-muted">{STATUS_LABELS[s]}</div>
+          <div key={s} className="bg-white rounded-xl border border-asha-border p-2.5 text-center">
+            <div className="font-mono font-bold text-xl text-asha-dark leading-none">{count}</div>
+            <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1">{STATUS_LABELS[s]}</div>
           </div>
         ))}
       </div>
@@ -152,7 +149,7 @@ export default function PickupManager() {
           <p className="font-body text-asha-muted">No responses match your filters</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-asha-border overflow-hidden">
+        <div className="bg-white rounded-xl border border-asha-border overflow-hidden">
           <div className="overflow-x-auto">
           <table className="w-full min-w-[640px]">
             <thead className="bg-asha-cream/60 border-b border-asha-border">

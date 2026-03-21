@@ -121,10 +121,9 @@ export default function AthleteRaces() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="font-display font-bold text-3xl text-asha-dark">Races</h1>
-        <p className="font-body text-asha-muted text-sm mt-1">Select your event and track your registration status</p>
+    <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">Races</h1>
       </div>
 
       {/* Filters */}
@@ -163,7 +162,7 @@ export default function AthleteRaces() {
 
       {loading ? (
         <div className="space-y-3">
-          {[...Array(4)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border h-36 animate-pulse" />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border h-12 animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
@@ -178,7 +177,7 @@ export default function AthleteRaces() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
           {filtered.map(race => {
             const reg = myRegs[race.id]
             const days = daysUntil(race.date)
@@ -186,116 +185,97 @@ export default function AthleteRaces() {
             const isLocked = !!race.isLocked
 
             return (
-              <div
-                key={race.id}
-                className={`bg-white rounded-2xl border transition-all ${reg ? 'border-asha-orange/40 shadow-sm' : 'border-asha-border'}`}
-              >
-                <div className="p-5 pb-3">
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="min-w-0">
-                      <h2 className="font-display font-bold text-lg text-asha-dark leading-tight mb-1">{race.name}</h2>
-                      {race.type && (
-                        <span className={`inline-block text-xs font-body font-medium px-2 py-0.5 rounded-full mb-0.5 ${
-                          race.type === 'swim' ? 'bg-blue-50 text-blue-600' :
-                          race.type === 'triathlon' ? 'bg-asha-orangeDim text-asha-orange' :
-                          race.type === 'aquathon' ? 'bg-purple-50 text-purple-600' :
-                          'bg-gray-100 text-gray-500'
-                        }`}>
-                          {race.type === 'swim' ? 'Swim' : race.type === 'triathlon' ? 'Tri' : race.type === 'aquathon' ? 'Aquathon' : race.type}
-                        </span>
-                      )}
-                      {race.description && <p className="font-body text-sm text-asha-muted">{race.description}</p>}
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {isLocked && (
-                        <span className="flex items-center gap-1 text-[10px] font-body font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                          <Lock size={9} />Locked
-                        </span>
-                      )}
-                      {days !== null ? (
-                        <div className={`text-[10px] font-body font-semibold px-1.5 py-0.5 rounded-full ${
-                          isPast ? 'bg-gray-100 text-gray-400' :
-                          days === 0 ? 'bg-asha-orange text-white' :
-                          days <= 14 ? 'bg-red-50 text-red-600' :
-                          days <= 60 ? 'bg-amber-50 text-amber-600' :
-                          'bg-asha-cream text-asha-muted'
-                        }`}>
-                          {isPast ? 'Past' : days === 0 ? 'Today!' : `${days}d away`}
+              <div key={race.id} className={`${reg ? 'bg-asha-orangeDim/10' : ''}`}>
+                <div className="flex items-start gap-3 px-3.5 py-3">
+                  <div className={`w-1.5 self-stretch rounded-full flex-shrink-0 mt-0.5 ${reg ? 'bg-asha-orange' : 'bg-asha-border'}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-body font-semibold text-sm text-asha-dark leading-tight">{race.name}</span>
+                          {race.type && (
+                            <span className={`text-[10px] font-body font-medium px-1.5 py-px rounded-full ${
+                              race.type === 'swim' ? 'bg-blue-50 text-blue-600' :
+                              race.type === 'triathlon' ? 'bg-asha-orangeDim text-asha-orange' :
+                              race.type === 'aquathon' ? 'bg-purple-50 text-purple-600' :
+                              'bg-gray-100 text-gray-500'
+                            }`}>
+                              {race.type === 'swim' ? 'Swim' : race.type === 'triathlon' ? 'Tri' : race.type === 'aquathon' ? 'Aquathon' : race.type}
+                            </span>
+                          )}
+                          {isLocked && <span className="flex items-center gap-0.5 text-[10px] font-body text-gray-400"><Lock size={8} />Locked</span>}
                         </div>
-                      ) : (
-                        <div className="text-[10px] font-body font-semibold px-1.5 py-0.5 rounded-full bg-asha-cream text-asha-muted">TBD</div>
-                      )}
+                        <div className="flex flex-wrap gap-x-3 gap-y-px mt-0.5">
+                          <span className="font-body text-[11px] text-asha-muted flex items-center gap-1"><Calendar size={10} />{fmtDate(race.date)}</span>
+                          {race.location && <span className="font-body text-[11px] text-asha-muted flex items-center gap-1"><MapPin size={10} />{race.location}</span>}
+                        </div>
+                        {(race.registrationUrl || race.couponCode) && (
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            {race.registrationUrl && (
+                              <a href={race.registrationUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 font-body text-[11px] text-asha-orange hover:underline">
+                                <ExternalLink size={10} />Register
+                              </a>
+                            )}
+                            {race.couponCode && (
+                              <span className="flex items-center gap-1 font-body text-[11px] text-asha-muted bg-asha-cream px-1.5 py-px rounded">
+                                <Tag size={9} />{race.couponCode}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        {days !== null ? (
+                          <div className={`text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-full ${
+                            isPast ? 'bg-gray-100 text-gray-400' :
+                            days === 0 ? 'bg-asha-orange text-white' :
+                            days <= 14 ? 'bg-red-50 text-red-600' :
+                            days <= 60 ? 'bg-amber-50 text-amber-600' :
+                            'bg-asha-cream text-asha-muted'
+                          }`}>
+                            {isPast ? 'Past' : days === 0 ? 'Today!' : `${days}d`}
+                          </div>
+                        ) : (
+                          <div className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-full bg-asha-cream text-asha-muted">TBD</div>
+                        )}
+                        {reg && (
+                          <button
+                            onClick={() => !isPast && !isLocked && !saving[race.id] && handleRegisteredToggle(race)}
+                            disabled={isPast || isLocked || saving[race.id]}
+                            className="flex items-center gap-1 group disabled:opacity-50"
+                            title={reg.isRegistered ? 'Registered' : 'Mark as registered'}
+                          >
+                            {reg.isRegistered
+                              ? <CheckCircle2 size={13} className="text-asha-orange" />
+                              : <Circle size={13} className="text-asha-muted group-hover:text-asha-orange transition-colors" />
+                            }
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-                    <span className="flex items-center gap-1.5 font-body text-xs text-asha-muted">
-                      <Calendar size={12} />{fmtDate(race.date)}
-                    </span>
-                    {race.location && (
-                      <span className="flex items-center gap-1.5 font-body text-xs text-asha-muted">
-                        <MapPin size={12} />{race.location}
-                      </span>
+                    {race.events?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {race.events.map(ev => (
+                          <button
+                            key={ev}
+                            onClick={() => !isPast && !isLocked && !saving[race.id] && handleEventSelect(race, ev)}
+                            disabled={isPast || isLocked || saving[race.id]}
+                            className={`px-2 py-0.5 rounded-md text-xs font-body font-medium border transition-all ${
+                              reg?.event === ev
+                                ? isLocked ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-asha-orange text-white border-asha-orange'
+                                : isPast || isLocked
+                                ? 'border-asha-border text-asha-muted opacity-40 cursor-not-allowed'
+                                : 'border-asha-border text-asha-muted hover:border-asha-orange/50 hover:text-asha-dark'
+                            }`}
+                          >
+                            {ev}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
-
-                  {(race.registrationUrl || race.couponCode) && (
-                    <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                      {race.registrationUrl && (
-                        <a href={race.registrationUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-body text-xs text-asha-orange hover:underline">
-                          <ExternalLink size={11} />Register
-                        </a>
-                      )}
-                      {race.couponCode && (
-                        <span className="flex items-center gap-1.5 font-body text-xs text-asha-muted bg-asha-cream px-1.5 py-0.5 rounded">
-                          <Tag size={10} />{race.couponCode}
-                        </span>
-                      )}
-                    </div>
-                  )}
                 </div>
-
-                {race.events?.length > 0 && (
-                  <div className="px-5 pb-3">
-                    <p className="text-xs font-body font-medium text-asha-muted uppercase tracking-wide mb-2">My event</p>
-                    <div className="flex flex-wrap gap-2">
-                      {race.events.map(ev => (
-                        <button
-                          key={ev}
-                          onClick={() => !isPast && !isLocked && !saving[race.id] && handleEventSelect(race, ev)}
-                          disabled={isPast || isLocked || saving[race.id]}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-body font-medium border transition-all ${
-                            reg?.event === ev
-                              ? isLocked ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-asha-orange text-white border-asha-orange'
-                              : isPast || isLocked
-                              ? 'border-asha-border text-asha-muted opacity-40 cursor-not-allowed'
-                              : 'border-asha-border text-asha-muted hover:border-asha-orange/50 hover:text-asha-dark'
-                          }`}
-                        >
-                          {ev}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {reg && (
-                  <div className="px-5 pb-5">
-                    <button
-                      onClick={() => !isPast && !isLocked && !saving[race.id] && handleRegisteredToggle(race)}
-                      disabled={isPast || isLocked || saving[race.id]}
-                      className="flex items-center gap-2.5 group disabled:opacity-50"
-                    >
-                      {reg.isRegistered
-                        ? <CheckCircle2 size={17} className="text-asha-orange flex-shrink-0" />
-                        : <Circle size={17} className="text-asha-muted group-hover:text-asha-orange flex-shrink-0 transition-colors" />
-                      }
-                      <span className={`font-body text-sm font-medium transition-colors ${reg.isRegistered ? 'text-asha-dark' : 'text-asha-muted group-hover:text-asha-dark'}`}>
-                        {reg.isRegistered ? 'Registered' : 'Mark as registered'}
-                      </span>
-                    </button>
-                  </div>
-                )}
               </div>
             )
           })}

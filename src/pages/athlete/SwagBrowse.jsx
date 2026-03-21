@@ -47,116 +47,85 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
   }
 
   return (
-    <div className={`bg-white rounded-2xl border transition-all flex flex-col overflow-hidden ${hasResponse ? 'border-asha-orange/40 shadow-sm' : 'border-asha-border hover:border-asha-orange/30 hover:shadow-sm'}`}>
-      {/* Image or color band */}
-      {item.imageUrl ? (
-        <img src={item.imageUrl} alt={item.name} className="w-full h-36 object-cover" onError={e => e.target.style.display='none'} />
-      ) : (
-        <div className={`h-1.5 ${hasResponse ? 'bg-asha-orange' : 'bg-asha-border'}`} />
-      )}
+    <div className={`flex items-center gap-3 px-3.5 py-3 ${hasResponse ? 'bg-asha-orangeDim/20' : ''}`}>
+      {/* Thumbnail or accent */}
+      {item.imageUrl
+        ? <img src={item.imageUrl} alt={item.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-asha-border" onError={e => e.target.style.display = 'none'} />
+        : <div className={`w-1.5 self-stretch rounded-full flex-shrink-0 ${hasResponse ? 'bg-asha-orange' : 'bg-asha-border'}`} />
+      }
 
-      <div className="p-5 flex-1 flex flex-col">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <div>
-            <h3 className="font-display font-bold text-asha-dark text-base leading-snug">{item.name}</h3>
-            {item.price != null && (
-              <span className="font-body text-sm font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
-            )}
-            {item.description && <p className="font-body text-xs text-asha-muted mt-1 leading-relaxed">{item.description}</p>}
-          </div>
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-body font-medium text-sm text-asha-dark">{item.name}</span>
+          {item.price != null && <span className="font-mono text-[10px] font-semibold text-asha-orange">{fmtUSD(item.price)}</span>}
           <StatusBadge status={stockStatus} />
         </div>
-
-        {/* Inventory stock indicator */}
-        {isInventory && (
-          <div className="mt-2 mb-3">
-            {item.hasSizes ? (
-              <div className="flex flex-wrap gap-1.5">
-                {sizeOptions.map(s => {
-                  const stock = getStock(s)
-                  return (
-                    <span key={s} className={`text-xs font-body px-2 py-0.5 rounded border ${stock > 0 ? 'bg-gray-50 border-asha-border text-asha-dark' : 'bg-gray-100 border-gray-200 text-gray-300 line-through'}`}>
-                      {s} <span className="text-asha-muted">({stock})</span>
-                    </span>
-                  )
-                })}
-              </div>
-            ) : (
-              <span className="font-body text-xs text-asha-muted">{totalStock} unit{totalStock !== 1 ? 's' : ''} available</span>
-            )}
+        {isInventory && item.hasSizes && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {sizeOptions.map(s => {
+              const stock = getStock(s)
+              return (
+                <span key={s} className={`font-body text-[9px] px-1.5 py-px rounded border ${stock > 0 ? 'bg-gray-50 border-asha-border text-asha-dark' : 'bg-gray-100 border-gray-200 text-gray-300 line-through'}`}>
+                  {s} ({stock})
+                </span>
+              )
+            })}
           </div>
         )}
-
-        <div className="flex-1" />
-
-        {/* Response area */}
-        {hasResponse ? (
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center gap-2 bg-asha-orangeDim rounded-xl px-3 py-2.5">
-              <Check size={14} className="text-asha-orange flex-shrink-0" />
-              <span className="font-body text-sm text-asha-orange font-medium">
-                {isInventory ? 'Ordered' : 'Interest submitted'}
-                {myResponse.size && myResponse.size !== 'One Size' && ` — ${myResponse.size}`}
-              </span>
-            </div>
-            {canCancel ? (
-              <button
-                onClick={handleWithdraw}
-                disabled={submitting}
-                className="w-full py-2 rounded-xl border border-asha-border font-body text-xs text-asha-muted hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-all disabled:opacity-50"
-              >
-                {submitting ? 'Cancelling…' : 'Cancel'}
-              </button>
-            ) : (
-              <div className="text-center flex items-center justify-center gap-1.5">
-                <StatusBadge status={myResponse.status} />
-                {item.isLocked && <span className="font-body text-xs text-asha-muted">(locked)</span>}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="mt-4 space-y-2">
-            {item.hasSizes && (
-              <div className="relative">
-                <select
-                  value={selectedSize}
-                  onChange={e => setSelectedSize(e.target.value)}
-                  className="w-full appearance-none border border-asha-border rounded-xl px-3 py-2.5 font-body text-sm focus:outline-none focus:border-asha-orange transition-colors bg-white pr-8"
-                >
-                  <option value="">Select size…</option>
-                  {sizeOptions.map(s => {
-                    const stock = isInventory ? getStock(s) : null
-                    const unavailable = isInventory && stock === 0
-                    return (
-                      <option key={s} value={s} disabled={unavailable}>
-                        {s}{isInventory ? ` (${stock} left)` : ''}
-                      </option>
-                    )
-                  })}
-                </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-asha-muted pointer-events-none" />
-              </div>
-            )}
-
-            {error && <p className="font-body text-xs text-red-500">{error}</p>}
-
-            {isLocked ? (
-              <div className="w-full py-2.5 rounded-xl bg-gray-100 flex items-center justify-center gap-2 text-asha-muted font-body font-medium text-sm">
-                <Lock size={13} /> Orders locked
-              </div>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={submitting || (item.hasSizes && !selectedSize) || (isInventory && !canClaim) || stockStatus === 'out_of_stock'}
-                className="w-full py-2.5 rounded-xl bg-asha-orange text-white font-body font-medium text-sm hover:bg-asha-orangeLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {submitting ? 'Submitting…' : isInventory ? 'Order Now' : 'Express Interest'}
+        {isInventory && !item.hasSizes && (
+          <span className="font-body text-[10px] text-asha-muted">{totalStock} available</span>
+        )}
+        {hasResponse && (
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <Check size={11} className="text-asha-orange" />
+            <span className="font-body text-[10px] text-asha-orange">
+              {isInventory ? 'Ordered' : 'Interested'}
+              {myResponse.size && myResponse.size !== 'One Size' && ` · ${myResponse.size}`}
+            </span>
+            {canCancel && (
+              <button onClick={handleWithdraw} disabled={submitting}
+                className="font-body text-[10px] text-asha-muted hover:text-red-500 transition-colors ml-1 disabled:opacity-50">
+                {submitting ? '…' : '· Cancel'}
               </button>
             )}
           </div>
         )}
+        {error && <p className="font-body text-[10px] text-red-500 mt-0.5">{error}</p>}
       </div>
+
+      {/* Action */}
+      {!hasResponse && (
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {item.hasSizes && (
+            <div className="relative">
+              <select value={selectedSize} onChange={e => setSelectedSize(e.target.value)}
+                className="appearance-none border border-asha-border rounded-lg pl-2 pr-5 py-1 font-body text-xs focus:outline-none focus:border-asha-orange bg-white w-20">
+                <option value="">Size</option>
+                {sizeOptions.map(s => {
+                  const stock = isInventory ? getStock(s) : null
+                  return <option key={s} value={s} disabled={isInventory && stock === 0}>{s}{isInventory ? ` (${stock})` : ''}</option>
+                })}
+              </select>
+              <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-asha-muted pointer-events-none" />
+            </div>
+          )}
+          {isLocked
+            ? <span className="font-body text-[10px] text-asha-muted flex items-center gap-1"><Lock size={10} />Locked</span>
+            : <button onClick={handleSubmit}
+                disabled={submitting || (item.hasSizes && !selectedSize) || (isInventory && !canClaim) || stockStatus === 'out_of_stock'}
+                className="font-body font-medium text-xs px-2.5 py-1 bg-asha-orange text-white rounded-lg hover:bg-asha-orangeLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap">
+                {submitting ? '…' : isInventory ? 'Order' : 'Interested'}
+              </button>
+          }
+        </div>
+      )}
+      {hasResponse && !canCancel && (
+        <div className="flex-shrink-0">
+          <StatusBadge status={myResponse.status} />
+          {item.isLocked && <span className="font-body text-[9px] text-asha-muted block text-right">locked</span>}
+        </div>
+      )}
     </div>
   )
 }
@@ -237,14 +206,13 @@ export default function SwagBrowse() {
   const inventoryCount = items.filter(i => i.type === 'inventory').length
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="mb-7">
-        <h1 className="font-display font-bold text-3xl text-asha-dark">Browse Swag</h1>
-        <p className="font-body text-asha-muted text-sm mt-1">Express interest in upcoming items or order available stock</p>
+    <div className="max-w-5xl mx-auto px-4 py-4 sm:py-6">
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">Browse Swag</h1>
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {[
           { val: 'all', label: `All (${items.length})` },
           { val: 'interest', label: `Interest Polls (${interestCount})` },
@@ -262,18 +230,18 @@ export default function SwagBrowse() {
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border h-52 animate-pulse" />)}
+          {[...Array(6)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-36 animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
-          <div className="w-14 h-14 rounded-2xl bg-asha-orangeDim flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded-xl bg-asha-orangeDim flex items-center justify-center mx-auto mb-3">
             <ShoppingBag size={24} className="text-asha-orange" />
           </div>
-          <h3 className="font-display font-semibold text-asha-dark mb-1">No items available</h3>
+          <h3 className="font-display font-semibold text-asha-dark mb-1 text-sm">No items available</h3>
           <p className="font-body text-asha-muted text-sm">Check back soon — your coordinators will add items here</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
           {filtered.map(item => (
             <SwagCard
               key={item.id}

@@ -81,24 +81,23 @@ export default function MySwag() {
   const filtered = responses.filter(r => filterStatus === 'all' || r.status === filterStatus)
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="mb-7">
-        <h1 className="font-display font-bold text-3xl text-asha-dark">My Swag</h1>
-        <p className="font-body text-asha-muted text-sm mt-1">Track your requests from interest to pickup</p>
+    <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="font-display font-bold text-xl text-asha-dark">My Swag</h1>
       </div>
 
-      {/* Summary row */}
+      {/* Summary strip */}
       {!loading && responses.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-4 gap-2 mb-5">
           {[
-            { label: 'Requested', val: responses.length, color: 'text-asha-dark' },
-            { label: 'In Progress', val: activeCount, color: 'text-amber-600' },
-            { label: 'Ready to Collect', val: readyCount, color: 'text-emerald-600' },
-            { label: 'My Total', val: fmtUSD(totalSpend), color: 'text-asha-orange' },
+            { label: 'REQUESTED', val: String(responses.length), color: 'text-asha-dark' },
+            { label: 'IN PROGRESS', val: String(activeCount), color: 'text-amber-600' },
+            { label: 'READY', val: String(readyCount), color: 'text-emerald-600' },
+            { label: 'MY TOTAL', val: fmtUSD(totalSpend), color: 'text-asha-orange' },
           ].map(({ label, val, color }) => (
-            <div key={label} className="bg-white rounded-2xl border border-asha-border p-4 text-center">
-              <div className={`font-display font-bold text-xl ${color}`}>{val}</div>
-              <div className="font-body text-xs text-asha-muted mt-0.5">{label}</div>
+            <div key={label} className="bg-white rounded-xl border border-asha-border p-3 text-center">
+              <div className={`font-mono font-bold text-xl leading-none ${color}`}>{val}</div>
+              <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1 leading-tight">{label}</div>
             </div>
           ))}
         </div>
@@ -106,10 +105,10 @@ export default function MySwag() {
 
       {/* Pickup alert */}
       {readyCount > 0 && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
-          <MapPin size={18} className="text-emerald-600 flex-shrink-0" />
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4 flex items-center gap-3">
+          <MapPin size={15} className="text-emerald-600 flex-shrink-0" />
           <div>
-            <div className="font-display font-semibold text-emerald-800 text-sm">
+            <div className="font-body font-semibold text-emerald-800 text-sm">
               {readyCount} item{readyCount > 1 ? 's' : ''} ready for pickup!
             </div>
             <div className="font-body text-xs text-emerald-700 mt-0.5">
@@ -120,7 +119,7 @@ export default function MySwag() {
       )}
 
       {/* Filter */}
-      <div className="flex gap-2 mb-5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {[
           { val: 'all', label: 'All' },
           { val: 'interested', label: 'Interested' },
@@ -131,7 +130,7 @@ export default function MySwag() {
           <button
             key={val}
             onClick={() => setFilterStatus(val)}
-            className={`px-2.5 py-1 rounded-lg font-body font-medium text-xs transition-all ${filterStatus === val ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'}`}
+            className={`px-2.5 py-1 rounded-lg font-body font-medium text-xs transition-all flex-shrink-0 ${filterStatus === val ? 'bg-asha-dark text-white' : 'bg-white border border-asha-border text-asha-muted hover:border-asha-orange/40'}`}
           >
             {label}
           </button>
@@ -139,71 +138,63 @@ export default function MySwag() {
       </div>
 
       {loading ? (
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-asha-border h-28 animate-pulse" />)}
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-asha-border h-12 animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="w-14 h-14 rounded-2xl bg-asha-orangeDim flex items-center justify-center mx-auto mb-4">
-            <Star size={24} className="text-asha-orange" />
-          </div>
-          <h3 className="font-display font-semibold text-asha-dark mb-1">
+        <div className="text-center py-12">
+          <Star size={24} className="text-asha-muted mx-auto mb-2" />
+          <h3 className="font-display font-semibold text-sm text-asha-dark mb-1">
             {responses.length === 0 ? 'No swag yet' : 'Nothing here'}
           </h3>
-          <p className="font-body text-asha-muted text-sm">
+          <p className="font-body text-asha-muted text-xs">
             {responses.length === 0 ? 'Browse available items and express your interest' : 'Try a different filter'}
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
           {filtered.map(r => {
             const item = itemMap[r.itemId]
             const meta = STATUS_META[r.status] || STATUS_META.interested
             const StatusIcon = meta.icon
 
             return (
-              <div key={r.id} className={`bg-white rounded-2xl border overflow-hidden ${r.status === 'ready' ? 'border-emerald-200' : 'border-asha-border'}`}>
-                <div className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className={`w-9 h-9 rounded-xl ${meta.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                      <StatusIcon size={16} className={meta.color} />
+              <div key={r.id} className="px-3.5 py-3">
+                <div className="flex items-center gap-3">
+                  <StatusIcon size={14} className={`${meta.color} flex-shrink-0`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-body font-medium text-sm text-asha-dark truncate">{item?.name || '—'}</span>
+                      {r.size && r.size !== 'One Size' && (
+                        <span className="font-body text-[10px] px-1.5 py-px rounded bg-asha-cream text-asha-muted flex-shrink-0">{r.size}</span>
+                      )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="font-display font-semibold text-asha-dark">{item?.name || '—'}</div>
-                          <div className="font-body text-xs text-asha-muted mt-0.5">{meta.desc}</div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {r.size && r.size !== 'One Size' && (
-                            <span className="font-body text-xs bg-gray-100 text-asha-muted px-2 py-0.5 rounded">{r.size}</span>
-                          )}
-                          {item?.price != null && (
-                            <span className="font-body text-sm font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
-                          )}
-                          <StatusBadge status={r.status} />
-                        </div>
-                      </div>
-                      <ProgressBar status={r.status} itemType={item?.type} />
-                    </div>
+                    <div className="font-body text-[10px] text-asha-muted mt-0.5">{meta.desc}</div>
+                    <ProgressBar status={r.status} itemType={item?.type} />
                   </div>
-                  {/* Cancel button */}
-                  {(r.status === 'interested' || r.status === 'ordered') && !item?.isLocked && (
-                    <div className="mt-3 pt-3 border-t border-asha-border/50">
-                      <button
-                        onClick={() => { if (confirm('Cancel this order?')) cancelResponse(r) }}
-                        className="text-xs font-body text-asha-muted hover:text-red-500 transition-colors"
-                      >
-                        Cancel order
-                      </button>
-                    </div>
-                  )}
-                  {item?.isLocked && (r.status === 'interested' || r.status === 'ordered') && (
-                    <div className="mt-3 pt-3 border-t border-asha-border/50">
-                      <span className="text-xs font-body text-asha-muted">Order locked by coordinator</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {item?.price != null && (
+                      <span className="font-mono text-xs font-semibold text-asha-orange">{fmtUSD(item.price)}</span>
+                    )}
+                    <StatusBadge status={r.status} />
+                  </div>
                 </div>
+                {/* Cancel button */}
+                {(r.status === 'interested' || r.status === 'ordered') && !item?.isLocked && (
+                  <div className="mt-2 pt-2 border-t border-asha-border/50">
+                    <button
+                      onClick={() => { if (confirm('Cancel this order?')) cancelResponse(r) }}
+                      className="text-xs font-body text-asha-muted hover:text-red-500 transition-colors"
+                    >
+                      Cancel order
+                    </button>
+                  </div>
+                )}
+                {item?.isLocked && (r.status === 'interested' || r.status === 'ordered') && (
+                  <div className="mt-2 pt-2 border-t border-asha-border/50">
+                    <span className="text-xs font-body text-asha-muted">Order locked by coordinator</span>
+                  </div>
+                )}
               </div>
             )
           })}
