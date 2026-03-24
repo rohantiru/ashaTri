@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAppConfig } from '../../contexts/AppConfigContext'
 import { Settings as SettingsIcon, Calendar, CheckCircle2, AlertCircle } from 'lucide-react'
@@ -101,7 +101,22 @@ function CalendarSettings() {
 }
 
 export default function Settings() {
-  const { config, updateTabs } = useAppConfig()
+  const { config, updateTabs, updateConfig } = useAppConfig()
+  const [teams, setTeams] = useState([])
+
+  useEffect(() => {
+    getDocs(collection(db, 'teams')).then(snap => {
+      setTeams(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    }).catch(() => {})
+  }, [])
+
+  const handleTrainingTeamChange = async (teamId) => {
+    const team = teams.find(t => t.id === teamId) || null
+    await updateConfig({
+      trainingTeamId: teamId || null,
+      trainingMemberIds: team?.memberIds || [],
+    })
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -123,7 +138,9 @@ export default function Settings() {
           <Toggle label="Races"   desc="View upcoming races and manage registrations"               enabled={config.tabs.races}   onChange={val => updateTabs({ races: val })} />
           <Toggle label="Swag"    desc="Browse swag items, express interest, and track orders"      enabled={config.tabs.swag}    onChange={val => updateTabs({ swag: val })} />
           <Toggle label="Expenses" desc="Submit and track personal triathlon expenses"              enabled={config.tabs.expenses} onChange={val => updateTabs({ expenses: val })} />
-          <div className="flex items-center justify-between py-4">
+
+          {/* Training Calendar — beta + two-level gating */}
+          <div className="flex items-center justify-between py-4 border-b border-asha-border">
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-body font-medium text-sm text-asha-dark">Training Calendar</span>
@@ -138,6 +155,30 @@ export default function Settings() {
               <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${config.tabs.training ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
+
+          {/* Team restriction — only shown when training is enabled */}
+          {config.tabs.training && (
+            <div className="pt-3 pb-1">
+              <label className="block font-body text-xs font-medium text-asha-muted uppercase tracking-wide mb-1.5">
+                Restrict to Team
+              </label>
+              <select
+                value={config.trainingTeamId || ''}
+                onChange={e => handleTrainingTeamChange(e.target.value)}
+                className="w-full border border-asha-border rounded-xl px-3 py-2.5 font-body text-sm focus:outline-none focus:border-asha-orange bg-white transition-colors"
+              >
+                <option value="">All athletes</option>
+                {teams.map(t => (
+                  <option key={t.id} value={t.id}>{t.name} ({(t.memberIds || []).length} members)</option>
+                ))}
+              </select>
+              <p className="font-body text-xs text-asha-muted mt-1.5">
+                {config.trainingTeamId
+                  ? `Only athletes in "${teams.find(t => t.id === config.trainingTeamId)?.name ?? 'selected team'}" can see Training.`
+                  : 'All athletes with the Training tab enabled can see it.'}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="mt-5 lg:mt-0">

@@ -42,7 +42,7 @@ export default function Sidebar() {
     ...(swagEnabled ? [{ key: 'swag', label: 'Swag', icon: ShoppingBag, to: '/athlete/browse' }] : []),
     ...(racesEnabled ? [{ key: 'races', label: 'Races', icon: Flag, to: '/athlete/races' }] : []),
     ...(expensesEnabled ? [{ key: 'expenses', label: 'Expenses', icon: Receipt, to: '/athlete/expenses' }] : []),
-    ...(config.tabs.training ? [{ key: 'training', label: 'Training', icon: Activity, to: '/athlete/training' }] : []),
+    ...(config.tabs.training && (!config.trainingMemberIds?.length || config.trainingMemberIds.includes(user?.uid)) ? [{ key: 'training', label: 'Training', icon: Activity, to: '/athlete/training' }] : []),
   ]
 
   const athleteSwagSub = swagEnabled ? [

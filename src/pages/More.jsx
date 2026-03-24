@@ -108,7 +108,7 @@ export default function More() {
         {/* ── Athlete menu (shown when in athlete mode) ── */}
         {isAthleteMode && (
           <MenuSection title="Athlete Menu">
-            {config.tabs.training && (
+            {config.tabs.training && (!config.trainingMemberIds?.length || config.trainingMemberIds.includes(user?.uid)) && (
               <MenuRow icon={Activity}  color="orange" label="Training & Strava"         to="/athlete/training" />
             )}
             {config.tabs.expenses && (

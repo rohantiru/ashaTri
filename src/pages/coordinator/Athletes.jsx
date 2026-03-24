@@ -295,7 +295,7 @@ function TeamsTab({ athletes, teams, onAdd, onEdit, onDelete }) {
               </div>
               {/* Mobile: member chips shown only when expanded */}
               {expandedIds.has(team.id) && (
-                <div className="lg:hidden px-3.5 pb-2.5">
+                <div className="lg:hidden px-3.5 pt-2 pb-3 border-t border-asha-border/30">
                   {members.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5">
                       {members.map(m => (

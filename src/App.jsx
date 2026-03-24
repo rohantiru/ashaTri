@@ -108,7 +108,7 @@ function AppRoutes() {
         {config.tabs.expenses && (
           <Route path="/athlete/expenses" element={<ProtectedRoute role="athlete"><Expenses /></ProtectedRoute>} />
         )}
-        {config.tabs.training && (
+        {config.tabs.training && (!config.trainingMemberIds?.length || config.trainingMemberIds.includes(user?.uid)) && (
           <Route path="/athlete/training" element={<ProtectedRoute role="athlete"><TrainingCalendar /></ProtectedRoute>} />
         )}
         <Route path="/athlete/more" element={<ProtectedRoute role="athlete"><More /></ProtectedRoute>} />

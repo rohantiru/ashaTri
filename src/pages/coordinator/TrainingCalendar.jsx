@@ -366,6 +366,11 @@ function CalendarView() {
   const [planMap, setPlanMap] = useState({})
   const [selectedActivity, setSelectedActivity] = useState(null)
   const [selectedSession, setSelectedSession] = useState(null) // { session, done }
+  const [selectedMobileDay, setSelectedMobileDay] = useState(() => {
+    // Auto-select today if it's in the current week
+    const todayStr = dateKey(new Date())
+    return todayStr
+  })
 
   // Mon–Sun days for the current week
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -496,62 +501,131 @@ function CalendarView() {
         </div>
       )}
 
-      {/* ── Mobile: stacked day list ── */}
-      <div className={`sm:hidden space-y-2 transition-opacity ${loading ? 'opacity-40' : ''}`}>
-        {weekDays.map(date => {
-          const key = dateKey(date)
-          const acts = activityMap[key] || []
-          const planned = planMap[key] || []
-          const isToday = key === todayKey
-          const hasContent = planned.length > 0 || acts.length > 0
-
+      {/* ── Mobile: compact weekly grid ── */}
+      <div className={`sm:hidden transition-opacity ${loading ? 'opacity-40' : ''}`}>
+        {/* Week completion summary */}
+        {(() => {
+          const totalSessions = weekDays.reduce((sum, d) => sum + (planMap[dateKey(d)]?.length || 0), 0)
+          const doneSessions = weekDays.reduce((sum, d) => {
+            const key = dateKey(d)
+            const acts = activityMap[key] || []
+            const planned = planMap[key] || []
+            return sum + planned.filter(s => {
+              const completedTypes = COMPLETION_MAP[s.sport] || []
+              return acts.some(a => completedTypes.includes(a.type))
+            }).length
+          }, 0)
+          if (!totalSessions) return null
+          const pct = Math.round((doneSessions / totalSessions) * 100)
           return (
-            <div
-              key={key}
-              className={`bg-white rounded-2xl border overflow-hidden ${
-                isToday ? 'border-asha-orange/50 ring-1 ring-asha-orange/15' : 'border-asha-border'
-              }`}
-            >
-              {/* Day header */}
-              <div className={`flex items-center gap-3 px-4 py-2.5 ${isToday ? 'bg-asha-orange/5' : 'bg-asha-cream/40'}`}>
-                {isToday ? (
-                  <span className="w-8 h-8 bg-asha-orange text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
-                    {date.getDate()}
-                  </span>
-                ) : (
-                  <span className="text-xl font-display font-bold text-asha-dark flex-shrink-0 leading-none">
-                    {date.getDate()}
-                  </span>
-                )}
-                <span className={`text-xs font-body font-semibold uppercase tracking-wide ${isToday ? 'text-asha-orange' : 'text-asha-muted'}`}>
-                  {date.toLocaleDateString('en-US', { weekday: 'long', month: 'short' })}
-                </span>
-                {!hasContent && <span className="ml-auto text-xs text-asha-muted/35 font-body italic">Rest</span>}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex-1 bg-asha-border rounded-full h-1.5 overflow-hidden">
+                <div className="h-full bg-asha-orange rounded-full transition-all" style={{ width: `${pct}%` }} />
               </div>
+              <span className="text-[11px] font-body font-medium text-asha-muted flex-shrink-0">{doneSessions}/{totalSessions} sessions</span>
+            </div>
+          )
+        })()}
 
-              {/* Content — plan left / done right when both exist */}
-              {hasContent && (
-                <div className="px-3 py-2.5">
-                  {planned.length > 0 && acts.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <div className="space-y-1">
-                        {planned.map((s, i) => {
-                          const completedTypes = COMPLETION_MAP[s.sport] || []
-                          const done = acts.some(a => completedTypes.includes(a.type))
-                          return (
-                            <PlanChip key={i} session={s} stravaTypes={acts.map(a => a.type)}
-                              onClick={() => setSelectedSession({ session: s, done })} mobile />
-                          )
-                        })}
-                      </div>
-                      <div className="space-y-1">
-                        {acts.map(a => (
-                          <MobileActivityChip key={a.id} activity={a} onClick={() => setSelectedActivity(a)} />
-                        ))}
-                      </div>
+        {/* 7-column compact grid */}
+        <div className="bg-white rounded-2xl border border-asha-border overflow-hidden">
+          {/* Day name row */}
+          <div className="grid grid-cols-7 border-b border-asha-border/40 bg-asha-cream/60">
+            {weekDays.map((date, i) => {
+              const isToday = dateKey(date) === todayKey
+              return (
+                <div key={i} className={`text-center py-1.5 border-r border-asha-border/30 last:border-r-0 ${isToday ? 'bg-asha-orange/10' : ''}`}>
+                  <span className={`text-[9px] font-body font-bold uppercase tracking-wide ${isToday ? 'text-asha-orange' : 'text-asha-muted'}`}>
+                    {WEEK_DAYS[i][0]}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Day cells */}
+          <div className="grid grid-cols-7">
+            {weekDays.map(date => {
+              const key = dateKey(date)
+              const acts = activityMap[key] || []
+              const planned = planMap[key] || []
+              const isToday = key === todayKey
+              const isSelected = key === selectedMobileDay
+
+              const indicators = planned.map((s, si) => {
+                const sport = PLAN_SPORTS[s.sport]
+                if (!sport) return null
+                const completedTypes = COMPLETION_MAP[s.sport] || []
+                const done = acts.some(a => completedTypes.includes(a.type))
+                return { color: sport.color, done, id: `plan-${si}` }
+              }).filter(Boolean)
+
+              const planSportTypes = new Set(planned.flatMap(s => COMPLETION_MAP[s.sport] || []))
+              acts
+                .filter(a => !planSportTypes.has(a.type) && !planSportTypes.has(STRAVA_TYPE_NORM[a.type] ?? a.type))
+                .forEach((a, ai) => {
+                  const sport = getSport(a.type)
+                  indicators.push({ color: sport.color, done: true, id: `act-${ai}` })
+                })
+
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSelectedMobileDay(isSelected ? null : key)}
+                  className={`border-r border-asha-border/30 last:border-r-0 flex flex-col items-center pt-2 pb-2.5 gap-1.5 transition-colors min-h-[72px] ${
+                    isSelected ? 'bg-asha-orangeDim/40' : isToday ? 'bg-asha-orange/5 hover:bg-asha-orange/10' : 'hover:bg-asha-cream/60'
+                  }`}
+                >
+                  {isToday ? (
+                    <div className="w-6 h-6 bg-asha-orange text-white rounded-full flex items-center justify-center text-[11px] font-bold font-display leading-none flex-shrink-0">
+                      {date.getDate()}
                     </div>
                   ) : (
-                    <div className="space-y-1.5">
+                    <span className={`text-sm font-display font-bold leading-none flex-shrink-0 ${isSelected ? 'text-asha-orange' : 'text-asha-dark'}`}>
+                      {date.getDate()}
+                    </span>
+                  )}
+                  <div className="flex flex-col gap-0.5 w-full px-1">
+                    {indicators.length === 0 ? (
+                      <div className="h-2 w-full rounded-sm bg-asha-border/20" />
+                    ) : (
+                      indicators.slice(0, 4).map(ind => (
+                        <div
+                          key={ind.id}
+                          className="h-2.5 w-full rounded-sm"
+                          style={{
+                            background: ind.done ? `${ind.color}30` : 'transparent',
+                            border: ind.done ? `1.5px solid ${ind.color}` : `1.5px dashed ${ind.color}60`,
+                          }}
+                        />
+                      ))
+                    )}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Selected day detail panel */}
+        {selectedMobileDay && (() => {
+          const date = new Date(selectedMobileDay + 'T12:00:00')
+          const acts = activityMap[selectedMobileDay] || []
+          const planned = planMap[selectedMobileDay] || []
+          const hasContent = planned.length > 0 || acts.length > 0
+          return (
+            <div className="mt-3 bg-white rounded-2xl border border-asha-border overflow-hidden">
+              <div className={`px-4 py-2.5 border-b border-asha-border/50 ${dateKey(date) === todayKey ? 'bg-asha-orange/5' : 'bg-asha-cream/40'}`}>
+                <span className="font-body font-semibold text-sm text-asha-dark">
+                  {date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+              <div className="p-3">
+                {!hasContent ? (
+                  <p className="text-xs font-body text-asha-muted italic py-1 text-center">Rest day</p>
+                ) : planned.length > 0 && acts.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div className="space-y-1">
                       {planned.map((s, i) => {
                         const completedTypes = COMPLETION_MAP[s.sport] || []
                         const done = acts.some(a => completedTypes.includes(a.type))
@@ -560,16 +634,32 @@ function CalendarView() {
                             onClick={() => setSelectedSession({ session: s, done })} mobile />
                         )
                       })}
+                    </div>
+                    <div className="space-y-1">
                       {acts.map(a => (
                         <MobileActivityChip key={a.id} activity={a} onClick={() => setSelectedActivity(a)} />
                       ))}
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {planned.map((s, i) => {
+                      const completedTypes = COMPLETION_MAP[s.sport] || []
+                      const done = acts.some(a => completedTypes.includes(a.type))
+                      return (
+                        <PlanChip key={i} session={s} stravaTypes={acts.map(a => a.type)}
+                          onClick={() => setSelectedSession({ session: s, done })} mobile />
+                      )
+                    })}
+                    {acts.map(a => (
+                      <MobileActivityChip key={a.id} activity={a} onClick={() => setSelectedActivity(a)} />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )
-        })}
+        })()}
       </div>
 
       {/* ── Desktop: 7-column grid ── */}

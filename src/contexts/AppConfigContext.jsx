@@ -7,6 +7,8 @@ const AppConfigContext = createContext({})
 const DEFAULT_CONFIG = {
   tabs: { home: true, events: true, races: true, swag: true, expenses: true, training: false },
   ownerEmail: 'rohantirumale@gmail.com',
+  trainingTeamId: null,
+  trainingMemberIds: [],
 }
 
 export function AppConfigProvider({ children }) {
@@ -18,7 +20,12 @@ export function AppConfigProvider({ children }) {
       try {
         const snap = await getDoc(doc(db, 'appConfig', 'main'))
         if (snap.exists()) {
-          setConfig({ ...DEFAULT_CONFIG, ...snap.data(), tabs: { ...DEFAULT_CONFIG.tabs, ...snap.data()?.tabs } })
+          setConfig({
+            ...DEFAULT_CONFIG,
+            ...snap.data(),
+            tabs: { ...DEFAULT_CONFIG.tabs, ...snap.data()?.tabs },
+            trainingMemberIds: snap.data()?.trainingMemberIds || [],
+          })
         }
       } catch (_) {}
       setLoading(false)
@@ -32,8 +39,14 @@ export function AppConfigProvider({ children }) {
     setConfig(newConfig)
   }
 
+  const updateConfig = async (updates) => {
+    const newConfig = { ...config, ...updates }
+    await setDoc(doc(db, 'appConfig', 'main'), newConfig)
+    setConfig(newConfig)
+  }
+
   return (
-    <AppConfigContext.Provider value={{ config, loading, updateTabs }}>
+    <AppConfigContext.Provider value={{ config, loading, updateTabs, updateConfig }}>
       {children}
     </AppConfigContext.Provider>
   )

@@ -26,7 +26,7 @@ function TabButton({ tab, active }) {
 }
 
 export default function BottomNav() {
-  const { profile } = useAuth()
+  const { profile, user } = useAuth()
   const { config } = useAppConfig()
   const location = useLocation()
   const p = location.pathname
@@ -36,7 +36,8 @@ export default function BottomNav() {
   const isCoordinator = profile?.role === 'coordinator'
 
   // Pages reachable only via More — keep More tab lit on these paths
-  const athleteMorePaths = ['/athlete/more', '/athlete/expenses', '/athlete/my-swag', ...(config.tabs.training ? ['/athlete/training'] : [])]
+  const trainingVisible = config.tabs.training && (!config.trainingMemberIds?.length || config.trainingMemberIds.includes(user?.uid))
+  const athleteMorePaths = ['/athlete/more', '/athlete/expenses', '/athlete/my-swag', ...(trainingVisible ? ['/athlete/training'] : [])]
   const coordMorePaths = [
     '/coord/more', '/coord/training-plans', '/coord/items',
     '/coord/interest', '/coord/pickup', '/coord/expenses',
