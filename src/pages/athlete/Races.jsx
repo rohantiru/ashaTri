@@ -242,12 +242,16 @@ export default function AthleteRaces() {
                           <button
                             onClick={() => !isPast && !isLocked && !saving[race.id] && handleRegisteredToggle(race)}
                             disabled={isPast || isLocked || saving[race.id]}
-                            className="flex items-center gap-1 group disabled:opacity-50"
+                            className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-body font-medium border transition-all disabled:opacity-50 ${
+                              reg.isRegistered
+                                ? 'bg-asha-orangeDim border-asha-orange/30 text-asha-orange'
+                                : 'border-asha-border text-asha-muted hover:border-asha-orange/40 hover:text-asha-dark'
+                            }`}
                             title={reg.isRegistered ? 'Registered' : 'Mark as registered'}
                           >
                             {reg.isRegistered
-                              ? <CheckCircle2 size={13} className="text-asha-orange" />
-                              : <Circle size={13} className="text-asha-muted group-hover:text-asha-orange transition-colors" />
+                              ? <><CheckCircle2 size={10} />Registered</>
+                              : <><Circle size={10} />Registered?</>
                             }
                           </button>
                         )}
@@ -255,23 +259,28 @@ export default function AthleteRaces() {
                     </div>
 
                     {race.events?.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-1.5">
-                        {race.events.map(ev => (
-                          <button
-                            key={ev}
-                            onClick={() => !isPast && !isLocked && !saving[race.id] && handleEventSelect(race, ev)}
-                            disabled={isPast || isLocked || saving[race.id]}
-                            className={`px-2 py-0.5 rounded-md text-xs font-body font-medium border transition-all ${
-                              reg?.event === ev
-                                ? isLocked ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-asha-orange text-white border-asha-orange'
-                                : isPast || isLocked
-                                ? 'border-asha-border text-asha-muted opacity-40 cursor-not-allowed'
-                                : 'border-asha-border text-asha-muted hover:border-asha-orange/50 hover:text-asha-dark'
-                            }`}
-                          >
-                            {ev}
-                          </button>
-                        ))}
+                      <div className="mt-2">
+                        <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mb-1.5">
+                          {reg?.event ? 'Your event' : isPast || isLocked ? 'Events' : 'Select your event'}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {race.events.map(ev => (
+                            <button
+                              key={ev}
+                              onClick={() => !isPast && !isLocked && !saving[race.id] && handleEventSelect(race, ev)}
+                              disabled={isPast || isLocked || saving[race.id]}
+                              className={`px-2 py-0.5 rounded-md text-xs font-body font-medium border transition-all ${
+                                reg?.event === ev
+                                  ? isLocked ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-asha-orange text-white border-asha-orange'
+                                  : isPast || isLocked
+                                  ? 'border-asha-border text-asha-muted opacity-40 cursor-not-allowed'
+                                  : 'border-asha-border text-asha-muted hover:border-asha-orange/50 hover:text-asha-dark'
+                              }`}
+                            >
+                              {ev}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

@@ -103,22 +103,23 @@ export default function AthleteDashboard() {
       label: 'DAYS TO RACE',
       value: nextRaceDays !== null ? String(nextRaceDays) : '—',
       color: nextRaceDays !== null && nextRaceDays <= 30 ? 'text-asha-orange' : 'text-asha-dark',
+      to: '/athlete/races',
     })
   }
   if (config.tabs.events) {
-    stats.push({ label: 'EVENTS', value: String(myEvents.length), color: 'text-asha-dark' })
+    stats.push({ label: 'EVENTS', value: String(myEvents.length), color: 'text-asha-dark', to: '/athlete/events' })
   }
   if (config.tabs.races) {
-    stats.push({ label: 'RACES', value: String(myRaceRegs.length), color: 'text-asha-dark' })
+    stats.push({ label: 'RACES', value: String(myRaceRegs.length), color: 'text-asha-dark', to: '/athlete/races' })
   }
   // 4th stat for desktop: expenses total (if enabled) or swag ready count
   const fourthStat = config.tabs.expenses
-    ? { label: 'EXPENSES', value: fmtUSD(expenseTotal), color: 'text-asha-dark' }
-    : { label: 'SWAG READY', value: String(readyItems.length), color: readyItems.length > 0 ? 'text-emerald-600' : 'text-asha-dark' }
+    ? { label: 'EXPENSES', value: fmtUSD(expenseTotal), color: 'text-asha-dark', to: '/athlete/expenses' }
+    : { label: 'SWAG READY', value: String(readyItems.length), color: readyItems.length > 0 ? 'text-emerald-600' : 'text-asha-dark', to: '/athlete/my-swag' }
 
   // Pad to at least 3 if we have fewer
   while (stats.length < 3) {
-    stats.push({ label: '', value: '—', color: 'text-asha-muted' })
+    stats.push({ label: '', value: '—', color: 'text-asha-muted', to: null })
   }
   const displayStats = stats.slice(0, 3)
 
@@ -136,17 +137,31 @@ export default function AthleteDashboard() {
       {/* Stats strip */}
       {!loading && (
         <div className="grid grid-cols-3 lg:grid-cols-4 gap-2 mb-5">
-          {displayStats.map(({ label, value, color }) => (
-            <div key={label} className="bg-white rounded-xl border border-asha-border p-3 text-center">
-              <div className={`font-mono font-bold text-2xl leading-none ${color}`}>{value}</div>
-              <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1 leading-tight">{label}</div>
-            </div>
+          {displayStats.map(({ label, value, color, to }) => (
+            to ? (
+              <Link key={label} to={to} className="bg-white rounded-xl border border-asha-border p-3 text-center hover:border-asha-orange/40 hover:shadow-sm active:scale-95 transition-all">
+                <div className={`font-mono font-bold text-2xl leading-none ${color}`}>{value}</div>
+                <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1 leading-tight">{label}</div>
+              </Link>
+            ) : (
+              <div key={label} className="bg-white rounded-xl border border-asha-border p-3 text-center">
+                <div className={`font-mono font-bold text-2xl leading-none ${color}`}>{value}</div>
+                <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1 leading-tight">{label}</div>
+              </div>
+            )
           ))}
           {/* 4th stat desktop-only */}
-          <div className="hidden lg:block bg-white rounded-xl border border-asha-border p-3 text-center">
-            <div className={`font-mono font-bold text-2xl leading-none ${fourthStat.color}`}>{fourthStat.value}</div>
-            <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1 leading-tight">{fourthStat.label}</div>
-          </div>
+          {fourthStat.to ? (
+            <Link to={fourthStat.to} className="hidden lg:block bg-white rounded-xl border border-asha-border p-3 text-center hover:border-asha-orange/40 hover:shadow-sm active:scale-95 transition-all">
+              <div className={`font-mono font-bold text-2xl leading-none ${fourthStat.color}`}>{fourthStat.value}</div>
+              <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1 leading-tight">{fourthStat.label}</div>
+            </Link>
+          ) : (
+            <div className="hidden lg:block bg-white rounded-xl border border-asha-border p-3 text-center">
+              <div className={`font-mono font-bold text-2xl leading-none ${fourthStat.color}`}>{fourthStat.value}</div>
+              <div className="font-body text-[9px] text-asha-muted uppercase tracking-widest mt-1 leading-tight">{fourthStat.label}</div>
+            </div>
+          )}
         </div>
       )}
 
@@ -229,7 +244,7 @@ export default function AthleteDashboard() {
                   const days = daysUntil(race.date)
                   const isPast = days !== null && days < 0
                   return (
-                    <div key={reg.id} className="flex items-center gap-3 px-3.5 py-2.5">
+                    <Link key={reg.id} to="/athlete/races" className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-asha-cream/50 transition-colors">
                       <div className="flex-1 min-w-0">
                         <div className="font-body font-medium text-sm text-asha-dark truncate">{race.name}</div>
                         <div className="flex items-center gap-2 mt-0.5">
@@ -252,7 +267,7 @@ export default function AthleteDashboard() {
                           : <Circle size={14} className="text-asha-muted" />
                         }
                       </div>
-                    </div>
+                    </Link>
                   )
                 })}
               </div>
@@ -274,7 +289,7 @@ export default function AthleteDashboard() {
                 {myEvents.slice(0, 3).map(event => {
                   const days = daysUntil(event.date)
                   return (
-                    <div key={event.id} className="flex items-center gap-3 px-3.5 py-2.5">
+                    <Link key={event.id} to="/athlete/events" className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-asha-cream/50 transition-colors">
                       <div className="flex-1 min-w-0">
                         <div className="font-body font-medium text-sm text-asha-dark truncate">{event.title}</div>
                         <div className="font-body text-[10px] text-asha-muted mt-0.5">
@@ -291,7 +306,7 @@ export default function AthleteDashboard() {
                           'text-asha-muted'
                         }`}>{days === 0 ? 'Today' : `${days}d`}</span>
                       )}
-                    </div>
+                    </Link>
                   )
                 })}
               </div>
