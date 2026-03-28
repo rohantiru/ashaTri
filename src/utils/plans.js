@@ -54,11 +54,12 @@ export async function getActivePlans(userUid = null, forceRefresh = false) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ data: active, fetchedAt: Date.now() }))
   } catch (_) {}
-  return userUid ? filterByUser(active, userUid) : active
+  // When plans cache was stale/force-refreshed, also refresh teams so membership is current
+  return userUid ? filterByUser(active, userUid, forceRefresh) : active
 }
 
-async function filterByUser(plans, userUid) {
-  const teams = await getTeams() // cached 5 min
+async function filterByUser(plans, userUid, forceRefresh = false) {
+  const teams = await getTeams(forceRefresh) // pass forceRefresh so team membership stays in sync
   const userTeamIds = new Set(teams.filter(t => t.memberIds?.includes(userUid)).map(t => t.id))
   return plans.filter(p =>
     !p.teamIds?.length || // no team restriction → visible to all
