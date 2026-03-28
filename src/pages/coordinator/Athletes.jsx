@@ -376,15 +376,19 @@ function currentWeekIdx(planStartDate, numWeeks) {
 
 
 function AthleteWeekCard({ athlete, weekData }) {
+  const [expanded, setExpanded] = useState(false)
+
   if (!weekData) {
     return (
       <div className="px-4 py-3 flex items-center gap-3">
         {athlete.photoURL
-          ? <img src={athlete.photoURL} alt={athlete.name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-          : <div className="w-7 h-7 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-xs flex-shrink-0">{athlete.name?.[0]}</div>
+          ? <img src={athlete.photoURL} alt={athlete.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+          : <div className="w-8 h-8 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-sm flex-shrink-0">{athlete.name?.[0]}</div>
         }
-        <span className="font-body font-medium text-sm text-asha-dark">{athlete.name}</span>
-        <span className="text-[10px] font-body text-asha-muted/60 italic ml-auto">Awaiting sync</span>
+        <div className="flex-1 min-w-0">
+          <div className="font-body font-medium text-sm text-asha-dark truncate">{athlete.name}</div>
+          <div className="text-[10px] font-body text-asha-muted/60 italic">Awaiting sync</div>
+        </div>
       </div>
     )
   }
@@ -396,37 +400,69 @@ function AthleteWeekCard({ athlete, weekData }) {
   const pct = totalPlannedMins ? Math.min(100, Math.round((totalActualMins / totalPlannedMins) * 100)) : null
 
   return (
-    <div className="px-4 py-3 flex items-center gap-3">
-      {athlete.photoURL
-        ? <img src={athlete.photoURL} alt={athlete.name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-        : <div className="w-7 h-7 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-xs flex-shrink-0">{athlete.name?.[0]}</div>
-      }
-      <span className="font-body font-medium text-sm text-asha-dark truncate flex-1 min-w-0">{athlete.name}</span>
-      <div className="flex items-center gap-1 flex-shrink-0">
-        {sports.map(sport => {
-          const p = planned[sport]
-          const a = actual[sport]
-          const plannedMins = p?.durationMins || 0
-          const actualMins = Math.round((a?.durationSecs || 0) / 60)
-          const hit = plannedMins > 0 && actualMins >= plannedMins * 0.8
-          const partial = !hit && actualMins > 0
-          return (
-            <span key={sport} className="text-[10px] font-body font-bold px-1.5 py-px rounded"
-              style={{
-                color: SPORT_COLORS[sport],
-                background: SPORT_COLORS[sport] + (hit ? '25' : partial ? '15' : '0D'),
-                border: `1px solid ${SPORT_COLORS[sport]}${hit ? '50' : '28'}`,
-                opacity: !hit && !partial ? 0.55 : 1,
-              }}
-            >
-              {SPORT_LABELS[sport]} {actualMins}/{plannedMins}m
-            </span>
-          )
-        })}
-      </div>
-      <PctBadge pct={pct} />
+    <div>
+      <button onClick={() => setExpanded(v => !v)} className="w-full text-left px-4 py-3 hover:bg-asha-cream/40 transition-colors">
+        {/* Row 1: avatar + name + % + chevron */}
+        <div className="flex items-center gap-2.5 mb-1.5">
+          {athlete.photoURL
+            ? <img src={athlete.photoURL} alt={athlete.name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+            : <div className="w-7 h-7 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-xs flex-shrink-0">{athlete.name?.[0]}</div>
+          }
+          <span className="font-body font-medium text-sm text-asha-dark truncate flex-1 min-w-0">{athlete.name}</span>
+          <PctBadge pct={pct} />
+          <ChevronDown size={13} className={`text-asha-muted transition-transform flex-shrink-0 ${expanded ? 'rotate-180' : ''}`} />
+        </div>
+        {/* Row 2: sport pills indented under name */}
+        <div className="flex flex-wrap gap-1 pl-[36px]">
+          {sports.map(sport => {
+            const p = planned[sport]
+            const a = actual[sport]
+            const plannedMins = p?.durationMins || 0
+            const actualMins = Math.round((a?.durationSecs || 0) / 60)
+            const hit = plannedMins > 0 && actualMins >= plannedMins * 0.8
+            const partial = !hit && actualMins > 0
+            return (
+              <span key={sport} className="text-[10px] font-body font-semibold px-2 py-0.5 rounded-full"
+                style={{
+                  color: SPORT_COLORS[sport],
+                  background: SPORT_COLORS[sport] + (hit ? '20' : partial ? '12' : '0A'),
+                  border: `1px solid ${SPORT_COLORS[sport]}${hit ? '45' : '25'}`,
+                  opacity: !hit && !partial ? 0.5 : 1,
+                }}
+              >
+                {SPORT_LABELS[sport]} {actualMins}/{plannedMins}m
+              </span>
+            )
+          })}
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-asha-border/40 bg-asha-cream/20 px-4 py-3 grid grid-cols-2 gap-2">
+          {sports.map(sport => {
+            const p = planned[sport]
+            const a = actual[sport]
+            const plannedMins = p?.durationMins || 0
+            const actualMins = Math.round((a?.durationSecs || 0) / 60)
+            const sportPct = plannedMins ? Math.min(100, Math.round((actualMins / plannedMins) * 100)) : null
+            return (
+              <div key={sport} className="bg-white rounded-lg border border-asha-border px-3 py-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] font-body font-bold" style={{ color: SPORT_COLORS[sport] }}>{SPORT_LABELS[sport]}</span>
+                  <PctBadge pct={sportPct} />
+                </div>
+                <div className="text-[10px] font-body text-asha-muted space-y-px">
+                  <div>Plan: {p ? `${p.sessions}× ${plannedMins}m` : '—'}</div>
+                  <div>Done: {a ? `${a.sessions}× ${actualMins}m` : '—'}</div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
+
 }
 
 function TrainingTab({ teams, athletes }) {
