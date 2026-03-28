@@ -93,10 +93,12 @@ function ActivityDetailModal({ activity, onClose }) {
   const watts     = activity.average_watts
   const hasWatts  = watts && activity.device_watts
 
-  const dateStr = new Date(activity.start_date_local).toLocaleDateString('en-US', {
+  // Strip the trailing Z so JS treats it as local time, not UTC
+  const localDt = new Date(activity.start_date_local.replace(/Z$/, ''))
+  const dateStr = localDt.toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric',
   })
-  const timeStr = new Date(activity.start_date_local).toLocaleTimeString('en-US', {
+  const timeStr = localDt.toLocaleTimeString('en-US', {
     hour: 'numeric', minute: '2-digit',
   })
 
@@ -380,56 +382,52 @@ function CalendarView() {
   })
   const weekEnd = weekDays[6]
 
-  // Load plans once — also writes aggregated stats to Firestore for coaches
-  useEffect(() => {
-    if (!user) return
-    getActivePlans(user.uid)
-      .then(async plans => {
-        setPlanMap(mergePlanMaps(plans.map(buildPlanDateMap)))
-        if (!plans.length) return
-        const plan = plans[0]
+  async function loadPlans(forceRefresh = false) {
+    try {
+      const plans = await getActivePlans(user.uid, forceRefresh)
+      setPlanMap(mergePlanMaps(plans.map(buildPlanDateMap)))
+      if (!plans.length) return
 
-        if (plan.startDate) {
-          const planStart = new Date(plan.startDate + 'T00:00:00')
-          const planEnd = new Date(planStart)
-          planEnd.setDate(planStart.getDate() + plan.weeks.length * 7 - 1)
+      const plan = plans[0]
+      const today = now
 
-          // Snap to a meaningful week: last plan week if today is past it, first if before
-          const today = new Date()
-          if (today > planEnd) {
-            setWeekStart(getWeekStart(planEnd))
-          } else if (today < planStart) {
-            setWeekStart(getWeekStart(planStart))
-          }
+      if (plan.startDate) {
+        const planStart = new Date(plan.startDate + 'T00:00:00')
+        const planEnd = new Date(planStart)
+        planEnd.setDate(planStart.getDate() + plan.weeks.length * 7 - 1)
+
+        // Snap only if today is outside the plan window
+        if (today > planEnd) setWeekStart(getWeekStart(planEnd))
+        else if (today < planStart) setWeekStart(getWeekStart(planStart))
+      }
+
+      // Collect plan months + last 3 calendar months for stats
+      const monthSet = new Set()
+      const addMonth = (y, m) => monthSet.add(`${y}-${m}`)
+      if (plan.startDate) {
+        const planStart = new Date(plan.startDate + 'T00:00:00')
+        const cur = new Date(planStart.getFullYear(), planStart.getMonth(), 1)
+        const planEndFull = new Date(plan.startDate + 'T00:00:00')
+        planEndFull.setDate(planEndFull.getDate() + plan.weeks.length * 7)
+        while (cur <= planEndFull) {
+          addMonth(cur.getFullYear(), cur.getMonth())
+          cur.setMonth(cur.getMonth() + 1)
         }
+      }
+      for (let i = 0; i < 3; i++) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
+        addMonth(d.getFullYear(), d.getMonth())
+      }
 
-        // Collect plan months + last 3 calendar months (for broader baselines coverage)
-        const monthSet = new Set()
-        const addMonth = (y, m) => monthSet.add(`${y}-${m}`)
-        if (plan.startDate) {
-          const planStart = new Date(plan.startDate + 'T00:00:00')
-          const cur = new Date(planStart.getFullYear(), planStart.getMonth(), 1)
-          const planEndFull = new Date(plan.startDate + 'T00:00:00')
-          planEndFull.setDate(planEndFull.getDate() + plan.weeks.length * 7)
-          while (cur <= planEndFull) {
-            addMonth(cur.getFullYear(), cur.getMonth())
-            cur.setMonth(cur.getMonth() + 1)
-          }
-        }
-        // Always include recent months so post-plan Strava activity shows
-        for (let i = 0; i < 3; i++) {
-          const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
-          addMonth(d.getFullYear(), d.getMonth())
-        }
+      const months = [...monthSet].map(k => k.split('-').map(Number))
+      const allActs = (await Promise.all(
+        months.map(([y, m]) => getActivitiesForUserMonth(user.uid, y, m).catch(() => []))
+      )).flat()
+      saveAthleteStats(user.uid, plan, allActs).catch(() => {})
+    } catch (_) {}
+  }
 
-        const months = [...monthSet].map(k => k.split('-').map(Number))
-        const allActs = (await Promise.all(
-          months.map(([y, m]) => getActivitiesForUserMonth(user.uid, y, m).catch(() => []))
-        )).flat()
-        saveAthleteStats(user.uid, plan, allActs).catch(() => {})
-      })
-      .catch(() => {})
-  }, [user])
+  useEffect(() => { if (user) loadPlans() }, [user])
 
   // Load activities for the displayed week's months (cached — no extra API calls)
   useEffect(() => { if (user) loadWeek() }, [weekStart, user])
@@ -491,7 +489,7 @@ function CalendarView() {
           )}
         </div>
         <button
-          onClick={() => loadWeek(true)}
+          onClick={() => { loadPlans(true); loadWeek(true) }}
           disabled={loading}
           className="flex items-center gap-1.5 text-xs font-body text-asha-muted hover:text-asha-dark transition-colors disabled:opacity-40"
         >

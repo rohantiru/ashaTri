@@ -4,7 +4,7 @@ import {
 import { db } from '../firebase'
 
 const CACHE_KEY = 'trainingPlans_v1'
-const CACHE_TTL_MS = 12 * 60 * 60 * 1000 // 12 hours — plans rarely update
+const CACHE_TTL_MS = 15 * 60 * 1000 // 15 minutes
 
 // ── Sport config ──────────────────────────────────────────────────────────────
 

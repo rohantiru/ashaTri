@@ -386,41 +386,6 @@ function currentWeekIdx(planStartDate, numWeeks) {
   return Math.min(Math.max(Math.floor(daysDiff / 7), 0), numWeeks - 1)
 }
 
-function SessionRow({ session }) {
-  const today = new Date().toISOString().slice(0, 10)
-  const isPast = session.date < today
-  const isToday = session.date === today
-  const color = SPORT_COLORS[session.sport] || '#9CA3AF'
-  const label = SPORT_LABELS[session.sport] || session.sport.toUpperCase()
-  const dist = fmtDist(session.actualDistanceM, session.sport)
-
-  return (
-    <div className={`flex items-center gap-3 px-3.5 py-2.5 ${!isPast && !isToday ? 'opacity-40' : ''}`}>
-      <span className="text-[10px] font-body font-medium text-asha-muted w-6 flex-shrink-0">{session.day}</span>
-      <span
-        className="text-[10px] font-body font-bold px-1.5 py-px rounded flex-shrink-0 w-11 text-center"
-        style={{ color, background: color + '18' }}
-      >
-        {label}
-      </span>
-      <div className="flex-1 min-w-0">
-        <span className="text-xs font-body text-asha-dark">{session.type}</span>
-        <span className="text-asha-muted text-xs font-body"> · {session.duration}min</span>
-      </div>
-      <div className="flex-shrink-0 text-right">
-        {!isPast && !isToday ? (
-          <span className="text-[10px] font-body text-asha-muted/50">upcoming</span>
-        ) : session.completed ? (
-          <span className="text-[10px] font-body text-emerald-600 font-medium">
-            ✓ {[dist, fmtSecs(session.actualDurationSecs)].filter(Boolean).join(' · ')}
-          </span>
-        ) : (
-          <span className="text-[10px] font-body text-red-400">not logged</span>
-        )}
-      </div>
-    </div>
-  )
-}
 
 function AthleteWeekCard({ athlete, weekData }) {
   const [expanded, setExpanded] = useState(false)
@@ -438,11 +403,11 @@ function AthleteWeekCard({ athlete, weekData }) {
     )
   }
 
-  const { sessions = [], planned = {}, actual = {} } = weekData
-  const totalPlanned = sessions.length
-  const totalDone = sessions.filter(s => s.completed).length
-  const pct = totalPlanned ? Math.round((totalDone / totalPlanned) * 100) : null
-  const sports = [...new Set(sessions.map(s => s.sport))]
+  const { planned = {}, actual = {} } = weekData
+  const sports = Object.keys(planned)
+  const totalPlannedMins = Object.values(planned).reduce((s, p) => s + (p.durationMins || 0), 0)
+  const totalActualMins = Object.values(actual).reduce((s, a) => s + (a.durationSecs || 0) / 60, 0)
+  const pct = totalPlannedMins ? Math.min(100, Math.round((totalActualMins / totalPlannedMins) * 100)) : null
 
   return (
     <div>
@@ -462,21 +427,22 @@ function AthleteWeekCard({ athlete, weekData }) {
           {sports.map(sport => {
             const p = planned[sport]
             const a = actual[sport]
-            const done = a?.sessions || 0
-            const total = p?.sessions || 0
-            const allDone = total > 0 && done >= total
+            const plannedMins = p?.durationMins || 0
+            const actualMins = Math.round((a?.durationSecs || 0) / 60)
+            const hit = plannedMins > 0 && actualMins >= plannedMins * 0.8
+            const partial = !hit && actualMins > 0
             return (
               <span
                 key={sport}
                 className="text-[10px] font-body font-bold px-1.5 py-px rounded"
                 style={{
                   color: SPORT_COLORS[sport],
-                  background: SPORT_COLORS[sport] + (allDone ? '25' : done > 0 ? '15' : '0D'),
-                  border: `1px solid ${SPORT_COLORS[sport]}${allDone ? '50' : '28'}`,
-                  opacity: done === 0 && total > 0 ? 0.55 : 1,
+                  background: SPORT_COLORS[sport] + (hit ? '25' : partial ? '15' : '0D'),
+                  border: `1px solid ${SPORT_COLORS[sport]}${hit ? '50' : '28'}`,
+                  opacity: !hit && !partial ? 0.55 : 1,
                 }}
               >
-                {SPORT_LABELS[sport]} {done}/{total}
+                {SPORT_LABELS[sport]} {actualMins}/{plannedMins}m
               </span>
             )
           })}
@@ -489,13 +455,14 @@ function AthleteWeekCard({ athlete, weekData }) {
       {/* ── Expanded panel ── */}
       {expanded && (
         <div className="border-t border-asha-border/50 bg-asha-cream/30">
-          {/* Sport summaries */}
-          <div className="px-4 pt-3 pb-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
             {sports.map(sport => {
               const p = planned[sport]
               const a = actual[sport]
               const dist = fmtDist(a?.distanceM, sport)
-              const sportPct = p?.sessions ? Math.min(100, Math.round(((a?.sessions || 0) / p.sessions) * 100)) : null
+              const plannedMins = p?.durationMins || 0
+              const actualMins = Math.round((a?.durationSecs || 0) / 60)
+              const sportPct = plannedMins ? Math.min(100, Math.round((actualMins / plannedMins) * 100)) : null
               return (
                 <div key={sport} className="bg-white rounded-xl border border-asha-border px-3 py-2.5">
                   <div className="flex items-center justify-between mb-2">
@@ -505,7 +472,7 @@ function AthleteWeekCard({ athlete, weekData }) {
                   <div className="space-y-0.5">
                     <div className="flex gap-2 text-xs font-body">
                       <span className="text-asha-muted w-8 flex-shrink-0">Plan</span>
-                      <span className="text-asha-dark">{p ? `${p.sessions} × ${fmtMins(p.durationMins)}` : '—'}</span>
+                      <span className="text-asha-dark">{p ? `${p.sessions} × ${fmtMins(plannedMins)}` : '—'}</span>
                     </div>
                     <div className="flex gap-2 text-xs font-body">
                       <span className="text-asha-muted w-8 flex-shrink-0">Done</span>
@@ -515,13 +482,6 @@ function AthleteWeekCard({ athlete, weekData }) {
                 </div>
               )
             })}
-          </div>
-
-          {/* Day-by-day sessions */}
-          <div className="px-4 pb-3">
-            <div className="bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/40">
-              {sessions.map((s, i) => <SessionRow key={i} session={s} />)}
-            </div>
           </div>
         </div>
       )}
