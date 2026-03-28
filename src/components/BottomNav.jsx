@@ -37,7 +37,7 @@ export default function BottomNav() {
 
   // Pages reachable only via More — keep More tab lit on these paths
   const trainingVisible = config.tabs.training && (!config.trainingMemberIds?.length || config.trainingMemberIds.includes(user?.uid))
-  const athleteMorePaths = ['/athlete/more', '/athlete/expenses', '/athlete/my-swag', ...(trainingVisible ? ['/athlete/training'] : [])]
+  const athleteMorePaths = ['/athlete/more', '/athlete/expenses', '/athlete/my-swag', '/athlete/mentor-hub', ...(trainingVisible ? ['/athlete/training'] : [])]
   const coordMorePaths = [
     '/coord/more', '/coord/training-plans', '/coord/items',
     '/coord/interest', '/coord/pickup', '/coord/expenses',

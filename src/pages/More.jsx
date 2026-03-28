@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Activity, Receipt, Package, Users, Flag, Settings,
   BookOpen, ShoppingBag, BarChart2, CheckSquare,
-  ArrowLeftRight, LogOut, ChevronRight,
+  ArrowLeftRight, LogOut, ChevronRight, Shield,
 } from 'lucide-react'
 import { useAuth, COORD_ROLES } from '../contexts/AuthContext'
 import { useAppConfig } from '../contexts/AppConfigContext'
@@ -110,6 +110,9 @@ export default function More() {
           <MenuSection title="Athlete Menu">
             {config.tabs.training && (!config.trainingMemberIds?.length || config.trainingMemberIds.includes(user?.uid)) && (
               <MenuRow icon={Activity}  color="orange" label="Training & Strava"         to="/athlete/training" />
+            )}
+            {(profile?.isMentor || profile?.role === 'owner') && (
+              <MenuRow icon={Shield} color="teal" label="Mentor Hub" to="/athlete/mentor-hub" />
             )}
             {config.tabs.expenses && (
               <MenuRow icon={Receipt}   color="blue"   label="Expenses & Reimbursements" to="/athlete/expenses" />

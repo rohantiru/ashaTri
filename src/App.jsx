@@ -20,6 +20,7 @@ import AthleteEvents from './pages/athlete/Events'
 import RaceManagement from './pages/coordinator/RaceManagement'
 import TrainingCalendar from './pages/coordinator/TrainingCalendar'
 import TrainingPlans from './pages/coordinator/TrainingPlans'
+import MentorHub from './pages/athlete/MentorHub'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
 import BottomNav from './components/BottomNav'
@@ -110,6 +111,9 @@ function AppRoutes() {
         )}
         {config.tabs.training && (!config.trainingMemberIds?.length || config.trainingMemberIds.includes(user?.uid)) && (
           <Route path="/athlete/training" element={<ProtectedRoute role="athlete"><TrainingCalendar /></ProtectedRoute>} />
+        )}
+        {(profile?.isMentor || profile?.role === 'owner') && (
+          <Route path="/athlete/mentor-hub" element={<ProtectedRoute role="athlete"><MentorHub /></ProtectedRoute>} />
         )}
         <Route path="/athlete/more" element={<ProtectedRoute role="athlete"><More /></ProtectedRoute>} />
         <Route path="/coord/more" element={<ProtectedRoute role="coordinator"><More /></ProtectedRoute>} />

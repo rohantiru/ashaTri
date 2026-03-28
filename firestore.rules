@@ -128,6 +128,12 @@ service cloud.firestore {
       allow read, write: if isDocOwner(uid);
     }
 
+    // Mentor weekly availability — any signed-in user can read (for summary), own doc write only
+    match /mentorAvailability/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isDocOwner(uid);
+    }
+
     // Athlete training stats (plan vs actual) — athlete writes own, coaches read all
     match /athleteStats/{uid} {
       allow read, write: if isDocOwner(uid);

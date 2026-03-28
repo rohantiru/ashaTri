@@ -36,6 +36,7 @@ export function AuthProvider({ children }) {
             email: firebaseUser.email,
             photoURL: firebaseUser.photoURL,
             role,
+            isMentor: role === 'coach' || role === 'owner',
             createdAt: serverTimestamp(),
           }
           await setDoc(ref, newProfile)

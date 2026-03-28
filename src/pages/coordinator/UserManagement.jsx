@@ -40,6 +40,13 @@ export default function UserManagement() {
     setUpdating(u => ({ ...u, [uid]: false }))
   }
 
+  const setMentor = async (uid, value) => {
+    setUpdating(u => ({ ...u, [`mentor_${uid}`]: true }))
+    await updateDoc(doc(db, 'users', uid), { isMentor: value })
+    setUsers(prev => prev.map(u => u.id === uid ? { ...u, isMentor: value } : u))
+    setUpdating(u => ({ ...u, [`mentor_${uid}`]: false }))
+  }
+
   const filtered = users.filter(u => {
     if (!search) return true
     const q = search.toLowerCase()
@@ -111,6 +118,7 @@ export default function UserManagement() {
                   <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Email</th>
                   <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Role</th>
                   <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Actions</th>
+                  <th className="text-left px-4 py-3 font-body font-medium text-xs text-asha-muted uppercase tracking-wide">Mentor</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-asha-border/40">
@@ -154,6 +162,22 @@ export default function UserManagement() {
                               <option key={r} value={r}>{ROLE_META[r]?.label ?? r}</option>
                             ))}
                           </select>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {amIOwner && !isMe && (
+                          <button
+                            disabled={updating[`mentor_${u.id}`]}
+                            onClick={() => setMentor(u.id, !u.isMentor)}
+                            title={u.isMentor ? 'Remove mentor' : 'Make mentor'}
+                            className={`text-xs font-body font-medium px-2.5 py-1 rounded-full border transition-colors disabled:opacity-40
+                              ${u.isMentor
+                                ? 'bg-teal-50 text-teal-600 border-teal-200'
+                                : 'bg-gray-100 text-asha-muted border-transparent hover:border-asha-border'
+                              }`}
+                          >
+                            {u.isMentor ? 'Mentor' : 'Non-mentor'}
+                          </button>
                         )}
                       </td>
                     </tr>
@@ -205,6 +229,20 @@ export default function UserManagement() {
                           <option key={r} value={r}>{ROLE_META[r]?.label ?? r}</option>
                         ))}
                       </select>
+                    )}
+                    {amIOwner && !isMe && (
+                      <button
+                        disabled={updating[`mentor_${u.id}`]}
+                        onClick={() => setMentor(u.id, !u.isMentor)}
+                        title={u.isMentor ? 'Remove mentor' : 'Make mentor'}
+                        className={`text-xs font-body font-medium px-2 py-1 rounded-full border transition-colors disabled:opacity-40
+                          ${u.isMentor
+                            ? 'bg-teal-50 text-teal-600 border-teal-200'
+                            : 'bg-gray-100 text-asha-muted border-transparent'
+                          }`}
+                      >
+                        {u.isMentor ? 'Mentor' : '—'}
+                      </button>
                     )}
                   </div>
                 </div>

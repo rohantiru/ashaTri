@@ -9,7 +9,7 @@ import {
 const MOBILE_TITLES = {
   '/athlete': 'Home', '/athlete/races': 'Races', '/athlete/browse': 'Browse Swag',
   '/athlete/my-swag': 'My Swag', '/athlete/events': 'Events', '/athlete/expenses': 'Expenses',
-  '/athlete/training': 'Training', '/athlete/more': 'More',
+  '/athlete/training': 'Training', '/athlete/mentor-hub': 'Mentor Hub', '/athlete/more': 'More',
   '/coord': 'Overview', '/coord/athletes': 'Team Roster', '/coord/races': 'Race Management',
   '/coord/events': 'Events', '/coord/items': 'Swag Items', '/coord/interest': 'Swag Interest',
   '/coord/pickup': 'Pickup', '/coord/expenses': 'Expenses',
