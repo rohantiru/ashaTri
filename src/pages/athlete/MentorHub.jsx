@@ -58,16 +58,15 @@ export default function MentorHub() {
         }
       }
 
-      // Load all mentor users, then their availability
-      const usersSnap = await getDocs(query(collection(db, 'users'), where('isMentor', '==', true)))
-      let mentorUsers = usersSnap.docs.map(d => ({ uid: d.id, ...d.data() }))
-
-      // Current user may have role-based access (e.g. owner) without isMentor flag
-      if (!mentorUsers.some(m => m.uid === user.uid)) {
-        const myUserSnap = await getDoc(doc(db, 'users', user.uid))
-        if (myUserSnap.exists()) {
-          mentorUsers = [...mentorUsers, { uid: user.uid, ...myUserSnap.data() }]
-        }
+      // Load all mentor users (isMentor flag) + owners (role-based access), deduplicated
+      const [mentorSnap, ownerSnap] = await Promise.all([
+        getDocs(query(collection(db, 'users'), where('isMentor', '==', true))),
+        getDocs(query(collection(db, 'users'), where('role', '==', 'owner'))),
+      ])
+      const seen = new Set()
+      const mentorUsers = []
+      for (const d of [...mentorSnap.docs, ...ownerSnap.docs]) {
+        if (!seen.has(d.id)) { seen.add(d.id); mentorUsers.push({ uid: d.id, ...d.data() }) }
       }
 
       const availDocs = await Promise.all(
