@@ -388,27 +388,33 @@ function CalendarView() {
         setPlanMap(mergePlanMaps(plans.map(buildPlanDateMap)))
         if (!plans.length) return
         const plan = plans[0]
-        const planStart = new Date(plan.startDate + 'T00:00:00')
-        const planEnd = new Date(planStart)
-        planEnd.setDate(planStart.getDate() + plan.weeks.length * 7 - 1)
 
-        // Snap to a meaningful week: last plan week if today is past it, first if before
-        const today = new Date()
-        if (today > planEnd) {
-          setWeekStart(getWeekStart(planEnd))
-        } else if (today < planStart) {
-          setWeekStart(getWeekStart(planStart))
+        if (plan.startDate) {
+          const planStart = new Date(plan.startDate + 'T00:00:00')
+          const planEnd = new Date(planStart)
+          planEnd.setDate(planStart.getDate() + plan.weeks.length * 7 - 1)
+
+          // Snap to a meaningful week: last plan week if today is past it, first if before
+          const today = new Date()
+          if (today > planEnd) {
+            setWeekStart(getWeekStart(planEnd))
+          } else if (today < planStart) {
+            setWeekStart(getWeekStart(planStart))
+          }
         }
 
         // Collect plan months + last 3 calendar months (for broader baselines coverage)
         const monthSet = new Set()
         const addMonth = (y, m) => monthSet.add(`${y}-${m}`)
-        const cur = new Date(planStart.getFullYear(), planStart.getMonth(), 1)
-        const planEndFull = new Date(plan.startDate + 'T00:00:00')
-        planEndFull.setDate(planEndFull.getDate() + plan.weeks.length * 7)
-        while (cur <= planEndFull) {
-          addMonth(cur.getFullYear(), cur.getMonth())
-          cur.setMonth(cur.getMonth() + 1)
+        if (plan.startDate) {
+          const planStart = new Date(plan.startDate + 'T00:00:00')
+          const cur = new Date(planStart.getFullYear(), planStart.getMonth(), 1)
+          const planEndFull = new Date(plan.startDate + 'T00:00:00')
+          planEndFull.setDate(planEndFull.getDate() + plan.weeks.length * 7)
+          while (cur <= planEndFull) {
+            addMonth(cur.getFullYear(), cur.getMonth())
+            cur.setMonth(cur.getMonth() + 1)
+          }
         }
         // Always include recent months so post-plan Strava activity shows
         for (let i = 0; i < 3; i++) {

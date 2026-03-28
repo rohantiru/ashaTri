@@ -73,8 +73,8 @@ export async function getAllPlans() {
 }
 
 export async function uploadPlan(planData, uploaderUid) {
-  // Strip any id/meta fields that may have been imported from another plan
-  const { id: _id, createdAt: _ca, uploadedBy: _ub, isActive: _ia, ...clean } = planData
+  // Strip any id/meta fields and startDate (start date is set post-upload via setPlanStartDate)
+  const { id: _id, createdAt: _ca, uploadedBy: _ub, isActive: _ia, startDate: _sd, ...clean } = planData
   const ref = await addDoc(collection(db, 'trainingPlans'), {
     ...clean,
     isActive: true,
@@ -83,6 +83,11 @@ export async function uploadPlan(planData, uploaderUid) {
   })
   invalidate()
   return ref.id
+}
+
+export async function setPlanStartDate(id, startDate) {
+  await updateDoc(doc(db, 'trainingPlans', id), { startDate })
+  invalidate()
 }
 
 export async function deletePlan(id) {
@@ -101,11 +106,14 @@ const DAY_OFFSETS = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 }
 
 /**
  * Given a plan, return a map of `YYYY-MM-DD` → [session, …].
- * startDate is the Monday of week 1.
+ * startDate is the Monday of week 1. Pass startDateOverride to use a different date.
+ * Returns {} if no start date is available.
  */
-export function buildPlanDateMap(plan) {
+export function buildPlanDateMap(plan, startDateOverride) {
+  const sd = startDateOverride ?? plan.startDate
+  if (!sd) return {}
   const map = {}
-  const start = new Date(plan.startDate + 'T00:00:00')
+  const start = new Date(sd + 'T00:00:00')
 
   plan.weeks.forEach((week, wi) => {
     ;(week.sessions || []).forEach(session => {
@@ -146,8 +154,8 @@ export function validatePlan(obj) {
 
   if (!obj.name || typeof obj.name !== 'string')
     errors.push('Missing or invalid "name" (must be a non-empty string)')
-  if (!obj.startDate || !/^\d{4}-\d{2}-\d{2}$/.test(obj.startDate))
-    errors.push('Missing or invalid "startDate" (must be YYYY-MM-DD, e.g. "2026-04-07")')
+  if (obj.startDate)
+    errors.push('"startDate" is no longer part of the plan format — remove it from your JSON. Set the start date after uploading using the calendar picker.')
   if (!Array.isArray(obj.weeks) || obj.weeks.length === 0)
     errors.push('"weeks" must be a non-empty array')
 
@@ -175,6 +183,7 @@ export function validatePlan(obj) {
 // ── Display helpers ───────────────────────────────────────────────────────────
 
 export function planEndDate(plan) {
+  if (!plan.startDate) return null
   const d = new Date(plan.startDate + 'T00:00:00')
   d.setDate(d.getDate() + plan.weeks.length * 7 - 1)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`

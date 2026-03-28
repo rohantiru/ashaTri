@@ -553,7 +553,7 @@ function TrainingTab({ teams, athletes }) {
         const plan = plans.find(p => p.isActive && p.teamIds?.includes(selectedTeamId))
         setTeamPlan(plan || null)
         if (plan) {
-          setWeekIdx(currentWeekIdx(plan.startDate, plan.weeks.length))
+          setWeekIdx(plan.startDate ? currentWeekIdx(plan.startDate, plan.weeks.length) : 0)
           if (memberIds.length > 0) return getTeamStats(memberIds)
         }
         return []
@@ -616,13 +616,13 @@ function TrainingTab({ teams, athletes }) {
                   {teamPlan.weeks[weekIdx]?.label || `Week ${weekIdx + 1}`}
                 </div>
                 <div className="font-body text-[10px] text-asha-muted leading-tight">
-                  {(() => {
+                  {teamPlan.startDate ? (() => {
                     const start = new Date(teamPlan.startDate + 'T00:00:00')
                     start.setDate(start.getDate() + weekIdx * 7)
                     const end = new Date(start)
                     end.setDate(start.getDate() + 6)
                     return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                  })()}
+                  })() : `Week ${weekIdx + 1}`}
                 </div>
               </div>
               <button

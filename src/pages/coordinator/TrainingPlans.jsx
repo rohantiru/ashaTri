@@ -8,7 +8,7 @@ import {
 import {
   getAllPlans, uploadPlan, deletePlan, setPlanActive,
   validatePlan, PLAN_SPORTS, planEndDate, sessionCount,
-  getTeams, assignPlanTeams,
+  getTeams, assignPlanTeams, setPlanStartDate,
 } from '../../utils/plans'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -200,7 +200,7 @@ function UploadModal({ uploaderUid, onClose, onUploaded }) {
           <textarea
             value={raw}
             onChange={e => { setRaw(e.target.value); setParsed(null); setParseErrors([]) }}
-            placeholder='{ "name": "Spring Base Block", "team": "A Team", "startDate": "2026-04-07", "weeks": [...] }'
+            placeholder='{ "name": "Spring Base Block", "weeks": [...] }'
             className="w-full h-28 border border-asha-border rounded-xl px-3 py-2.5 font-mono text-xs text-asha-dark placeholder-asha-muted/40 focus:outline-none focus:ring-2 focus:ring-asha-orange/30 resize-none"
           />
 
@@ -209,9 +209,9 @@ function UploadModal({ uploaderUid, onClose, onUploaded }) {
             <div className="font-semibold text-asha-dark text-[11px] uppercase tracking-wide mb-2">JSON format</div>
             <div><code className="bg-white border border-asha-border/50 px-1 rounded text-asha-dark">sport</code> → Run · Ride · Swim · Strength · Brick · Rest</div>
             <div><code className="bg-white border border-asha-border/50 px-1 rounded text-asha-dark">day</code> → Mon · Tue · Wed · Thu · Fri · Sat · Sun</div>
-            <div><code className="bg-white border border-asha-border/50 px-1 rounded text-asha-dark">startDate</code> → YYYY-MM-DD (must be the Monday of week 1)</div>
             <div><code className="bg-white border border-asha-border/50 px-1 rounded text-asha-dark">duration</code> → minutes as a number</div>
             <div><code className="bg-white border border-asha-border/50 px-1 rounded text-asha-dark">notes</code> → optional session details (shown on hover)</div>
+            <div className="text-[10px] text-asha-muted/70 pt-1">Start date is set after uploading, not in the file.</div>
           </div>
 
           {/* Parse button */}
@@ -249,7 +249,7 @@ function UploadModal({ uploaderUid, onClose, onUploaded }) {
                 </div>
               )}
               <div className="text-xs font-body text-asha-muted">
-                Starts {fmtDate(parsed.startDate)} · {parsed.weeks.length} week{parsed.weeks.length !== 1 ? 's' : ''} · {sessionCount(parsed)} sessions
+                {parsed.weeks.length} week{parsed.weeks.length !== 1 ? 's' : ''} · {sessionCount(parsed)} sessions · start date set after upload
               </div>
             </div>
           )}
@@ -283,6 +283,93 @@ function UploadModal({ uploaderUid, onClose, onUploaded }) {
   )
 }
 
+// ── Start date modal ─────────────────────────────────────────────────────────
+
+function StartDateModal({ plan, onClose, onSaved }) {
+  const [date, setDate] = useState(plan.startDate || '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  // Snap to nearest Monday
+  function nearestMonday(str) {
+    if (!str) return str
+    const d = new Date(str + 'T00:00:00')
+    const day = d.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
+    if (day === 1) return str
+    const diff = day === 0 ? 1 : (8 - day) // snap forward to next Monday
+    d.setDate(d.getDate() + diff)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
+  const snapped = nearestMonday(date)
+  const isMonday = date && new Date(date + 'T00:00:00').getDay() === 1
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  async function save() {
+    const finalDate = snapped || date
+    if (!finalDate) { setError('Please select a date.'); return }
+    setSaving(true)
+    setError(null)
+    try {
+      await setPlanStartDate(plan.id, finalDate)
+      onSaved(plan.id, finalDate)
+    } catch (e) {
+      setError(e.message)
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl border border-asha-border w-full max-w-sm flex flex-col">
+        <div className="flex items-center justify-between p-5 border-b border-asha-border">
+          <h2 className="font-display font-bold text-asha-dark">Set start date</h2>
+          <button onClick={onClose} className="p-1.5 hover:bg-asha-cream rounded-lg transition-colors">
+            <X size={16} className="text-asha-muted" />
+          </button>
+        </div>
+        <div className="p-5 space-y-4">
+          <p className="text-sm font-body text-asha-muted">
+            Week 1 begins on this date. Sessions are placed on the calendar from here.
+          </p>
+          <div>
+            <input
+              type="date"
+              value={date}
+              onChange={e => { setDate(e.target.value); setError(null) }}
+              className="w-full border border-asha-border rounded-xl px-3 py-2.5 font-body text-sm text-asha-dark focus:outline-none focus:ring-2 focus:ring-asha-orange/30"
+            />
+            {date && !isMonday && snapped && (
+              <p className="mt-1.5 text-xs font-body text-asha-orange">
+                Must be a Monday — will use {fmtDate(snapped)} instead.
+              </p>
+            )}
+          </div>
+          {error && <p className="text-sm text-red-600 font-body">{error}</p>}
+        </div>
+        <div className="flex gap-2 p-5 border-t border-asha-border">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl font-body text-sm text-asha-muted border border-asha-border hover:bg-asha-cream transition-colors">
+            Cancel
+          </button>
+          <button
+            onClick={save}
+            disabled={!date || saving}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-body font-semibold text-sm bg-asha-orange text-white hover:bg-asha-orangeLight transition-colors disabled:opacity-40"
+          >
+            {saving && <Loader2 size={13} className="animate-spin" />}
+            Save start date
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function TrainingPlans() {
@@ -295,6 +382,8 @@ export default function TrainingPlans() {
   const [toggling, setToggling] = useState({})
   const [deleting, setDeleting] = useState(null)
   const [selectedPlanId, setSelectedPlanId] = useState(null)
+
+  const [startDatePlanId, setStartDatePlanId] = useState(null)
 
   // Teams (for plan assignment only — management is handled elsewhere)
   const [teams, setTeams] = useState([])
@@ -470,8 +559,26 @@ export default function TrainingPlans() {
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 mt-1 text-xs font-body text-asha-muted flex-wrap">
-                        <Calendar size={10} />
-                        {fmtDate(plan.startDate)} → {fmtDate(end)}
+                        {plan.startDate ? (
+                          <>
+                            <Calendar size={10} />
+                            {fmtDate(plan.startDate)} → {fmtDate(end)}
+                            <button
+                              onClick={e => { e.stopPropagation(); setStartDatePlanId(plan.id) }}
+                              className="text-asha-muted hover:text-asha-dark transition-colors"
+                              title="Change start date"
+                            >
+                              <Pencil size={10} />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={e => { e.stopPropagation(); setStartDatePlanId(plan.id) }}
+                            className="text-asha-orange hover:text-asha-orangeLight font-semibold transition-colors"
+                          >
+                            Set start date →
+                          </button>
+                        )}
                         <span className="text-asha-border">·</span>
                         {plan.weeks.length} wk{plan.weeks.length !== 1 ? 's' : ''}
                         <span className="text-asha-border">·</span>
@@ -593,9 +700,27 @@ export default function TrainingPlans() {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="font-display font-bold text-asha-dark">{selectedPlan.name}</h3>
-                  <div className="flex items-center gap-1.5 mt-1 text-xs font-body text-asha-muted">
-                    <Calendar size={10} />
-                    {fmtDate(selectedPlan.startDate)} → {fmtDate(planEndDate(selectedPlan))}
+                  <div className="flex items-center gap-1.5 mt-1 text-xs font-body text-asha-muted flex-wrap">
+                    {selectedPlan.startDate ? (
+                      <>
+                        <Calendar size={10} />
+                        {fmtDate(selectedPlan.startDate)} → {fmtDate(planEndDate(selectedPlan))}
+                        <button
+                          onClick={() => setStartDatePlanId(selectedPlan.id)}
+                          className="text-asha-muted hover:text-asha-dark transition-colors"
+                          title="Change start date"
+                        >
+                          <Pencil size={10} />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setStartDatePlanId(selectedPlan.id)}
+                        className="text-asha-orange hover:text-asha-orangeLight font-semibold transition-colors"
+                      >
+                        Set start date →
+                      </button>
+                    )}
                     <span className="text-asha-border">·</span>
                     {selectedPlan.weeks.length} weeks · {sessionCount(selectedPlan)} sessions
                   </div>
@@ -688,6 +813,21 @@ export default function TrainingPlans() {
           onUploaded={() => { setShowUpload(false); load() }}
         />
       )}
+
+      {startDatePlanId && (() => {
+        const plan = plans.find(p => p.id === startDatePlanId)
+        if (!plan) return null
+        return (
+          <StartDateModal
+            plan={plan}
+            onClose={() => setStartDatePlanId(null)}
+            onSaved={(id, date) => {
+              setPlans(prev => prev.map(p => p.id === id ? { ...p, startDate: date } : p))
+              setStartDatePlanId(null)
+            }}
+          />
+        )
+      })()}
 
     </div>
   )
