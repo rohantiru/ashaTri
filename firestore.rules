@@ -94,9 +94,10 @@ service cloud.firestore {
         resource.data.athleteId == request.auth.uid;
     }
 
-    // Teams (athlete grouping lists — coord/coach/owner only)
+    // Teams — athletes need read access to filter their training plans by team membership
     match /teams/{teamId} {
-      allow read, write: if isCoordOrAbove();
+      allow read: if isSignedIn();
+      allow write: if isCoordOrAbove();
     }
 
     // Events (created by coords/coaches, visible to recipients)
