@@ -59,7 +59,13 @@ export async function getActivePlans(userUid = null, forceRefresh = false) {
 
 async function filterByUser(plans, userUid) {
   // Always fetch fresh — teams collection is tiny and membership changes must be reflected immediately
-  const teams = await getTeams(true)
+  let teams
+  try {
+    teams = await getTeams(true)
+  } catch (e) {
+    console.error('[plans] filterByUser: could not read teams collection:', e.message)
+    throw e
+  }
   const userTeamIds = new Set(teams.filter(t => t.memberIds?.includes(userUid)).map(t => t.id))
   return plans.filter(p =>
     !p.teamIds?.length || // no team restriction → visible to all

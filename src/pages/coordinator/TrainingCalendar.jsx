@@ -356,8 +356,10 @@ const WEEK_DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
 // ── Calendar view (single week, grid style) ───────────────────────────────────
 
+const COORD_ROLES_CAL = ['coordinator', 'coach', 'owner']
+
 function CalendarView() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const now = new Date()
   const todayKey = dateKey(now)
 
@@ -365,6 +367,7 @@ function CalendarView() {
   const [activityMap, setActivityMap] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [planError, setPlanError] = useState(null)
   const [planMap, setPlanMap] = useState({})
   const [selectedActivity, setSelectedActivity] = useState(null)
   const [selectedSession, setSelectedSession] = useState(null) // { session, done }
@@ -386,9 +389,18 @@ function CalendarView() {
     try {
       const plans = await getActivePlans(user.uid, forceRefresh)
       setPlanMap(mergePlanMaps(plans.map(buildPlanDateMap)))
-      if (!plans.length) return
+      if (!plans.length) {
+        setPlanError('No active training plan found for your account.')
+        return
+      }
+      const plansWithDates = plans.filter(p => p.startDate)
+      if (!plansWithDates.length) {
+        setPlanError('Your plan has no start date set yet — a coordinator needs to set one in Training Plans.')
+        return
+      }
+      setPlanError(null)
 
-      const plan = plans[0]
+      const plan = plansWithDates[0]
       const today = now
 
       if (plan.startDate) {
@@ -404,7 +416,7 @@ function CalendarView() {
       // Collect plan months + last 3 calendar months for stats
       const monthSet = new Set()
       const addMonth = (y, m) => monthSet.add(`${y}-${m}`)
-      if (plan.startDate) {
+      if (plan.startDate) {  // always true since plan = plansWithDates[0]
         const planStart = new Date(plan.startDate + 'T00:00:00')
         const cur = new Date(planStart.getFullYear(), planStart.getMonth(), 1)
         const planEndFull = new Date(plan.startDate + 'T00:00:00')
@@ -424,7 +436,12 @@ function CalendarView() {
         months.map(([y, m]) => getActivitiesForUserMonth(user.uid, y, m).catch(() => []))
       )).flat()
       saveAthleteStats(user.uid, plan, allActs).catch(() => {})
-    } catch (_) {}
+    } catch (e) {
+      const msg = e.message?.includes('Missing or insufficient permissions')
+        ? 'Could not load your training plan — permissions error. Make sure Firestore rules are deployed.'
+        : `Plan load error: ${e.message}`
+      setPlanError(msg)
+    }
   }
 
   useEffect(() => { if (user) loadPlans() }, [user])
@@ -489,7 +506,7 @@ function CalendarView() {
           )}
         </div>
         <button
-          onClick={() => { loadPlans(true); loadWeek(true) }}
+          onClick={() => { setPlanError(null); loadPlans(true); loadWeek(true) }}
           disabled={loading}
           className="flex items-center gap-1.5 text-xs font-body text-asha-muted hover:text-asha-dark transition-colors disabled:opacity-40"
         >
@@ -498,6 +515,12 @@ function CalendarView() {
         </button>
       </div>
 
+      {planError && (
+        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+          <AlertCircle size={14} className="shrink-0" />
+          {planError}
+        </div>
+      )}
       {error && (
         <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
           <AlertCircle size={14} className="shrink-0" />
