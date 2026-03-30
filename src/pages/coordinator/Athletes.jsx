@@ -7,9 +7,8 @@ import {
   Users, Plus, X, Pencil, Trash2, CheckSquare, Square, Search, Tag, BarChart2,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
 } from 'lucide-react'
-import { getAllPlans } from '../../utils/plans'
+import { getPlans, PLAN_SPORTS } from '../../utils/plans'
 import { getTeamStats } from '../../utils/athleteStats'
-import { getCached, setCached } from '../../utils/cache'
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
@@ -356,166 +355,165 @@ function TeamsTab({ athletes, teams, onAdd, onEdit, onDelete }) {
 
 // ── Training Tab ──────────────────────────────────────────────────────────────
 
-const SPORT_COLORS = { Run: '#FC4C02', Ride: '#16A34A', Swim: '#2563EB', Strength: '#7C3AED' }
-const SPORT_LABELS = { Run: 'RUN', Ride: 'BIKE', Swim: 'SWIM', Strength: 'LIFT' }
-
-
-function PctBadge({ pct }) {
-  if (pct === null || pct === undefined) return null
-  const cls = pct >= 80 ? 'bg-green-100 text-green-700' : pct >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
-  return <span className={`text-xs font-body font-semibold px-2 py-0.5 rounded-full ${cls}`}>{pct}%</span>
+function ttDateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// Determine current week index based on today vs plan start
-function currentWeekIdx(planStartDate, numWeeks) {
-  const today = new Date()
-  const start = new Date(planStartDate + 'T00:00:00')
-  const daysDiff = Math.floor((today - start) / 86400000)
-  return Math.min(Math.max(Math.floor(daysDiff / 7), 0), numWeeks - 1)
+function ttWeekStart(date) {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  const dow = d.getDay()
+  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1))
+  return d
 }
 
+function SportBar({ sportKey, data }) {
+  const sport = PLAN_SPORTS[sportKey] || { color: '#9CA3AF', label: sportKey }
+  const { planned, plannedMins, plannedDistM, actual, actualMins, actualDistM } = data
+  const pct = plannedMins ? Math.min(100, Math.round((actualMins / plannedMins) * 100)) : null
+  const barColor = pct === null ? '#9CA3AF' : pct >= 80 ? '#16A34A' : pct >= 50 ? '#D97706' : '#DC2626'
+  const distMi = plannedDistM > 0 ? (plannedDistM / 1609.34).toFixed(1) : null
+  const actualDistMi = actualDistM > 0 ? (actualDistM / 1609.34).toFixed(1) : null
 
-function AthleteWeekCard({ athlete, weekData }) {
-  const [expanded, setExpanded] = useState(false)
-
-  if (!weekData) {
-    return (
-      <div className="px-4 py-3 flex items-center gap-3">
-        {athlete.photoURL
-          ? <img src={athlete.photoURL} alt={athlete.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-          : <div className="w-8 h-8 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-sm flex-shrink-0">{athlete.name?.[0]}</div>
-        }
-        <div className="flex-1 min-w-0">
-          <div className="font-body font-medium text-sm text-asha-dark truncate">{athlete.name}</div>
-          <div className="text-[10px] font-body text-asha-muted/60 italic">Awaiting sync</div>
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <span className="text-[10px] font-body font-bold w-8 flex-shrink-0" style={{ color: sport.color }}>
+        {sport.label?.toUpperCase()}
+      </span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-1 mb-0.5">
+          <span className="text-[10px] font-body tabular-nums text-asha-dark">
+            {actualMins}<span className="text-asha-muted">/{plannedMins}m</span>
+            {distMi && (
+              <span className="text-asha-muted ml-1">
+                · {actualDistMi || '0'}/{distMi}mi
+              </span>
+            )}
+          </span>
+          <span className="text-[10px] font-body font-semibold" style={{ color: barColor }}>
+            {actual}/{planned}
+          </span>
+        </div>
+        <div className="h-1 rounded-full bg-asha-border/40 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all"
+            style={{ width: `${pct ?? 0}%`, background: barColor }}
+          />
         </div>
       </div>
-    )
-  }
+    </div>
+  )
+}
 
-  const { planned = {}, actual = {} } = weekData
-  const sports = Object.keys(planned)
-  const totalPlannedMins = Object.values(planned).reduce((s, p) => s + (p.durationMins || 0), 0)
-  const totalActualMins = Object.values(actual).reduce((s, a) => s + (a.durationSecs || 0) / 60, 0)
+function AthleteCompletionRow({ athlete, weekStats }) {
+  const [expanded, setExpanded] = useState(false)
+  const sports = weekStats ? Object.keys(weekStats) : []
+  const totalPlannedMins = sports.reduce((s, sp) => s + (weekStats[sp].plannedMins || 0), 0)
+  const totalActualMins = sports.reduce((s, sp) => s + (weekStats[sp].actualMins || 0), 0)
   const pct = totalPlannedMins ? Math.min(100, Math.round((totalActualMins / totalPlannedMins) * 100)) : null
+  const pctColor = pct === null ? '' : pct >= 80 ? 'bg-green-100 text-green-700' : pct >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
 
   return (
     <div>
-      <button onClick={() => setExpanded(v => !v)} className="w-full text-left px-4 py-3 hover:bg-asha-cream/40 transition-colors">
-        {/* Row 1: avatar + name + % + chevron */}
-        <div className="flex items-center gap-2.5 mb-1.5">
-          {athlete.photoURL
-            ? <img src={athlete.photoURL} alt={athlete.name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-            : <div className="w-7 h-7 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-xs flex-shrink-0">{athlete.name?.[0]}</div>
-          }
-          <span className="font-body font-medium text-sm text-asha-dark truncate flex-1 min-w-0">{athlete.name}</span>
-          <PctBadge pct={pct} />
-          <ChevronDown size={13} className={`text-asha-muted transition-transform flex-shrink-0 ${expanded ? 'rotate-180' : ''}`} />
+      <button
+        onClick={() => weekStats && setExpanded(v => !v)}
+        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left ${weekStats ? 'hover:bg-asha-cream/30 transition-colors' : ''}`}
+      >
+        {athlete.photoURL
+          ? <img src={athlete.photoURL} alt={athlete.name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+          : <div className="w-7 h-7 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-display font-bold text-xs flex-shrink-0">{athlete.name?.[0]}</div>
+        }
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-body font-medium text-asha-dark truncate">{athlete.name}</div>
+          {!weekStats && (
+            <div className="text-[10px] font-body text-asha-muted/60 italic">Awaiting sync</div>
+          )}
+          {weekStats && sports.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-0.5">
+              {sports.map(sp => {
+                const d = weekStats[sp]
+                const spPct = d.plannedMins ? Math.min(100, Math.round((d.actualMins / d.plannedMins) * 100)) : null
+                const c = spPct === null ? 'text-asha-muted/40' : spPct >= 80 ? 'text-green-600' : spPct >= 50 ? 'text-amber-600' : 'text-red-500'
+                return (
+                  <span key={sp} className={`text-[10px] font-body font-semibold ${c}`} style={{ color: spPct !== null ? undefined : undefined }}>
+                    {PLAN_SPORTS[sp]?.label || sp} {d.actualMins}/{d.plannedMins}m
+                  </span>
+                )
+              })}
+            </div>
+          )}
         </div>
-        {/* Row 2: sport pills indented under name */}
-        <div className="flex flex-wrap gap-1 pl-[36px]">
-          {sports.map(sport => {
-            const p = planned[sport]
-            const a = actual[sport]
-            const plannedMins = p?.durationMins || 0
-            const actualMins = Math.round((a?.durationSecs || 0) / 60)
-            const hit = plannedMins > 0 && actualMins >= plannedMins * 0.8
-            const partial = !hit && actualMins > 0
-            return (
-              <span key={sport} className="text-[10px] font-body font-semibold px-2 py-0.5 rounded-full"
-                style={{
-                  color: SPORT_COLORS[sport],
-                  background: SPORT_COLORS[sport] + (hit ? '20' : partial ? '12' : '0A'),
-                  border: `1px solid ${SPORT_COLORS[sport]}${hit ? '45' : '25'}`,
-                  opacity: !hit && !partial ? 0.5 : 1,
-                }}
-              >
-                {SPORT_LABELS[sport]} {actualMins}/{plannedMins}m
-              </span>
-            )
-          })}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {pct !== null && (
+            <span className={`text-xs font-body font-semibold px-2 py-0.5 rounded-full ${pctColor}`}>{pct}%</span>
+          )}
+          {weekStats && sports.length > 0 && (
+            <ChevronDown size={13} className={`text-asha-muted transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          )}
         </div>
       </button>
 
-      {expanded && (
-        <div className="border-t border-asha-border/40 bg-asha-cream/20 px-4 py-3 grid grid-cols-2 gap-2">
-          {sports.map(sport => {
-            const p = planned[sport]
-            const a = actual[sport]
-            const plannedMins = p?.durationMins || 0
-            const actualMins = Math.round((a?.durationSecs || 0) / 60)
-            const sportPct = plannedMins ? Math.min(100, Math.round((actualMins / plannedMins) * 100)) : null
-            return (
-              <div key={sport} className="bg-white rounded-lg border border-asha-border px-3 py-2">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-body font-bold" style={{ color: SPORT_COLORS[sport] }}>{SPORT_LABELS[sport]}</span>
-                  <PctBadge pct={sportPct} />
-                </div>
-                <div className="text-[10px] font-body text-asha-muted space-y-px">
-                  <div>Plan: {p ? `${p.sessions}× ${plannedMins}m` : '—'}</div>
-                  <div>Done: {a ? `${a.sessions}× ${actualMins}m` : '—'}</div>
-                </div>
-              </div>
-            )
-          })}
+      {expanded && weekStats && (
+        <div className="border-t border-asha-border/30 bg-asha-cream/20 px-4 py-3 space-y-2">
+          {sports.map(sp => (
+            <SportBar key={sp} sportKey={sp} data={weekStats[sp]} />
+          ))}
         </div>
       )}
     </div>
   )
-
 }
 
 function TrainingTab({ teams, athletes }) {
   const [selectedTeamId, setSelectedTeamId] = useState(teams[0]?.id || '')
-  const [teamPlan, setTeamPlan] = useState(null)
+  const [plans, setPlans] = useState([])
   const [teamStats, setTeamStats] = useState([])
-  const [planLoading, setPlanLoading] = useState(false)
-  const [weekIdx, setWeekIdx] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [weekStart, setWeekStart] = useState(() => ttWeekStart(new Date()))
 
   const selectedTeam = teams.find(t => t.id === selectedTeamId)
-  const memberIds = selectedTeam?.memberIds || []
-  const memberAthletes = memberIds.map(uid => athletes.find(a => a.id === uid)).filter(Boolean)
+  const memberAthletes = (selectedTeam?.memberIds || [])
+    .map(uid => athletes.find(a => a.id === uid)).filter(Boolean)
 
   useEffect(() => {
-    if (!selectedTeamId) return
-    setPlanLoading(true)
-    setTeamPlan(null)
-    setTeamStats([])
-    let cancelled = false
-    const cachedPlans = getCached('allPlans')
-    ;(cachedPlans ? Promise.resolve(cachedPlans) : getAllPlans().then(p => { setCached('allPlans', p, 30 * 60 * 1000); return p }))
-      .then(plans => {
-        if (cancelled) return
-        const plan = plans.find(p => p.isActive && p.teamIds?.includes(selectedTeamId))
-        setTeamPlan(plan || null)
-        if (plan) {
-          setWeekIdx(plan.startDate ? currentWeekIdx(plan.startDate, plan.weeks.length) : 0)
-          if (memberIds.length > 0) return getTeamStats(memberIds)
-        }
-        return []
-      })
-      .then(stats => { if (!cancelled) setTeamStats(stats || []) })
+    getPlans()
+      .then(p => setPlans(p))
       .catch(() => {})
-      .finally(() => { if (!cancelled) setPlanLoading(false) })
-    return () => { cancelled = true }
-  }, [selectedTeamId])
+      .finally(() => setLoading(false))
+  }, [])
 
-  const statsById = Object.fromEntries((teamStats || []).filter(Boolean).map(s => [s.uid, s]))
-  const numWeeks = teamPlan?.weeks.length || 0
+  useEffect(() => {
+    if (!memberAthletes.length) { setTeamStats([]); return }
+    getTeamStats(memberAthletes.map(a => a.id))
+      .then(s => setTeamStats(s.filter(Boolean)))
+      .catch(() => setTeamStats([]))
+  }, [selectedTeamId, memberAthletes.map(a => a.id).join(',')])
 
-  // Sports present in this week's plan sessions
-  const weekSports = teamPlan?.weeks[weekIdx]
-    ? [...new Set((teamPlan.weeks[weekIdx].sessions || []).map(s => s.sport).filter(s => s && s !== 'Rest'))]
-    : []
+  const statsById = Object.fromEntries(teamStats.map(s => [s.uid, s]))
 
-  function weekDateRange() {
-    if (!teamPlan?.startDate) return null
-    const start = new Date(teamPlan.startDate + 'T00:00:00')
-    start.setDate(start.getDate() + weekIdx * 7)
-    const end = new Date(start)
-    end.setDate(start.getDate() + 6)
-    return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-  }
+  // Plans assigned to selected team
+  const teamPlans = plans.filter(p =>
+    !p.teamIds?.length || p.teamIds.includes(selectedTeamId)
+  )
+
+  // Week date range
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); return d
+  })
+  const weekStartKey = ttDateKey(weekStart)
+  const weekEndKey = ttDateKey(weekDays[6])
+  const weekLabel = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${weekDays[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+  const isCurrentWeek = ttDateKey(ttWeekStart(new Date())) === weekStartKey
+
+  // Planned activities this week
+  const weekActivities = []
+  teamPlans.forEach(plan => {
+    ;(plan.activities || []).forEach(act => {
+      if (act.date >= weekStartKey && act.date <= weekEndKey)
+        weekActivities.push({ ...act, planName: plan.name })
+    })
+  })
+  weekActivities.sort((a, b) => a.date.localeCompare(b.date))
 
   if (teams.length === 0) {
     return (
@@ -527,7 +525,7 @@ function TrainingTab({ teams, athletes }) {
 
   return (
     <div className="space-y-3">
-      {/* Team selector + week nav in one bar */}
+      {/* Team selector + week nav */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex gap-1.5 flex-wrap">
           {teams.map(t => (
@@ -541,131 +539,95 @@ function TrainingTab({ teams, athletes }) {
             </button>
           ))}
         </div>
-        {teamPlan && (
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <button onClick={() => setWeekIdx(i => Math.max(0, i - 1))} disabled={weekIdx === 0}
-              className="p-1 rounded-lg hover:bg-asha-border disabled:opacity-25 transition-colors">
-              <ChevronLeft size={14} className="text-asha-muted" />
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button onClick={() => setWeekStart(d => { const n = new Date(d); n.setDate(d.getDate() - 7); return n })}
+            className="p-1 rounded-lg hover:bg-asha-border transition-colors">
+            <ChevronLeft size={14} className="text-asha-muted" />
+          </button>
+          <span className="text-xs font-body text-asha-dark font-medium min-w-[180px] text-center">{weekLabel}</span>
+          <button onClick={() => setWeekStart(d => { const n = new Date(d); n.setDate(d.getDate() + 7); return n })}
+            className="p-1 rounded-lg hover:bg-asha-border transition-colors">
+            <ChevronRight size={14} className="text-asha-muted" />
+          </button>
+          {!isCurrentWeek && (
+            <button onClick={() => setWeekStart(ttWeekStart(new Date()))}
+              className="text-xs font-body text-asha-orange hover:underline ml-1">
+              Today
             </button>
-            <div className="text-center min-w-[150px]">
-              <div className="font-body text-xs text-asha-dark font-medium leading-tight">
-                {teamPlan.weeks[weekIdx]?.label || `Week ${weekIdx + 1}`}
-              </div>
-              {weekDateRange() && (
-                <div className="font-body text-[10px] text-asha-muted leading-tight">{weekDateRange()}</div>
-              )}
-            </div>
-            <button onClick={() => setWeekIdx(i => Math.min(numWeeks - 1, i + 1))} disabled={weekIdx === numWeeks - 1}
-              className="p-1 rounded-lg hover:bg-asha-border disabled:opacity-25 transition-colors">
-              <ChevronRight size={14} className="text-asha-muted" />
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {planLoading ? (
-        <div className="bg-white rounded-xl border border-asha-border h-32 animate-pulse" />
-      ) : !teamPlan ? (
-        <div className="bg-white rounded-xl border border-asha-border p-6 text-center">
-          <p className="font-body text-asha-muted text-sm">No active plan for <strong>{selectedTeam?.name}</strong>.</p>
-          <p className="font-body text-asha-muted text-xs mt-1">Assign a plan in Training Plans.</p>
-        </div>
-      ) : memberAthletes.length === 0 ? (
-        <div className="bg-white rounded-xl border border-asha-border p-6 text-center">
-          <p className="font-body text-asha-muted text-sm">No members in {selectedTeam?.name}.</p>
-        </div>
+      {loading ? (
+        <div className="bg-white rounded-xl border border-asha-border h-24 animate-pulse" />
       ) : (
         <>
-          {/* Plan name + stale sync warning */}
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <span className="font-display font-semibold text-sm text-asha-dark">{teamPlan.name}</span>
-            {memberAthletes.some(a => !statsById[a.id]) && (
-              <span className="text-[11px] font-body text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1">
-                ⚠ Some athletes awaiting sync
-              </span>
+          {/* Planned sessions */}
+          <div className="bg-white rounded-xl border border-asha-border overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-asha-border bg-asha-cream/40 flex items-center justify-between">
+              <span className="text-[11px] font-body font-semibold text-asha-muted uppercase tracking-wide">Planned Sessions</span>
+              <span className="text-[11px] font-body text-asha-muted">{weekActivities.length} session{weekActivities.length !== 1 ? 's' : ''}</span>
+            </div>
+            {weekActivities.length === 0 ? (
+              <div className="px-4 py-5 text-center">
+                <p className="text-sm font-body text-asha-muted">
+                  {teamPlans.length === 0
+                    ? `No plans assigned to ${selectedTeam?.name || 'this team'} — assign one in Training Plans.`
+                    : 'No sessions scheduled this week.'}
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-asha-border/40">
+                {weekActivities.map((act, i) => {
+                  const sport = PLAN_SPORTS[act.sport] || { color: '#9CA3AF', bg: '#F9FAFB', label: act.sport }
+                  const dayLabel = new Date(act.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                  return (
+                    <div key={act.id || i} className="flex items-center gap-3 px-4 py-2.5">
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: sport.color }} />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-body font-semibold text-asha-dark">{act.type || sport.label}</span>
+                        {act.sport && act.type && <span className="ml-1.5 text-xs font-body text-asha-muted">{sport.label}</span>}
+                        {act.planName && <span className="ml-1.5 text-[11px] font-body text-asha-muted/60">· {act.planName}</span>}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-body text-asha-muted flex-shrink-0">
+                        {act.distance > 0 && <span>{act.distance} {act.distanceUnit || 'mi'}</span>}
+                        {act.duration > 0 && <span>{act.duration}m</span>}
+                        <span className="text-asha-muted/60">{dayLabel}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             )}
           </div>
 
-          {/* Desktop table */}
-          <div className="hidden lg:block bg-white rounded-xl border border-asha-border overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-asha-cream/50 border-b border-asha-border">
-                  <th className="text-left px-4 py-2.5 text-[11px] font-body font-semibold text-asha-muted uppercase tracking-wide">Athlete</th>
-                  {weekSports.map(sport => (
-                    <th key={sport} className="px-4 py-2.5 text-[11px] font-body font-semibold uppercase tracking-wide text-center"
-                      style={{ color: SPORT_COLORS[sport] || '#8C7B6B' }}>
-                      {SPORT_LABELS[sport] || sport}
-                    </th>
-                  ))}
-                  <th className="px-4 py-2.5 text-[11px] font-body font-semibold text-asha-muted uppercase tracking-wide text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-asha-border/40">
-                {memberAthletes.map(athlete => {
-                  const stats = statsById[athlete.id]
-                  const weekData = stats?.byWeek?.[weekIdx]
-                  const { planned = {}, actual = {} } = weekData || {}
-                  const totalPlannedMins = Object.values(planned).reduce((s, p) => s + (p.durationMins || 0), 0)
-                  const totalActualMins = Object.values(actual).reduce((s, a) => s + (a.durationSecs || 0) / 60, 0)
-                  const pct = totalPlannedMins ? Math.min(100, Math.round((totalActualMins / totalPlannedMins) * 100)) : null
+          {/* Athlete completion */}
+          <div className="bg-white rounded-xl border border-asha-border overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-asha-border bg-asha-cream/40 flex items-center justify-between">
+              <span className="text-[11px] font-body font-semibold text-asha-muted uppercase tracking-wide">
+                Athlete Completion
+              </span>
+              <span className="text-[11px] font-body text-asha-muted italic">tap to expand per sport</span>
+            </div>
+            {memberAthletes.length === 0 ? (
+              <div className="px-4 py-5 text-center">
+                <p className="text-sm font-body text-asha-muted">No members in {selectedTeam?.name}.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-asha-border/40">
+                {memberAthletes.map(a => {
+                  const stats = statsById[a.id]
+                  const weekStats = stats?.weeks?.[weekStartKey] || null
                   return (
-                    <tr key={athlete.id} className="hover:bg-asha-cream/20 transition-colors group">
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-2.5">
-                          {athlete.photoURL
-                            ? <img src={athlete.photoURL} alt={athlete.name} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
-                            : <div className="w-6 h-6 rounded-full bg-asha-orangeDim flex items-center justify-center text-asha-orange font-bold text-[10px] flex-shrink-0">{athlete.name?.[0]}</div>
-                          }
-                          <span className="font-body text-sm text-asha-dark">{athlete.name}</span>
-                        </div>
-                      </td>
-                      {weekSports.map(sport => {
-                        const p = planned[sport]
-                        const a = actual[sport]
-                        const plannedMins = p?.durationMins || 0
-                        const actualMins = Math.round((a?.durationSecs || 0) / 60)
-                        const barPct = plannedMins ? Math.min(100, Math.round((actualMins / plannedMins) * 100)) : 0
-                        const color = SPORT_COLORS[sport] || '#8C7B6B'
-                        return (
-                          <td key={sport} className="px-4 py-2.5 text-center">
-                            {!weekData ? (
-                              <span className="text-[10px] text-asha-muted/40">—</span>
-                            ) : plannedMins > 0 ? (
-                              <div className="flex flex-col items-center gap-1">
-                                <span className="text-xs font-body font-semibold tabular-nums" style={{ color, opacity: barPct >= 80 ? 1 : barPct > 0 ? 0.75 : 0.35 }}>
-                                  {actualMins}<span className="font-normal text-asha-muted opacity-70">/{plannedMins}m</span>
-                                </span>
-                                <div className="w-14 h-1 rounded-full bg-asha-border/50 overflow-hidden">
-                                  <div className="h-full rounded-full" style={{ width: `${barPct}%`, background: color }} />
-                                </div>
-                              </div>
-                            ) : (
-                              <span className="text-[10px] text-asha-border/80">—</span>
-                            )}
-                          </td>
-                        )
-                      })}
-                      <td className="px-4 py-2.5 text-right">
-                        {!weekData
-                          ? <span className="text-[10px] text-asha-muted/50 italic">awaiting sync</span>
-                          : <PctBadge pct={pct} />
-                        }
-                      </td>
-                    </tr>
+                    <AthleteCompletionRow
+                      key={a.id}
+                      athlete={a}
+                      weekStats={weekStats}
+                    />
                   )
                 })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile cards */}
-          <div className="lg:hidden bg-white rounded-xl border border-asha-border overflow-hidden divide-y divide-asha-border/50">
-            {memberAthletes.map(athlete => {
-              const stats = statsById[athlete.id]
-              const weekData = stats?.byWeek?.[weekIdx]
-              return <AthleteWeekCard key={athlete.id} athlete={athlete} weekData={weekData} />
-            })}
+              </div>
+            )}
           </div>
         </>
       )}

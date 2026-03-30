@@ -1,0 +1,49 @@
+{
+  "name": "8-Week Sprint Tri Base Build",
+  "description": "Low-intensity aerobic base block. Runs at Z2, swims focusing on form, bikes at conversational pace. Week 7 is a recovery week.",
+  "activities": [
+    { "week": 1, "day": "Mon", "sport": "Swim",     "type": "Easy",        "duration": 30, "distance": 1000, "distanceUnit": "m",  "notes": "Focus on catch and pull" },
+    { "week": 1, "day": "Wed", "sport": "Run",      "type": "Easy Z2",     "duration": 35, "distance": 3,    "distanceUnit": "mi" },
+    { "week": 1, "day": "Thu", "sport": "Ride",     "type": "Easy Spin",   "duration": 45, "distance": 12,   "distanceUnit": "mi" },
+    { "week": 1, "day": "Sat", "sport": "Run",      "type": "Long Easy",   "duration": 50, "distance": 4.5,  "distanceUnit": "mi" },
+
+    { "week": 2, "day": "Mon", "sport": "Swim",     "type": "Easy",        "duration": 35, "distance": 1200, "distanceUnit": "m",  "notes": "Drill sets: 4x50 catch-up" },
+    { "week": 2, "day": "Wed", "sport": "Run",      "type": "Easy Z2",     "duration": 40, "distance": 3.5,  "distanceUnit": "mi" },
+    { "week": 2, "day": "Thu", "sport": "Ride",     "type": "Easy Spin",   "duration": 50, "distance": 14,   "distanceUnit": "mi" },
+    { "week": 2, "day": "Sat", "sport": "Brick",    "type": "Brick",       "duration": 60,                                          "notes": "30min ride + 20min run, practice transitions" },
+
+    { "week": 3, "day": "Mon", "sport": "Swim",     "type": "Easy",        "duration": 40, "distance": 1400, "distanceUnit": "m" },
+    { "week": 3, "day": "Tue", "sport": "Strength", "type": "Core & Hips", "duration": 30,                                          "notes": "Glute bridges, plank, hip flexor stretching" },
+    { "week": 3, "day": "Wed", "sport": "Run",      "type": "Easy Z2",     "duration": 40, "distance": 3.5,  "distanceUnit": "mi" },
+    { "week": 3, "day": "Thu", "sport": "Ride",     "type": "Easy Spin",   "duration": 55, "distance": 16,   "distanceUnit": "mi" },
+    { "week": 3, "day": "Sat", "sport": "Run",      "type": "Long Easy",   "duration": 60, "distance": 5.5,  "distanceUnit": "mi" },
+
+    { "week": 4, "day": "Mon", "sport": "Swim",     "type": "Easy",        "duration": 40, "distance": 1500, "distanceUnit": "m" },
+    { "week": 4, "day": "Tue", "sport": "Strength", "type": "Core & Hips", "duration": 30 },
+    { "week": 4, "day": "Wed", "sport": "Run",      "type": "Easy Z2",     "duration": 45, "distance": 4,    "distanceUnit": "mi" },
+    { "week": 4, "day": "Thu", "sport": "Ride",     "type": "Easy Spin",   "duration": 60, "distance": 17,   "distanceUnit": "mi" },
+    { "week": 4, "day": "Sat", "sport": "Brick",    "type": "Brick",       "duration": 75,                                          "notes": "45min ride + 20min run" },
+
+    { "week": 5, "day": "Mon", "sport": "Swim",     "type": "Technique",   "duration": 45, "distance": 1600, "distanceUnit": "m",  "notes": "Open water sighting drills if possible" },
+    { "week": 5, "day": "Tue", "sport": "Strength", "type": "Core & Hips", "duration": 30 },
+    { "week": 5, "day": "Wed", "sport": "Run",      "type": "Easy Z2",     "duration": 45, "distance": 4,    "distanceUnit": "mi" },
+    { "week": 5, "day": "Thu", "sport": "Ride",     "type": "Easy Spin",   "duration": 60, "distance": 18,   "distanceUnit": "mi" },
+    { "week": 5, "day": "Sun", "sport": "Run",      "type": "Long Easy",   "duration": 65, "distance": 6,    "distanceUnit": "mi" },
+
+    { "week": 6, "day": "Mon", "sport": "Swim",     "type": "Technique",   "duration": 45, "distance": 1800, "distanceUnit": "m" },
+    { "week": 6, "day": "Tue", "sport": "Strength", "type": "Core & Hips", "duration": 30 },
+    { "week": 6, "day": "Wed", "sport": "Run",      "type": "Easy Z2",     "duration": 50, "distance": 4.5,  "distanceUnit": "mi" },
+    { "week": 6, "day": "Thu", "sport": "Ride",     "type": "Easy Spin",   "duration": 70, "distance": 20,   "distanceUnit": "mi" },
+    { "week": 6, "day": "Sat", "sport": "Brick",    "type": "Brick",       "duration": 90,                                          "notes": "60min ride + 25min run" },
+
+    { "week": 7, "day": "Mon", "sport": "Swim",     "type": "Easy",        "duration": 30, "distance": 1000, "distanceUnit": "m",  "notes": "Recovery week — keep it easy" },
+    { "week": 7, "day": "Wed", "sport": "Run",      "type": "Easy Z2",     "duration": 30, "distance": 2.5,  "distanceUnit": "mi" },
+    { "week": 7, "day": "Sat", "sport": "Ride",     "type": "Easy Spin",   "duration": 45, "distance": 12,   "distanceUnit": "mi" },
+
+    { "week": 8, "day": "Mon", "sport": "Swim",     "type": "Easy",        "duration": 40, "distance": 1500, "distanceUnit": "m" },
+    { "week": 8, "day": "Tue", "sport": "Strength", "type": "Core & Hips", "duration": 30 },
+    { "week": 8, "day": "Wed", "sport": "Run",      "type": "Easy Z2",     "duration": 45, "distance": 4,    "distanceUnit": "mi" },
+    { "week": 8, "day": "Thu", "sport": "Ride",     "type": "Easy Spin",   "duration": 60, "distance": 17,   "distanceUnit": "mi" },
+    { "week": 8, "day": "Sat", "sport": "Brick",    "type": "Brick",       "duration": 90,                                          "notes": "Race simulation — treat as a C race effort" }
+  ]
+}

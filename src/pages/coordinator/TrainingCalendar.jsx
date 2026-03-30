@@ -10,7 +10,7 @@ import {
   stravaStatusForUser, buildStravaAuthUrl, exchangeCodeForUser,
   getActivitiesForUserMonth, getAllLocalActivitiesForUser,  // getAllLocalActivitiesForUser used in BaselinesTab
 } from '../../utils/strava'
-import { getActivePlans, buildPlanDateMap, mergePlanMaps, PLAN_SPORTS, COMPLETION_MAP } from '../../utils/plans'
+import { getActivePlanMapForUser, PLAN_SPORTS, COMPLETION_MAP } from '../../utils/plans'
 import { saveAthleteStats } from '../../utils/athleteStats'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -387,58 +387,39 @@ function CalendarView() {
 
   async function loadPlans(forceRefresh = false) {
     try {
-      const plans = await getActivePlans(user.uid, forceRefresh)
-      setPlanMap(mergePlanMaps(plans.map(buildPlanDateMap)))
-      if (!plans.length) {
-        setPlanError('No active training plan found for your account.')
-        return
-      }
-      const plansWithDates = plans.filter(p => p.startDate)
-      if (!plansWithDates.length) {
-        setPlanError('Your plan has no start date set yet — a coordinator needs to set one in Training Plans.')
-        return
-      }
+      const map = await getActivePlanMapForUser(user.uid, forceRefresh)
+      setPlanMap(map)
       setPlanError(null)
 
-      const plan = plansWithDates[0]
-      const today = now
-
-      if (plan.startDate) {
-        const planStart = new Date(plan.startDate + 'T00:00:00')
-        const planEnd = new Date(planStart)
-        planEnd.setDate(planStart.getDate() + plan.weeks.length * 7 - 1)
-
-        // Snap only if today is outside the plan window
-        if (today > planEnd) setWeekStart(getWeekStart(planEnd))
-        else if (today < planStart) setWeekStart(getWeekStart(planStart))
-      }
-
-      // Collect plan months + last 3 calendar months for stats
-      const monthSet = new Set()
-      const addMonth = (y, m) => monthSet.add(`${y}-${m}`)
-      if (plan.startDate) {  // always true since plan = plansWithDates[0]
-        const planStart = new Date(plan.startDate + 'T00:00:00')
-        const cur = new Date(planStart.getFullYear(), planStart.getMonth(), 1)
-        const planEndFull = new Date(plan.startDate + 'T00:00:00')
-        planEndFull.setDate(planEndFull.getDate() + plan.weeks.length * 7)
-        while (cur <= planEndFull) {
-          addMonth(cur.getFullYear(), cur.getMonth())
-          cur.setMonth(cur.getMonth() + 1)
+      // Background: save adherence stats for coordinator view
+      const dates = Object.keys(map)
+      if (dates.length > 0) {
+        const monthSet = new Set()
+        dates.forEach(d => {
+          const date = new Date(d + 'T00:00:00')
+          monthSet.add(`${date.getFullYear()}-${date.getMonth()}`)
+        })
+        const today = new Date()
+        for (let i = 0; i < 3; i++) {
+          const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
+          monthSet.add(`${d.getFullYear()}-${d.getMonth()}`)
         }
+        Promise.all([...monthSet].map(k => {
+          const [y, m] = k.split('-').map(Number)
+          return getActivitiesForUserMonth(user.uid, y, m).catch(() => [])
+        })).then(arrays => {
+          const actMap = {}
+          arrays.flat().forEach(a => {
+            const k = a.start_date_local.slice(0, 10)
+            if (!actMap[k]) actMap[k] = []
+            actMap[k].push(a)
+          })
+          return saveAthleteStats(user.uid, map, actMap)
+        }).catch(() => {})
       }
-      for (let i = 0; i < 3; i++) {
-        const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
-        addMonth(d.getFullYear(), d.getMonth())
-      }
-
-      const months = [...monthSet].map(k => k.split('-').map(Number))
-      const allActs = (await Promise.all(
-        months.map(([y, m]) => getActivitiesForUserMonth(user.uid, y, m).catch(() => []))
-      )).flat()
-      saveAthleteStats(user.uid, plan, allActs).catch(() => {})
     } catch (e) {
       const msg = e.message?.includes('Missing or insufficient permissions')
-        ? 'Could not load your training plan — permissions error. Make sure Firestore rules are deployed.'
+        ? 'Could not load training plan — permissions error. Make sure Firestore rules are deployed.'
         : `Plan load error: ${e.message}`
       setPlanError(msg)
     }
