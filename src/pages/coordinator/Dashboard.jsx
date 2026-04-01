@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
-import { Package, CheckSquare, TrendingUp, Users, ArrowRight, DollarSign, Flag, Calendar, CheckCircle2, MapPin, ChevronRight } from 'lucide-react'
+import { Package, CheckSquare, TrendingUp, Users, ArrowRight, DollarSign, Flag, Calendar, CheckCircle2, MapPin, ChevronRight, ArrowLeftRight } from 'lucide-react'
 import { fmtUSD } from '../../utils/format'
 import { getCached, setCached } from '../../utils/cache'
 
@@ -98,9 +98,15 @@ export default function CoordinatorDashboard() {
     <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
 
       {/* Greeting */}
-      <div className="flex items-baseline justify-between mb-4">
-        <h1 className="font-display font-bold text-xl text-asha-dark">Hey, {firstName}!</h1>
-        <span className="font-body text-xs text-asha-muted">{todayStr}</span>
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h1 className="font-display font-bold text-xl text-asha-dark">Hey, {firstName}!</h1>
+          <a href="/athlete" className="font-body text-[10px] text-asha-muted hover:text-asha-orange transition-colors flex items-center gap-1 mt-0.5">
+            <ArrowLeftRight size={9} />
+            Switch to athlete view
+          </a>
+        </div>
+        <span className="font-body text-xs text-asha-muted pt-1">{todayStr}</span>
       </div>
 
       {loading ? (

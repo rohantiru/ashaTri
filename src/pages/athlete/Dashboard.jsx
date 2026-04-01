@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { collection, getDocs, getDoc, query, where, doc } from 'firebase/firestore'
 import { db } from '../../firebase'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth, COORD_ROLES } from '../../contexts/AuthContext'
 import { useAppConfig } from '../../contexts/AppConfigContext'
 import { fmtUSD } from '../../utils/format'
-import StatusBadge from '../../components/StatusBadge'
-import { Package, Flag, ArrowRight, Calendar, CheckCircle2, Circle, MapPin, Activity } from 'lucide-react'
+import { Package, ArrowRight, CheckCircle2, Circle, MapPin, Activity, Trophy, CalendarDays, Shirt, Receipt, ArrowLeftRight } from 'lucide-react'
 
 function fmtDate(dateStr) {
   if (!dateStr) return 'TBD'
@@ -25,6 +24,7 @@ function daysUntil(dateStr) {
 export default function AthleteDashboard() {
   const { user, profile } = useAuth()
   const { config } = useAppConfig()
+  const isCoordLike = COORD_ROLES.includes(profile?.role)
   const [myResponses, setMyResponses] = useState([])
   const [itemMap, setItemMap] = useState({})
   const [expenses, setExpenses] = useState([])
@@ -127,11 +127,19 @@ export default function AthleteDashboard() {
     <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
 
       {/* Greeting */}
-      <div className="flex items-baseline justify-between mb-4">
-        <h1 className="font-display font-bold text-xl text-asha-dark">
-          Hey, {firstName}! 🏊🚴🏃
-        </h1>
-        <span className="font-body text-xs text-asha-muted">{todayStr}</span>
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h1 className="font-display font-bold text-xl text-asha-dark">
+            Hey, {firstName}! 🏊🚴🏃
+          </h1>
+          {isCoordLike && (
+            <a href="/coord" className="font-body text-[10px] text-asha-muted hover:text-asha-orange transition-colors flex items-center gap-1 mt-0.5">
+              <ArrowLeftRight size={9} />
+              Switch to coordinator view
+            </a>
+          )}
+        </div>
+        <span className="font-body text-xs text-asha-muted pt-1">{todayStr}</span>
       </div>
 
       {/* Stats strip */}
@@ -209,7 +217,7 @@ export default function AthleteDashboard() {
           )}
 
           {/* Training Log banner */}
-          {config.tabs.training && <div className="mb-5">
+          {config.tabs.training && (!config.trainingMemberIds?.length || config.trainingMemberIds.includes(user.uid)) && <div className="mb-5">
             <Link to="/athlete/training"
               className="flex items-center gap-3 bg-asha-dark rounded-xl px-3.5 py-3 hover:bg-asha-mid transition-colors">
               <Activity size={16} className="text-asha-orange flex-shrink-0" />
@@ -222,6 +230,38 @@ export default function AthleteDashboard() {
               </span>
             </Link>
           </div>}
+
+          {/* Empty state — shown when there's nothing meaningful on the dashboard yet */}
+          {!loading && myRaceRegs.length === 0 && myEvents.length === 0 && (() => {
+            const features = [
+              ...(config.tabs.races    ? [{ icon: Trophy,       label: 'Races',       desc: 'Register for races & track your season', to: '/athlete/races'    }] : []),
+              ...(config.tabs.events   ? [{ icon: CalendarDays, label: 'Events',       desc: 'Team events & meetups',                  to: '/athlete/events'   }] : []),
+              ...(config.tabs.swag     ? [{ icon: Shirt,        label: 'Browse Swag', desc: 'Order club gear & apparel',              to: '/athlete/browse'   }] : []),
+              ...(config.tabs.swag     ? [{ icon: Package,      label: 'My Swag',     desc: 'Check your order & pickup status',       to: '/athlete/my-swag'  }] : []),
+              ...(config.tabs.expenses ? [{ icon: Receipt,      label: 'Expenses',    desc: 'Log & track reimbursement requests',     to: '/athlete/expenses' }] : []),
+              ...(config.tabs.training && (!config.trainingMemberIds?.length || config.trainingMemberIds.includes(user.uid)) ? [{ icon: Activity, label: 'Training', desc: 'Strava-connected activity log', to: '/athlete/training' }] : []),
+            ]
+            return (
+              <div className="bg-white rounded-2xl border border-asha-border overflow-hidden mb-5">
+                <div className="px-4 py-2.5 border-b border-asha-border">
+                  <span className="font-body font-semibold text-xs text-asha-muted uppercase tracking-widest">Explore the app</span>
+                </div>
+                <div className="divide-y divide-asha-border/50">
+                  {features.map(({ icon: Icon, label, desc, to }) => (
+                    <Link key={label} to={to}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-asha-cream/50 transition-colors group">
+                      <Icon size={14} className="text-asha-orange flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-body font-medium text-sm text-asha-dark leading-none">{label}</div>
+                        <div className="font-body text-[10px] text-asha-muted mt-0.5">{desc}</div>
+                      </div>
+                      <ArrowRight size={11} className="text-asha-border group-hover:text-asha-orange transition-colors flex-shrink-0" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         {/* Right column */}

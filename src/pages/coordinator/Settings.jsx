@@ -111,11 +111,7 @@ export default function Settings() {
   }, [])
 
   const handleTrainingTeamChange = async (teamId) => {
-    const team = teams.find(t => t.id === teamId) || null
-    await updateConfig({
-      trainingTeamId: teamId || null,
-      trainingMemberIds: team?.memberIds || [],
-    })
+    await updateConfig({ trainingTeamId: teamId || null })
   }
 
   return (

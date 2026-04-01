@@ -20,12 +20,26 @@ export function AppConfigProvider({ children }) {
       try {
         const snap = await getDoc(doc(db, 'appConfig', 'main'))
         if (snap.exists()) {
-          setConfig({
+          const data = snap.data()
+          const base = {
             ...DEFAULT_CONFIG,
-            ...snap.data(),
-            tabs: { ...DEFAULT_CONFIG.tabs, ...snap.data()?.tabs },
-            trainingMemberIds: snap.data()?.trainingMemberIds || [],
-          })
+            ...data,
+            tabs: { ...DEFAULT_CONFIG.tabs, ...data?.tabs },
+          }
+
+          // Resolve team membership dynamically — don't trust the stored snapshot
+          if (base.trainingTeamId) {
+            try {
+              const teamSnap = await getDoc(doc(db, 'teams', base.trainingTeamId))
+              base.trainingMemberIds = teamSnap.exists() ? (teamSnap.data().memberIds || []) : []
+            } catch (_) {
+              base.trainingMemberIds = []
+            }
+          } else {
+            base.trainingMemberIds = []
+          }
+
+          setConfig(base)
         }
       } catch (_) {}
       setLoading(false)
