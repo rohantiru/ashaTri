@@ -1122,7 +1122,7 @@ function BaselinesTab({ uid }) {
 
 // ── Connect screen ────────────────────────────────────────────────────────────
 
-function ConnectScreen({ onError }) {
+function ConnectScreen({ onError, isAdmin }) {
   const redirectUri = `${window.location.origin}${window.location.pathname}`
   const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID
 
@@ -1148,7 +1148,7 @@ function ConnectScreen({ onError }) {
           Authorize this app to read your Strava activities. You'll be redirected to Strava and right back.
         </p>
 
-        {!clientId && (
+        {isAdmin && !clientId && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-left">
             <p className="text-xs font-body text-amber-800">
               <strong>Setup needed:</strong> Add <code className="bg-white px-1 rounded">VITE_STRAVA_CLIENT_ID</code>,{' '}
@@ -1159,10 +1159,12 @@ function ConnectScreen({ onError }) {
           </div>
         )}
 
-        <p className="text-xs font-body text-asha-muted bg-asha-cream rounded-xl p-3 mb-5 text-left">
-          In your Strava app settings, set the <strong>Authorization Callback Domain</strong> to{' '}
-          <code className="bg-white px-1 rounded text-[10px]">{window.location.hostname}</code>
-        </p>
+        {isAdmin && (
+          <p className="text-xs font-body text-asha-muted bg-asha-cream rounded-xl p-3 mb-5 text-left">
+            In your Strava app settings, set the <strong>Authorization Callback Domain</strong> to{' '}
+            <code className="bg-white px-1 rounded text-[10px]">{window.location.hostname}</code>
+          </p>
+        )}
 
         <button
           onClick={handleConnect}
@@ -1181,7 +1183,8 @@ function ConnectScreen({ onError }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function TrainingCalendar() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
+  const isAdmin = profile?.role === 'owner'
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
@@ -1279,7 +1282,7 @@ export default function TrainingCalendar() {
           {tab === 'calendar' ? <CalendarView /> : <BaselinesTab uid={user.uid} />}
         </>
       ) : (
-        <ConnectScreen onError={setError} />
+        <ConnectScreen onError={setError} isAdmin={isAdmin} />
       )}
     </div>
   )
