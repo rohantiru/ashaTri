@@ -1,18 +1,21 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, writeBatch } from 'firebase/firestore'
 import { getCached, setCached, invalidate } from '../../utils/cache'
-import { db, storage } from '../../firebase'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db } from '../../firebase'
 import StatusBadge from '../../components/StatusBadge'
-import { Plus, Pencil, Trash2, X, Package, Lock, Upload } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Package, Lock } from 'lucide-react'
 import { fmtUSD } from '../../utils/format'
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size']
 
+function driveToDirectUrl(url) {
+  const match = url.match(/drive\.google\.com\/file\/d\/([^/]+)/)
+  if (match) return `https://drive.google.com/uc?export=view&id=${match[1]}`
+  return url
+}
+
 function ItemModal({ item, onSave, onClose }) {
   const editing = !!item?.id
-  const [uploading, setUploading] = useState(false)
-  const fileInputRef = useRef(null)
   const [form, setForm] = useState({
     name: item?.name || '',
     description: item?.description || '',
@@ -35,17 +38,6 @@ function ItemModal({ item, onSave, onClose }) {
 
   const setInventoryCount = (size, val) => {
     setForm(f => ({ ...f, inventory: { ...f.inventory, [size]: parseInt(val) || 0 } }))
-  }
-
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    setUploading(true)
-    const storageRef = ref(storage, `swagImages/${Date.now()}_${file.name}`)
-    await uploadBytes(storageRef, file)
-    const url = await getDownloadURL(storageRef)
-    setForm(f => ({ ...f, imageUrl: url }))
-    setUploading(false)
   }
 
   const handleSubmit = () => {
@@ -107,19 +99,15 @@ function ItemModal({ item, onSave, onClose }) {
             />
           </div>
 
-          {/* Image */}
+          {/* Image URL */}
           <div>
-            <label className="block text-xs font-body font-medium text-asha-muted mb-1.5 uppercase tracking-wide">Image</label>
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current.click()}
-              disabled={uploading}
-              className="w-full flex items-center justify-center gap-2 border border-dashed border-asha-border rounded-xl px-3 py-3 font-body text-sm text-asha-muted hover:border-asha-orange hover:text-asha-orange transition-colors disabled:opacity-50"
-            >
-              <Upload size={15} />
-              {uploading ? 'Uploading…' : 'Upload image'}
-            </button>
+            <label className="block text-xs font-body font-medium text-asha-muted mb-1.5 uppercase tracking-wide">Image URL</label>
+            <input
+              value={form.imageUrl}
+              onChange={e => setForm(f => ({ ...f, imageUrl: driveToDirectUrl(e.target.value.trim()) }))}
+              className="w-full border border-asha-border rounded-xl px-3 py-2.5 font-body text-sm focus:outline-none focus:border-asha-orange transition-colors"
+              placeholder="Paste any image URL or Google Drive share link"
+            />
             {form.imageUrl && (
               <img src={form.imageUrl} alt="preview" className="mt-2 w-full h-32 object-cover rounded-xl border border-asha-border" onError={e => e.target.style.display='none'} />
             )}
