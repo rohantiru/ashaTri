@@ -9,8 +9,8 @@ import { fmtUSD } from '../../utils/format'
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size']
 
 function driveToDirectUrl(url) {
-  const match = url.match(/drive\.google\.com\/file\/d\/([^/]+)/)
-  if (match) return `https://drive.google.com/uc?export=view&id=${match[1]}`
+  const match = url.match(/drive\.google\.com\/file\/d\/([^/?]+)/)
+  if (match) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`
   return url
 }
 

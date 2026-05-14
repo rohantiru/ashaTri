@@ -3,13 +3,29 @@ import { collection, getDocs, onSnapshot, query, where, addDoc, deleteDoc, doc, 
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
-import { ShoppingBag, Check, ChevronDown, Lock } from 'lucide-react'
+import { ShoppingBag, Check, ChevronDown, Lock, X } from 'lucide-react'
 import { fmtUSD } from '../../utils/format'
+
+function ImageLightbox({ url, onClose }) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <button className="absolute top-4 right-4 text-white/70 hover:text-white" onClick={onClose}><X size={24} /></button>
+      <img src={url} alt="" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl" onClick={e => e.stopPropagation()} />
+    </div>
+  )
+}
 
 function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
   const [selectedSize, setSelectedSize] = useState(myResponse?.size || '')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [lightbox, setLightbox] = useState(false)
   const hasResponse = !!myResponse
   const isInventory = item.type === 'inventory'
   const canCancel = hasResponse && !item.isLocked && (myResponse.status === 'interested' || myResponse.status === 'ordered')
@@ -50,9 +66,10 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
     <div className={`flex items-center gap-3 px-3.5 py-3 ${hasResponse ? 'bg-asha-orangeDim/20' : ''}`}>
       {/* Thumbnail or accent */}
       {item.imageUrl
-        ? <img src={item.imageUrl} alt={item.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-asha-border" onError={e => e.target.style.display = 'none'} />
+        ? <img src={item.imageUrl} alt={item.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-asha-border cursor-zoom-in" onClick={() => setLightbox(true)} onError={e => e.target.style.display = 'none'} />
         : <div className={`w-1.5 self-stretch rounded-full flex-shrink-0 ${hasResponse ? 'bg-asha-orange' : 'bg-asha-border'}`} />
       }
+      {lightbox && <ImageLightbox url={item.imageUrl} onClose={() => setLightbox(false)} />}
 
       {/* Info */}
       <div className="flex-1 min-w-0">
