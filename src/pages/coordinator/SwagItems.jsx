@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react'
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { useEffect, useState, useRef } from 'react'
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, writeBatch } from 'firebase/firestore'
 import { getCached, setCached, invalidate } from '../../utils/cache'
-import { db } from '../../firebase'
+import { db, storage } from '../../firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import StatusBadge from '../../components/StatusBadge'
-import { Plus, Pencil, Trash2, X, Package, Lock } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Package, Lock, Upload } from 'lucide-react'
 import { fmtUSD } from '../../utils/format'
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size']
 
 function ItemModal({ item, onSave, onClose }) {
   const editing = !!item?.id
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
   const [form, setForm] = useState({
     name: item?.name || '',
     description: item?.description || '',
@@ -32,6 +35,17 @@ function ItemModal({ item, onSave, onClose }) {
 
   const setInventoryCount = (size, val) => {
     setForm(f => ({ ...f, inventory: { ...f.inventory, [size]: parseInt(val) || 0 } }))
+  }
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploading(true)
+    const storageRef = ref(storage, `swagImages/${Date.now()}_${file.name}`)
+    await uploadBytes(storageRef, file)
+    const url = await getDownloadURL(storageRef)
+    setForm(f => ({ ...f, imageUrl: url }))
+    setUploading(false)
   }
 
   const handleSubmit = () => {
@@ -93,15 +107,19 @@ function ItemModal({ item, onSave, onClose }) {
             />
           </div>
 
-          {/* Image URL */}
+          {/* Image */}
           <div>
-            <label className="block text-xs font-body font-medium text-asha-muted mb-1.5 uppercase tracking-wide">Image URL</label>
-            <input
-              value={form.imageUrl}
-              onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
-              className="w-full border border-asha-border rounded-xl px-3 py-2.5 font-body text-sm focus:outline-none focus:border-asha-orange transition-colors"
-              placeholder="https://…"
-            />
+            <label className="block text-xs font-body font-medium text-asha-muted mb-1.5 uppercase tracking-wide">Image</label>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current.click()}
+              disabled={uploading}
+              className="w-full flex items-center justify-center gap-2 border border-dashed border-asha-border rounded-xl px-3 py-3 font-body text-sm text-asha-muted hover:border-asha-orange hover:text-asha-orange transition-colors disabled:opacity-50"
+            >
+              <Upload size={15} />
+              {uploading ? 'Uploading…' : 'Upload image'}
+            </button>
             {form.imageUrl && (
               <img src={form.imageUrl} alt="preview" className="mt-2 w-full h-32 object-cover rounded-xl border border-asha-border" onError={e => e.target.style.display='none'} />
             )}
@@ -253,9 +271,21 @@ export default function SwagItems() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this item? This will not remove existing responses.')) return
-    await deleteDoc(doc(db, 'swagItems', id))
+    if (!confirm('Delete this item and all associated orders/interest?')) return
+    const responsesSnap = await getDocs(query(collection(db, 'swagResponses'), where('itemId', '==', id)))
+    const batch = writeBatch(db)
+    responsesSnap.docs.forEach(d => batch.delete(d.ref))
+    batch.delete(doc(db, 'swagItems', id))
+    await batch.commit()
     fetchItems(true)
+  }
+
+  const handleClearAllResponses = async () => {
+    if (!confirm('Delete ALL orders and interest across every swag item? This cannot be undone.')) return
+    const snap = await getDocs(collection(db, 'swagResponses'))
+    const batch = writeBatch(db)
+    snap.docs.forEach(d => batch.delete(d.ref))
+    await batch.commit()
   }
 
   const toggleActive = async (item) => {
@@ -265,15 +295,24 @@ export default function SwagItems() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-4 sm:py-6">
-      <div className="flex items-baseline justify-between mb-4">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">Swag Items</h1>
-        <button
-          onClick={() => setModal('new')}
-          className="flex items-center gap-1.5 bg-asha-orange text-white px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-asha-orangeLight transition-colors"
-        >
-          <Plus size={14} />
-          Add Item
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleClearAllResponses}
+            className="flex items-center gap-1.5 border border-red-200 text-red-500 px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-red-50 transition-colors"
+          >
+            <Trash2 size={14} />
+            Clear All Orders
+          </button>
+          <button
+            onClick={() => setModal('new')}
+            className="flex items-center gap-1.5 bg-asha-orange text-white px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-asha-orangeLight transition-colors"
+          >
+            <Plus size={14} />
+            Add Item
+          </button>
+        </div>
       </div>
 
       {loading ? (

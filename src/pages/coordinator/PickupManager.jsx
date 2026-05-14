@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, updateDoc, doc, serverTimestamp, runTransaction, writeBatch } from 'firebase/firestore'
+import { collection, getDocs, updateDoc, doc, serverTimestamp, runTransaction, writeBatch, deleteDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import StatusBadge from '../../components/StatusBadge'
-import { CheckSquare, Search, Check } from 'lucide-react'
+import { CheckSquare, Search, Check, Trash2 } from 'lucide-react'
 import { fmtUSD } from '../../utils/format'
 
 const FULL_FLOW = ['interested', 'ordered', 'ready', 'picked_up']
@@ -73,6 +73,14 @@ export default function PickupManager() {
     return matchSearch && matchStatus && matchItem
   })
 
+  const clearAllResponses = async () => {
+    if (!confirm(`Delete all ${responses.length} orders/interest records? This cannot be undone.`)) return
+    const batch = writeBatch(db)
+    responses.forEach(r => batch.delete(doc(db, 'swagResponses', r.id)))
+    await batch.commit()
+    setResponses([])
+  }
+
   const bulkReady = async () => {
     const ordered = filtered.filter(r => r.status === 'ordered')
     if (!ordered.length) return
@@ -92,12 +100,21 @@ export default function PickupManager() {
     <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-display font-bold text-xl text-asha-dark">Pickup Manager</h1>
-        <button
-          onClick={bulkReady}
-          className="flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-emerald-700 transition-colors"
-        >
-          Bulk: Mark ordered → Ready
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={clearAllResponses}
+            className="flex items-center gap-1.5 border border-red-200 text-red-500 px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-red-50 transition-colors"
+          >
+            <Trash2 size={14} />
+            Clear All
+          </button>
+          <button
+            onClick={bulkReady}
+            className="flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-2 rounded-lg font-body font-medium text-xs hover:bg-emerald-700 transition-colors"
+          >
+            Bulk: Mark ordered → Ready
+          </button>
+        </div>
       </div>
 
       {/* Status summary pills */}

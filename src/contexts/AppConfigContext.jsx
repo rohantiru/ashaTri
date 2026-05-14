@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { db } from '../firebase'
+import { onAuthStateChanged } from 'firebase/auth'
+import { db, auth } from '../firebase'
 
 const AppConfigContext = createContext({})
 
@@ -16,7 +17,7 @@ export function AppConfigProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function load() {
+    const unsubscribe = onAuthStateChanged(auth, async () => {
       try {
         const snap = await getDoc(doc(db, 'appConfig', 'main'))
         if (snap.exists()) {
@@ -43,8 +44,9 @@ export function AppConfigProvider({ children }) {
         }
       } catch (_) {}
       setLoading(false)
-    }
-    load()
+      unsubscribe()
+    })
+    return () => unsubscribe()
   }, [])
 
   const updateTabs = async (tabs) => {

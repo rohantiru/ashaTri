@@ -153,9 +153,10 @@ service cloud.firestore {
         (request.resource.data.status == 'interested' ||
          request.resource.data.status == 'ordered');
       allow update: if isCoordOrAbove();
-      allow delete: if isSignedIn() &&
-        resource.data.athleteId == request.auth.uid &&
-        (resource.data.status == 'interested' || resource.data.status == 'ordered');
+      allow delete: if isCoordOrAbove() ||
+        (isSignedIn() &&
+          resource.data.athleteId == request.auth.uid &&
+          (resource.data.status == 'interested' || resource.data.status == 'ordered'));
     }
   }
 }
