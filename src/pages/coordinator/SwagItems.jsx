@@ -22,6 +22,7 @@ function ItemModal({ item, onSave, onClose }) {
     imageUrl: item?.imageUrl || '',
     price: item?.price ?? '',
     type: item?.type || 'interest',
+    gender: item?.gender || 'unisex',
     hasSizes: item?.hasSizes ?? true,
     sizes: item?.sizes || ['S', 'M', 'L', 'XL'],
     inventory: item?.inventory || {},
@@ -128,6 +129,22 @@ function ItemModal({ item, onSave, onClose }) {
                 >
                   <div className="font-body font-medium text-sm text-asha-dark">{label}</div>
                   <div className="font-body text-xs text-asha-muted mt-0.5">{desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Gender */}
+          <div>
+            <label className="block text-xs font-body font-medium text-asha-muted mb-1.5 uppercase tracking-wide">Fit</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[{ val: 'unisex', label: 'Unisex' }, { val: 'mens', label: "Men's" }, { val: 'womens', label: "Women's" }].map(({ val, label }) => (
+                <button
+                  key={val}
+                  onClick={() => setForm(f => ({ ...f, gender: val }))}
+                  className={`py-2 rounded-xl border text-sm font-body font-medium transition-all ${form.gender === val ? 'border-asha-orange bg-asha-orangeDim text-asha-orange' : 'border-asha-border text-asha-muted hover:border-asha-orange/40'}`}
+                >
+                  {label}
                 </button>
               ))}
             </div>

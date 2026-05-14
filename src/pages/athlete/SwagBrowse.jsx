@@ -59,6 +59,9 @@ function SwagCard({ item, myResponse, onSubmit, onWithdraw }) {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-body font-medium text-sm text-asha-dark">{item.name}</span>
           {item.price != null && <span className="font-mono text-[10px] font-semibold text-asha-orange">{fmtUSD(item.price)}</span>}
+          {item.gender && item.gender !== 'unisex' && (
+            <span className="font-body text-[9px] uppercase tracking-wide px-1.5 py-px rounded border border-asha-border text-asha-muted">{item.gender === 'mens' ? "Men's" : "Women's"}</span>
+          )}
           <StatusBadge status={stockStatus} />
         </div>
         {isInventory && item.hasSizes && (
